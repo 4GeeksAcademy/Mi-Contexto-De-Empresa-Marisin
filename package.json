@@ -1,0 +1,30 @@
+{
+  "name": "mi-contexto-de-empresa-marisin",
+  "version": "1.0.0",
+  "description": "[![4Geeks Academy](https://img.shields.io/badge/4Geeks-Academy-blue)](https://4geeksacademy.com) [![AI Engineering](https://img.shields.io/badge/track-AI%20Engineering-green)](https://4geeksacademy.com/es/programas-de-carrera/ingenieria-ia)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typecheck": "tsc --noEmit",
+    "demo": "tsx src/demo.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/4GeeksAcademy/Mi-Contexto-De-Empresa-Marisin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/4GeeksAcademy/Mi-Contexto-De-Empresa-Marisin/issues"
+  },
+  "homepage": "https://github.com/4GeeksAcademy/Mi-Contexto-De-Empresa-Marisin#readme",
+  "devDependencies": {
+    "tsx": "^4.23.0",
+    "typescript": "^7.0.2"
+  }
+}
