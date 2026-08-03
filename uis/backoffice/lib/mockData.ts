@@ -1,0 +1,173 @@
+import type { BrandClient, CarrierShipment, CustomerTicket, OrderReturn, SKUInventory } from "../../../src/types/models";
+
+export const inventoryData: SKUInventory[] = [
+  {
+    sku: "SKU-001",
+    productName: "Eco Box Premium",
+    clientBrand: "Nike",
+    stockLA: 50,
+    stockZaragoza: 120,
+    minRequiredStock: 200,
+  },
+  {
+    sku: "SKU-002",
+    productName: "Suede Cleaner Kit",
+    clientBrand: "Puma",
+    stockLA: 300,
+    stockZaragoza: 150,
+    minRequiredStock: 100,
+  },
+  {
+    sku: "SKU-003",
+    productName: "Running Laces Glow",
+    clientBrand: "Nike",
+    stockLA: 10,
+    stockZaragoza: 15,
+    minRequiredStock: 50,
+  },
+  {
+    sku: "SKU-004",
+    productName: "Sport Bottle Fold",
+    clientBrand: "Adidas",
+    stockLA: 210,
+    stockZaragoza: 80,
+    minRequiredStock: 90,
+  },
+];
+
+export const shipmentsData: CarrierShipment[] = [
+  {
+    id: "SH-101",
+    trackingNumber: "TRK-UPS-01",
+    carrierName: "UPS",
+    origin: "Los Angeles",
+    destinationCountry: "USA",
+    weightKg: 2.5,
+    urgency: "Express",
+    status: "Delivered",
+    costEuro: 15,
+    hasIncident: false,
+  },
+  {
+    id: "SH-102",
+    trackingNumber: "TRK-SEUR-02",
+    carrierName: "SEUR",
+    origin: "Zaragoza",
+    destinationCountry: "Spain",
+    weightKg: 12,
+    urgency: "Standard",
+    status: "In Transit",
+    costEuro: 8.5,
+    hasIncident: true,
+  },
+  {
+    id: "SH-103",
+    trackingNumber: "TRK-FEDEX-03",
+    carrierName: "FedEx",
+    origin: "Los Angeles",
+    destinationCountry: "Canada",
+    weightKg: 5,
+    urgency: "Express",
+    status: "Failed",
+    costEuro: 45,
+    hasIncident: true,
+  },
+  {
+    id: "SH-104",
+    trackingNumber: "TRK-DHL-04",
+    carrierName: "DHL",
+    origin: "Zaragoza",
+    destinationCountry: "France",
+    weightKg: 6,
+    urgency: "Standard",
+    status: "Delivered",
+    costEuro: 13.4,
+    hasIncident: false,
+  },
+];
+
+export const returnsData: OrderReturn[] = [
+  {
+    id: "RT-11",
+    shipmentId: "SH-101",
+    clientBrand: "Nike",
+    reason: "Talla incorrecta",
+    status: "Pending Approval",
+    estimatedValueEuro: 115,
+    aiInspectionCondition: "Like New",
+    requiresHumanReview: false,
+  },
+  {
+    id: "RT-12",
+    shipmentId: "SH-103",
+    clientBrand: "Puma",
+    reason: "Producto defectuoso",
+    status: "Inspected",
+    estimatedValueEuro: 220,
+    aiInspectionCondition: "Damaged",
+    requiresHumanReview: true,
+  },
+];
+
+export const ticketsData: CustomerTicket[] = [
+  {
+    id: "TK-1",
+    clientBrand: "Nike",
+    channel: "Email",
+    subject: "Pedido sin tracking",
+    sentiment: "Negative",
+    isResolved: false,
+    createdAt: new Date("2026-07-21T10:12:00Z"),
+  },
+  {
+    id: "TK-2",
+    clientBrand: "Puma",
+    channel: "WhatsApp",
+    subject: "Cambio de direccion",
+    sentiment: "Neutral",
+    isResolved: true,
+    createdAt: new Date("2026-07-21T12:00:00Z"),
+  },
+  {
+    id: "TK-3",
+    consumerEmail: "buyer@example.com",
+    channel: "Phone",
+    subject: "Paquete entregado tarde",
+    sentiment: "Negative",
+    isResolved: true,
+    createdAt: new Date("2026-07-22T14:41:00Z"),
+  },
+  {
+    id: "TK-4",
+    consumerEmail: "customer@example.com",
+    channel: "Email",
+    subject: "Buena experiencia",
+    sentiment: "Positive",
+    isResolved: true,
+    createdAt: new Date("2026-07-22T15:02:00Z"),
+  },
+];
+
+export const clientsData: BrandClient[] = [
+  {
+    id: "CL-01",
+    companyName: "Nike",
+    contractExpirationDate: new Date("2026-08-01"),
+    monthlyVolumeEuro: 15000,
+    renewalRiskScore: 85,
+  },
+  {
+    id: "CL-02",
+    companyName: "Puma",
+    contractExpirationDate: new Date("2027-02-15"),
+    monthlyVolumeEuro: 8000,
+    renewalRiskScore: 20,
+  },
+  {
+    id: "CL-03",
+    companyName: "Adidas",
+    contractExpirationDate: new Date("2026-10-18"),
+    monthlyVolumeEuro: 11000,
+    renewalRiskScore: 68,
+  },
+];
