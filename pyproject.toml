@@ -1,0 +1,10 @@
+[project]
+name = "mi-contexto-de-empresa-marisin"
+version = "0.1.0"
+description = "TrackFlow Supplier Directory API"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "tinydb",
+    "pydantic"
+]
