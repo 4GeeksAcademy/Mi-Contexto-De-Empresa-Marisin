@@ -1,5 +1,5 @@
 from datetime import datetime
-from database import suppliers_table
+from .database import suppliers_table
 
 
 def run_seed():
