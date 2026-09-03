@@ -4,7 +4,8 @@ from typing import Optional
 from tinydb import Query
 
 from ..database import profiles_table, users_table
-from ..models import ProfileCreate, UserCreate, UserRole, UserUpdate
+from ..models import UserCreate, UserRole, UserUpdate
+from .profiles import create_profile
 
 
 def create_user(user_in: UserCreate) -> dict:
@@ -54,9 +55,3 @@ def delete_user(user_id: int) -> bool:
     profiles_table.remove(Query().user_id == user_id)
     users_table.remove(doc_ids=[user_id])
     return True
-
-
-def create_profile(user_id: int, profile_in: ProfileCreate) -> dict:
-    profile_id = profiles_table.insert({"user_id": user_id, **profile_in.model_dump()})
-    profiles_table.update({"id": profile_id}, doc_ids=[profile_id])
-    return profiles_table.get(doc_id=profile_id)

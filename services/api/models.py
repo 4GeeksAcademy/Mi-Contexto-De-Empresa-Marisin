@@ -127,4 +127,9 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
   access_token: str
   token_type: str = "bearer"
-  
+
+
+class MeResponse(BaseModel):
+  email: str
+  role: UserRole
+  profile: Optional[Profile] = None
