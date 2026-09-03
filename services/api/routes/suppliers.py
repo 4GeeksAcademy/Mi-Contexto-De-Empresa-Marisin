@@ -1,6 +1,6 @@
 from datetime import datetime
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Query
+from typing import Annotated, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from ..database import suppliers_table
 from ..models import (
     Supplier,
@@ -9,6 +9,7 @@ from ..models import (
     SupplierUpdateRate,
     SupplierUpdateStatus,
 )
+from ..security import get_current_user
 
 router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
 
@@ -42,7 +43,7 @@ def get_suppliers(
 
 
 @router.get("/{supplier_id}", response_model=Supplier)
-def get_supplier_by_id(supplier_id: int):
+def get_supplier_by_id(supplier_id: int, _: Annotated[dict, Depends(get_current_user)]):
     """Devuelve el detalle de un proveedor por su ID."""
     if not suppliers_table.contains(doc_id=supplier_id):
         raise HTTPException(status_code=404, detail="Supplier not found")
@@ -52,7 +53,7 @@ def get_supplier_by_id(supplier_id: int):
 
 
 @router.post("", response_model=Supplier, status_code=201)
-def create_supplier(supplier_in: SupplierCreate):
+def create_supplier(supplier_in: SupplierCreate, _: Annotated[dict, Depends(get_current_user)]):
     """Registra un nuevo proveedor en el directorio."""
     new_data = supplier_in.dict()
     new_data["updated_at"] = datetime.utcnow().isoformat()
@@ -64,7 +65,11 @@ def create_supplier(supplier_in: SupplierCreate):
 
 
 @router.patch("/{supplier_id}/rate", response_model=Supplier)
-def update_supplier_rate(supplier_id: int, rate_in: SupplierUpdateRate):
+def update_supplier_rate(
+    supplier_id: int,
+    rate_in: SupplierUpdateRate,
+    _: Annotated[dict, Depends(get_current_user)],
+):
     """Actualiza la tarifa de un proveedor existente."""
     if not suppliers_table.contains(doc_id=supplier_id):
         raise HTTPException(status_code=404, detail="Supplier not found")
@@ -82,7 +87,11 @@ def update_supplier_rate(supplier_id: int, rate_in: SupplierUpdateRate):
 
 
 @router.patch("/{supplier_id}/status", response_model=Supplier)
-def update_supplier_status(supplier_id: int, status_in: SupplierUpdateStatus):
+def update_supplier_status(
+    supplier_id: int,
+    status_in: SupplierUpdateStatus,
+    _: Annotated[dict, Depends(get_current_user)],
+):
     """Actualiza el estado operativo de un proveedor."""
     if not suppliers_table.contains(doc_id=supplier_id):
         raise HTTPException(status_code=404, detail="Supplier not found")
@@ -100,7 +109,7 @@ def update_supplier_status(supplier_id: int, status_in: SupplierUpdateStatus):
 
 
 @router.delete("/{supplier_id}", status_code=204)
-def delete_supplier(supplier_id: int):
+def delete_supplier(supplier_id: int, _: Annotated[dict, Depends(get_current_user)]):
     """Elimina un proveedor del directorio."""
     if not suppliers_table.contains(doc_id=supplier_id):
         raise HTTPException(status_code=404, detail="Supplier not found")

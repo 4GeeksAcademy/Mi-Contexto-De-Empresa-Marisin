@@ -2,16 +2,19 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
+load_dotenv()
+
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-JWT_SECRET = os.getenv("JWT_SECRET", "change-this-development-secret")
+JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 # Auth centralizado en /auth/login: usuarios y perfiles viven solo en TinyDB.
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
