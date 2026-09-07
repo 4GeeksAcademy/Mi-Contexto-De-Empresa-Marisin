@@ -1,0 +1,13 @@
+metric,value
+total_elements,100.0
+valid_records,99.0
+invalid_records,1.0
+avg_satisfaction_closed,3.06
+category_DELAYED_DELIVERY,39.0
+category_WRONG_ADDRESS,20.0
+category_RETURN_REQUEST,18.0
+category_LOST_PARCEL,15.0
+category_DAMAGE,7.0
+status_CLOSED,53.0
+status_OPEN,32.0
+status_DISCARDED,14.0
