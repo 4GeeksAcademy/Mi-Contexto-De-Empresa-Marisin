@@ -7,6 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
+    "dev": "npm --prefix uis/application run dev",
     "test": "echo \"Error: no test specified\" && exit 1",
     "typecheck": "tsc --noEmit",
     "demo": "tsx src/demo.ts"
