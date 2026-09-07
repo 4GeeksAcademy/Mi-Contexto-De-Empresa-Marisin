@@ -1,4 +1,4 @@
-import { Candidate, CandidateFormData, Note } from "@/types";
+import { Candidate, CandidateFormData, Note } from "../types";
 
 const API_BASE_URL =
 	process.env.NEXT_PUBLIC_API_URL ||
@@ -36,15 +36,6 @@ type RawNote = {
 	created_at?: string;
 };
 
-type ListPayload<T> =
-	| T[]
-	| {
-			data?: T[];
-			items?: T[];
-			results?: T[];
-			records?: T[];
-		};
-
 function isObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null;
 }
@@ -52,13 +43,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
 function extractArray<T>(payload: unknown): T[] {
 	if (Array.isArray(payload)) return payload as T[];
 	if (!isObject(payload)) return [];
-
-	const listPayload = payload as ListPayload<T>;
-
-	if (Array.isArray(listPayload.data)) return listPayload.data;
-	if (Array.isArray(listPayload.items)) return listPayload.items;
-	if (Array.isArray(listPayload.results)) return listPayload.results;
-	if (Array.isArray(listPayload.records)) return listPayload.records;
+	if ("data" in payload && Array.isArray(payload.data)) return payload.data as T[];
+	if ("items" in payload && Array.isArray(payload.items)) return payload.items as T[];
+	if ("results" in payload && Array.isArray(payload.results)) return payload.results as T[];
+	if ("records" in payload && Array.isArray(payload.records)) return payload.records as T[];
 
 	return [];
 }
