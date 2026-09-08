@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+from threading import RLock
 from tinydb import TinyDB
 
 # Definir la ruta de la base de data local (se creará un fichero JSON)
@@ -12,6 +13,9 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 db = TinyDB(DB_PATH)
 suppliers_table = db.table("suppliers")
+users_table = db.table("users")
+password_reset_tokens_table = db.table("password_reset_tokens")
+auth_db_lock = RLock()
 
 
 def seed_database():

@@ -6,5 +6,6 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "tinydb",
-    "pydantic"
+    "pydantic",
+    "python-dotenv"
 ]

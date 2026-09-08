@@ -43,4 +43,28 @@ class Supplier(SupplierCreate):
   updated_at: str = Field(
       ..., description="Timestamp de la última actualización"
   )
+
+
+class LoginRequest(BaseModel):
+  email: str = Field(..., min_length=3)
+  password: str = Field(..., min_length=1)
+
+
+class ForgotPasswordRequest(BaseModel):
+  email: str = Field(..., min_length=3)
+
+
+class ResetPasswordRequest(BaseModel):
+  token: str = Field(..., min_length=1)
+  new_password: str = Field(..., min_length=8)
+
+
+class ChangePasswordRequest(BaseModel):
+  current_password: str = Field(..., min_length=1)
+  new_password: str = Field(..., min_length=8)
+
+
+class LoginResponse(BaseModel):
+  access_token: str
+  token_type: str = "bearer"
   
