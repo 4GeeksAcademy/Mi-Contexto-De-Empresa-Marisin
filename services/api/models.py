@@ -1,7 +1,14 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
+
+from packages.shared.incident_validation import (
+  IncidentBranch,
+  IncidentCategory,
+  IncidentOrigin,
+  IncidentStatus,
+)
 
 
 class SupplierStatus(str, Enum):
@@ -62,6 +69,33 @@ class ResetPasswordRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
   current_password: str = Field(..., min_length=1)
   new_password: str = Field(..., min_length=8)
+
+
+class IncidentCreate(BaseModel):
+  title: str = Field(..., min_length=1)
+  description: str = Field(..., min_length=1)
+  category: IncidentCategory
+  status: IncidentStatus = IncidentStatus.open
+  origin: IncidentOrigin
+  branch: IncidentBranch
+
+
+class IncidentStatusUpdate(BaseModel):
+  status: IncidentStatus
+
+
+class Incident(IncidentCreate):
+  id: str
+  created_at: str
+  updated_at: str
+
+
+class IncidentSummary(BaseModel):
+  total: int
+  by_status: Dict[str, int]
+  by_category: Dict[str, int]
+  by_origin: Dict[str, int]
+  by_branch: Dict[str, int]
 
 
 class LoginResponse(BaseModel):

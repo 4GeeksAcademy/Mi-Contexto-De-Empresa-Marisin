@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   return (
@@ -14,6 +15,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         <p className="mt-2 max-w-3xl text-sm text-slate-300 md:text-base">
           Vista unificada para coordinacion interna entre operaciones logisticas, experiencia del cliente y seguimiento del pipeline de talento.
         </p>
+        <nav className="mt-5 flex flex-wrap gap-2 text-sm" aria-label="Navegacion principal">
+          <Link href="/" className="rounded-lg border border-white/15 px-3 py-2 text-slate-200 hover:border-cyan-300/60">Inicio</Link>
+          <Link href="/incidents" className="rounded-lg border border-cyan-300/40 bg-cyan-300/10 px-3 py-2 text-cyan-100 hover:bg-cyan-300/20">Incidencias</Link>
+        </nav>
       </header>
       <div className="mt-6 space-y-6">{children}</div>
     </div>
