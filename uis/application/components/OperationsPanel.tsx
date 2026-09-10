@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+type AsyncStatus = "loading" | "success" | "error";
+
+const operationsErrorMessage = "No fue posible cargar el resumen operativo. Revisa la conexión y vuelve a intentarlo.";
 
 type OperationSnapshot = {
   stockReport: {
@@ -33,45 +37,54 @@ export function OperationsPanel() {
   const [selectedOrigin, setSelectedOrigin] = useState<"all" | "Los Angeles" | "Zaragoza">("all");
   const [trackingLookup, setTrackingLookup] = useState("TRK-SEUR-02");
   const [snapshot, setSnapshot] = useState<OperationSnapshot | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<AsyncStatus>("loading");
   const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
+  const loadSnapshot = useCallback(async (shouldIgnore: () => boolean = () => false) => {
     const params = new URLSearchParams();
     if (selectedOrigin !== "all") params.set("origin", selectedOrigin);
     if (trackingLookup.trim().length > 0) params.set("tracking", trackingLookup.trim());
 
-    let ignore = false;
-    const loadSnapshot = async () => {
-      setIsLoading(true);
-      setErrorMessage("");
+    setStatus("loading");
+    setErrorMessage("");
 
-      try {
-        const response = await fetch(`/api/operations?${params.toString()}`, { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error("No fue posible cargar el resumen operativo");
-        }
-
-        const payload = (await response.json()) as OperationSnapshot;
-        if (!ignore) {
-          setSnapshot(payload);
-        }
-      } catch (error) {
-        if (!ignore) {
-          setErrorMessage(error instanceof Error ? error.message : "No fue posible cargar el resumen operativo");
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false);
-        }
+    try {
+      const response = await fetch(`/api/operations?${params.toString()}`, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(operationsErrorMessage);
       }
-    };
 
-    void loadSnapshot();
+      let payload: OperationSnapshot;
+      try {
+        payload = (await response.json()) as OperationSnapshot;
+      } catch {
+        throw new Error("La respuesta operativa no se pudo interpretar. Inténtalo de nuevo.");
+      }
+
+      if (!shouldIgnore()) {
+        setSnapshot(payload);
+        setStatus("success");
+      }
+    } catch {
+      if (!shouldIgnore()) {
+        setErrorMessage(operationsErrorMessage);
+        setStatus("error");
+      }
+    } finally {
+      if (shouldIgnore()) return;
+    }
+  }, [selectedOrigin, trackingLookup]);
+
+  useEffect(() => {
+    let ignore = false;
+    const timer = window.setTimeout(() => {
+      void loadSnapshot(() => ignore);
+    }, 0);
     return () => {
       ignore = true;
+      window.clearTimeout(timer);
     };
-  }, [selectedOrigin, trackingLookup]);
+  }, [loadSnapshot]);
 
   return (
     <section className="rounded-3xl border border-white/10 bg-[var(--panel)] p-5 shadow-xl shadow-black/25 md:p-6">
@@ -91,23 +104,23 @@ export function OperationsPanel() {
         </label>
       </div>
 
-      {isLoading ? <p className="mb-3 text-sm text-cyan-200">Actualizando resumen operativo...</p> : null}
-      {errorMessage ? <p className="mb-3 text-sm text-rose-300">{errorMessage}</p> : null}
+      {status === "loading" ? <LoadingBlock label="Actualizando resumen operativo..." /> : null}
+      {status === "error" ? <ErrorBlock message={errorMessage || operationsErrorMessage} onRetry={() => { void loadSnapshot(); }} /> : null}
 
-      {snapshot ? (
+      {status === "success" && snapshot ? (
         <>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <KpiCard title="SKUs activos" value={snapshot.stockReport.totalSKUs.toString()} detail={`Stock global: ${snapshot.stockReport.globalTotalStock}`} />
-            <KpiCard title="Envios analizados" value={snapshot.carrierReport.totalShipments.toString()} detail={`Incidencias: ${snapshot.carrierReport.totalIncidents}`} />
+            <KpiCard title="SKUs activos" value={(snapshot?.stockReport?.totalSKUs ?? 0).toString()} detail={`Stock global: ${snapshot?.stockReport?.globalTotalStock ?? 0}`} />
+            <KpiCard title="Envios analizados" value={(snapshot?.carrierReport?.totalShipments ?? 0).toString()} detail={`Incidencias: ${snapshot?.carrierReport?.totalIncidents ?? 0}`} />
             <KpiCard
               title="Coste promedio"
-              value={`${snapshot.carrierReport.averageCostEuro.toFixed(2)} EUR`}
-              detail={`Total: ${snapshot.carrierReport.totalCostEuro.toFixed(2)} EUR`}
+              value={`${(snapshot?.carrierReport?.averageCostEuro ?? 0).toFixed(2)} EUR`}
+              detail={`Total: ${(snapshot?.carrierReport?.totalCostEuro ?? 0).toFixed(2)} EUR`}
             />
             <KpiCard
               title="Resolucion tickets"
-              value={`${snapshot.customerReport.resolutionRatePercentage.toFixed(1)}%`}
-              detail={`Abiertos: ${snapshot.customerReport.totalTickets - snapshot.customerReport.resolvedTickets}`}
+              value={`${(snapshot?.customerReport?.resolutionRatePercentage ?? 0).toFixed(1)}%`}
+              detail={`Abiertos: ${(snapshot?.customerReport?.totalTickets ?? 0) - (snapshot?.customerReport?.resolvedTickets ?? 0)}`}
             />
           </div>
 
@@ -115,10 +128,10 @@ export function OperationsPanel() {
             <article className="rounded-2xl border border-white/10 bg-[var(--panel-soft)] p-4">
               <h3 className="text-sm font-semibold tracking-wide text-cyan-200 uppercase">Alertas y riesgos</h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                <li>SKUs con stock bajo: {snapshot.lowStockSkus.length}</li>
-                <li>Clientes con alto riesgo de churn: {snapshot.atRiskClients.length}</li>
-                <li>Devoluciones con revision humana obligatoria: {snapshot.mandatoryHumanReview}</li>
-                <li>Valor medio devoluciones: {snapshot.returnsReport.averageValueEuro.toFixed(2)} EUR</li>
+                <li>SKUs con stock bajo: {snapshot?.lowStockSkus?.length ?? 0}</li>
+                <li>Clientes con alto riesgo de churn: {snapshot?.atRiskClients?.length ?? 0}</li>
+                <li>Devoluciones con revision humana obligatoria: {snapshot?.mandatoryHumanReview ?? 0}</li>
+                <li>Valor medio devoluciones: {(snapshot?.returnsReport?.averageValueEuro ?? 0).toFixed(2)} EUR</li>
               </ul>
             </article>
 
@@ -133,7 +146,7 @@ export function OperationsPanel() {
                 />
                 {snapshot.trackingResult ? (
                   <p className="text-sm text-slate-200">
-                    {snapshot.trackingResult.trackingNumber} · {snapshot.trackingResult.carrierName} · {snapshot.trackingResult.status} · {snapshot.trackingResult.costEuro} EUR
+                    {snapshot?.trackingResult?.trackingNumber || "Sin tracking"} · {snapshot?.trackingResult?.carrierName || "Sin carrier"} · {snapshot?.trackingResult?.status || "Sin estado"} · {snapshot?.trackingResult?.costEuro ?? 0} EUR
                   </p>
                 ) : (
                   <p className="text-sm text-[var(--danger)]">Tracking no encontrado.</p>
@@ -146,12 +159,12 @@ export function OperationsPanel() {
             <article className="rounded-2xl border border-white/10 bg-[var(--panel-soft)] p-4">
               <h3 className="text-sm font-semibold tracking-wide text-cyan-200 uppercase">Top envios por coste</h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                {snapshot.expensiveShipments.map((shipment) => (
-                  <li key={shipment.id} className="flex items-center justify-between gap-2">
+                {(snapshot?.expensiveShipments ?? []).map((shipment) => (
+                  <li key={shipment?.id || `${shipment?.carrierName}-${shipment?.costEuro}`} className="flex items-center justify-between gap-2">
                     <span>
-                      {shipment.id} · {shipment.carrierName}
+                      {shipment?.id || "Sin id"} · {shipment?.carrierName || "Sin carrier"}
                     </span>
-                    <span className="font-semibold text-amber-300">{shipment.costEuro.toFixed(2)} EUR</span>
+                    <span className="font-semibold text-amber-300">{(shipment?.costEuro ?? 0).toFixed(2)} EUR</span>
                   </li>
                 ))}
               </ul>
@@ -160,10 +173,10 @@ export function OperationsPanel() {
             <article className="rounded-2xl border border-white/10 bg-[var(--panel-soft)] p-4">
               <h3 className="text-sm font-semibold tracking-wide text-cyan-200 uppercase">Agrupacion por carrier</h3>
               <ul className="mt-3 space-y-2 text-sm text-slate-200">
-                {Object.entries(snapshot.shipmentByCarrier).map(([carrier, carrierShipments]) => (
+                {Object.entries(snapshot?.shipmentByCarrier ?? {}).map(([carrier, carrierShipments]) => (
                   <li key={carrier} className="flex items-center justify-between gap-2">
                     <span>{carrier}</span>
-                    <span className="rounded-full bg-[#213759] px-2 py-0.5 text-xs text-cyan-100">{carrierShipments.length} envios</span>
+                    <span className="rounded-full bg-[#213759] px-2 py-0.5 text-xs text-cyan-100">{carrierShipments?.length ?? 0} envios</span>
                   </li>
                 ))}
               </ul>
@@ -173,6 +186,14 @@ export function OperationsPanel() {
       ) : null}
     </section>
   );
+}
+
+function LoadingBlock({ label }: { label: string }) {
+  return <div className="mb-3 flex items-center gap-3 text-sm text-cyan-200"><span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-200 border-t-transparent" />{label}</div>;
+}
+
+function ErrorBlock({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return <div role="alert" className="mb-3 flex flex-col gap-3 rounded-xl border border-rose-300/20 bg-rose-300/10 p-4 text-sm text-rose-200 sm:flex-row sm:items-center sm:justify-between"><span>{message}</span><button type="button" onClick={onRetry} className="rounded-lg border border-rose-200/50 px-3 py-1.5 font-semibold text-rose-100 hover:bg-rose-200/10">Reintentar</button></div>;
 }
 
 function KpiCard({ title, value, detail }: { title: string; value: string; detail: string }) {

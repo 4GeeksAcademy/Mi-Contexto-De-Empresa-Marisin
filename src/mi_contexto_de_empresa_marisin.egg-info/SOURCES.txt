@@ -1,0 +1,7 @@
+README.md
+pyproject.toml
+src/mi_contexto_de_empresa_marisin.egg-info/PKG-INFO
+src/mi_contexto_de_empresa_marisin.egg-info/SOURCES.txt
+src/mi_contexto_de_empresa_marisin.egg-info/dependency_links.txt
+src/mi_contexto_de_empresa_marisin.egg-info/requires.txt
+src/mi_contexto_de_empresa_marisin.egg-info/top_level.txt

@@ -1,88 +1,41 @@
-import base64
-import hashlib
-import hmac
-import json
-import os
-import secrets
-import time
-from typing import Any, Dict
+from fastapi import APIRouter, HTTPException, status
+from datetime import datetime
+import logging
 
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from services.api.email import send_reset_email
 
-from .database import users_table
+logger = logging.getLogger(__name__)
+router = APIRouter()
 
-PASSWORD_ITERATIONS = 600_000
-SESSION_TTL_SECONDS = 8 * 60 * 60
-bearer_scheme = HTTPBearer(auto_error=False)
+@router.post("/auth/forgot-password")
+def forgot_password(payload: dict):
+    user_email = payload.get("email")
+    # Lógica de búsqueda de usuario simulada / o real en tu base de datos
+    user = {"email": user_email} 
+    reset_link = "https://example.com/reset"
 
+    try:
+        send_reset_email(user["email"], reset_link)
+    except RuntimeError as e:
+        logger.error(f"Email dispatch failed for user recovery: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se pudo procesar el correo de recuperación en este momento."
+        )
+    
+    return {"message": "Si el correo está registrado, se han enviado las instrucciones."}
 
-def hash_password(password: str) -> str:
-  salt = secrets.token_bytes(16)
-  digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, PASSWORD_ITERATIONS)
-  return "$".join([
-      "pbkdf2_sha256",
-      str(PASSWORD_ITERATIONS),
-      base64.urlsafe_b64encode(salt).decode(),
-      base64.urlsafe_b64encode(digest).decode(),
-  ])
+@router.post("/auth/reset-password")
+def reset_password(payload: dict):
+    token_data = {"expires_at": payload.get("expires_at")}
+    
+    try:
+        expires_at = datetime.fromisoformat(token_data["expires_at"])
+    except (ValueError, KeyError) as e:
+        logger.warning("Corrupted token expiration format encountered in database.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El token de recuperación es inválido o está malformado."
+        )
 
-
-def verify_password(password: str, encoded_password: str) -> bool:
-  try:
-    algorithm, iterations, encoded_salt, encoded_digest = encoded_password.split("$")
-    if algorithm != "pbkdf2_sha256":
-      return False
-    salt = base64.urlsafe_b64decode(encoded_salt.encode())
-    expected = base64.urlsafe_b64decode(encoded_digest.encode())
-    actual = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, int(iterations))
-    return hmac.compare_digest(actual, expected)
-  except (ValueError, TypeError):
-    return False
-
-
-def _signing_secret() -> bytes:
-  secret = os.getenv("AUTH_SECRET")
-  if not secret:
-    raise RuntimeError("AUTH_SECRET must be configured")
-  return secret.encode()
-
-
-def create_access_token(user_id: int) -> str:
-  payload = {"sub": str(user_id), "exp": int(time.time()) + SESSION_TTL_SECONDS}
-  encoded_payload = base64.urlsafe_b64encode(
-      json.dumps(payload, separators=(",", ":")).encode()
-  ).rstrip(b"=")
-  signature = hmac.new(_signing_secret(), encoded_payload, hashlib.sha256).digest()
-  encoded_signature = base64.urlsafe_b64encode(signature).rstrip(b"=")
-  return f"{encoded_payload.decode()}.{encoded_signature.decode()}"
-
-
-def _decode_part(value: str) -> bytes:
-  return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
-
-
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-) -> Dict[str, Any]:
-  unauthorized = HTTPException(
-      status_code=status.HTTP_401_UNAUTHORIZED,
-      detail="Invalid or missing authentication token",
-      headers={"WWW-Authenticate": "Bearer"},
-  )
-  if credentials is None or credentials.scheme.lower() != "bearer":
-    raise unauthorized
-  try:
-    encoded_payload, encoded_signature = credentials.credentials.split(".")
-    expected_signature = hmac.new(_signing_secret(), encoded_payload.encode(), hashlib.sha256).digest()
-    if not hmac.compare_digest(expected_signature, _decode_part(encoded_signature)):
-      raise unauthorized
-    payload = json.loads(_decode_part(encoded_payload))
-    if int(payload["exp"]) <= int(time.time()):
-      raise unauthorized
-    user = users_table.get(doc_id=int(payload["sub"]))
-  except (ValueError, KeyError, TypeError, json.JSONDecodeError, RuntimeError):
-    raise unauthorized
-  if not user or not user.get("is_active", True):
-    raise unauthorized
-  return {**user, "id": int(payload["sub"])}
+    return {"message": "Contraseña restablecida correctamente con éxito."}

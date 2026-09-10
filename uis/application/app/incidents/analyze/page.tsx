@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 
+type UiState = 'idle' | 'loading' | 'success' | 'error';
+
 interface AnalysisResult {
   total_elements: number;
   valid_records: number;
@@ -16,161 +18,186 @@ interface AnalysisResult {
   avg_satisfaction: number;
 }
 
+const analyzeErrorMessage = 'No se pudo analizar el fichero. Revisa que sea un CSV valido y vuelve a intentarlo.';
+const downloadErrorMessage = 'No se pudo descargar el CSV de resultados. Vuelve a intentarlo.';
+
+function isAnalysisResult(value: unknown): value is AnalysisResult {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Partial<AnalysisResult>;
+  return typeof item.total_elements === 'number' && typeof item.valid_records === 'number' && typeof item.invalid_records === 'number';
+}
+
 export default function IncidentsAnalyzePage() {
   const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [uiState, setUiState] = useState<UiState>('idle');
+  const [downloadLoading, setDownloadLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      setError(null);
-    }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0] ?? null;
+    setFile(selectedFile);
+    setError(null);
+    setDownloadError(null);
   };
 
-  const handleAnalyze = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const runAnalysis = async () => {
     if (!file) {
-      setError('Por favor, selecciona un fichero CSV.');
+      setUiState('error');
+      setError('Selecciona un fichero CSV antes de ejecutar el analisis.');
       return;
     }
-
-    setLoading(true);
-    setError(null);
 
     const formData = new FormData();
     formData.append('file', file);
 
+    setUiState('loading');
+    setError(null);
+    setDownloadError(null);
+
     try {
-      // Apunta a la ruta del endpoint que creamos en services/api
-      const res = await fetch('/api/incidents/analyze', {
+      const response = await fetch('/api/incidents/analyze', {
         method: 'POST',
         body: formData,
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Error al procesar el fichero.');
+      if (!response.ok) {
+        throw new Error(analyzeErrorMessage);
       }
 
-      setResult(data);
-    } catch (err: any) {
-      setError(err.message || 'Error de conexión con el servidor.');
+      let payload: unknown;
+      try {
+        payload = await response.json();
+      } catch {
+        throw new Error('La respuesta del analisis no se pudo interpretar. Intentalo de nuevo.');
+      }
+
+      if (!isAnalysisResult(payload)) {
+        throw new Error('El analisis no devolvio metricas validas. Intentalo de nuevo.');
+      }
+
+      setResult(payload);
+      setUiState('success');
+    } catch {
+      setError(analyzeErrorMessage);
+      setUiState('error');
     } finally {
-      setLoading(false);
+      setDownloadLoading(false);
     }
   };
 
-  const handleDownload = () => {
-    // Apunta al endpoint GET de exportación
-    window.location.href = '/api/incidents/results/export';
+  const handleAnalyze = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await runAnalysis();
+  };
+
+  const handleDownload = async () => {
+    setDownloadLoading(true);
+    setDownloadError(null);
+    try {
+      const response = await fetch('/api/incidents/results/export', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(downloadErrorMessage);
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'results.csv';
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      setDownloadError(downloadErrorMessage);
+    } finally {
+      setDownloadLoading(false);
+    }
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto font-sans">
-      <h1 className="text-3xl font-bold mb-2 text-slate-800">Análisis de Incidencias — TrackFlow</h1>
-      <p className="text-slate-600 mb-6">Sube el fichero CSV de la empresa para validar registros y ver las métricas operativas.</p>
+    <div className="mx-auto max-w-6xl p-8 font-sans">
+      <h1 className="mb-2 text-3xl font-bold text-slate-800">Analisis de Incidencias - TrackFlow</h1>
+      <p className="mb-6 text-slate-600">Sube el fichero CSV de la empresa para validar registros y ver las metricas operativas.</p>
 
-      {/* Formulario de Carga */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <form onSubmit={handleAnalyze} className="flex flex-col gap-4">
-          <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors cursor-pointer">
-            <input 
-              type="file" 
-              accept=".csv" 
-              onChange={handleFileChange} 
-              className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          <div className="cursor-pointer rounded-lg border-2 border-dashed border-slate-300 p-6 text-center transition-colors hover:border-blue-500">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
             />
             <p className="mt-2 text-sm text-slate-500">Selecciona o arrastra tu fichero CSV corporativo</p>
           </div>
 
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
+          {uiState === 'loading' ? <LoadingBlock label="Analizando registros..." /> : null}
+          {uiState === 'error' && error ? <ErrorBlock message={error} onRetry={runAnalysis} disabled={!file} /> : null}
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="bg-blue-600 text-white font-medium py-2.5 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-slate-400"
+          <button
+            type="submit"
+            disabled={uiState === 'loading'}
+            className="rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-blue-700 disabled:bg-slate-400"
           >
-            {loading ? 'Analizando registros...' : 'Ejecutar Análisis'}
+            {uiState === 'loading' ? 'Analizando registros...' : 'Ejecutar Analisis'}
           </button>
         </form>
       </div>
 
-      {/* Resultados y Métricas */}
-      {result && (
+      {uiState === 'success' && result ? (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-slate-800">Resultados del Análisis</h2>
-            <button 
-              onClick={handleDownload}
-              className="bg-emerald-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-emerald-700 transition-colors text-sm flex items-center gap-2"
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-2xl font-bold text-slate-800">Resultados del Analisis</h2>
+            <button
+              onClick={() => { void handleDownload(); }}
+              disabled={downloadLoading}
+              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:bg-slate-400"
             >
-              📥 Descargar Resultados en CSV
+              {downloadLoading ? 'Preparando CSV...' : 'Descargar Resultados en CSV'}
             </button>
           </div>
+          {downloadError ? <ErrorBlock message={downloadError} onRetry={handleDownload} disabled={downloadLoading} /> : null}
 
-          {/* Métricas Generales */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 font-medium">Total Elementos</p>
-              <p className="text-3xl font-bold text-slate-800 mt-1">{result.total_elements}</p>
-            </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 font-medium">Registros Válidos</p>
-              <p className="text-3xl font-bold text-emerald-600 mt-1">{result.valid_records}</p>
-            </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 font-medium">Registros Inválidos</p>
-              <p className="text-3xl font-bold text-red-600 mt-1">{result.invalid_records}</p>
-            </div>
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <p className="text-sm text-slate-500 font-medium">Satisfacción Promedio</p>
-              <p className="text-3xl font-bold text-blue-600 mt-1">{result.avg_satisfaction} / 5</p>
-            </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <MetricCard label="Total Elementos" value={result?.total_elements ?? 0} tone="text-slate-800" />
+            <MetricCard label="Registros Validos" value={result?.valid_records ?? 0} tone="text-emerald-600" />
+            <MetricCard label="Registros Invalidos" value={result?.invalid_records ?? 0} tone="text-red-600" />
+            <MetricCard label="Satisfaccion Promedio" value={`${result?.avg_satisfaction ?? 0} / 5`} tone="text-blue-600" />
           </div>
 
-          {/* Alerta de Registros Inválidos */}
-          {result.invalid_records > 0 && (
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl text-amber-800 text-sm">
-              <p className="font-semibold mb-1">⚠️ Atención: Se han detectado registros inválidos en el fichero:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Campos vacíos o faltantes: <strong>{result.invalid_reasons.missing_fields}</strong></li>
-                <li>Categorías no reconocidas: <strong>{result.invalid_reasons.invalid_category}</strong></li>
-                <li>Estados no reconocidos: <strong>{result.invalid_reasons.invalid_status}</strong></li>
+          {(result?.invalid_records ?? 0) > 0 ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <p className="mb-1 font-semibold">Se han detectado registros invalidos en el fichero:</p>
+              <ul className="list-inside list-disc space-y-1">
+                <li>Campos vacios o faltantes: <strong>{result?.invalid_reasons?.missing_fields ?? 0}</strong></li>
+                <li>Categorias no reconocidas: <strong>{result?.invalid_reasons?.invalid_category ?? 0}</strong></li>
+                <li>Estados no reconocidos: <strong>{result?.invalid_reasons?.invalid_status ?? 0}</strong></li>
               </ul>
             </div>
-          )}
+          ) : null}
 
-          {/* Desgloses (Categorías y Estados) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Desglose por Categoría</h3>
-              <div className="space-y-3">
-                {Object.entries(result.category_breakdown).map(([cat, count]) => (
-                  <div key={cat} className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <span className="text-slate-600 font-medium">{cat}</span>
-                    <span className="bg-slate-100 text-slate-800 px-2.5 py-1 rounded-md text-sm font-semibold">{count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Desglose por Estado</h3>
-              <div className="space-y-3">
-                {Object.entries(result.status_breakdown).map(([status, count]) => (
-                  <div key={status} className="flex justify-between items-center border-b border-slate-100 pb-2">
-                    <span className="text-slate-600 font-medium">{status}</span>
-                    <span className="bg-slate-100 text-slate-800 px-2.5 py-1 rounded-md text-sm font-semibold">{count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <BreakdownCard title="Desglose por Categoria" values={result?.category_breakdown ?? {}} />
+            <BreakdownCard title="Desglose por Estado" values={result?.status_breakdown ?? {}} />
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
+}
+
+function MetricCard({ label, value, tone }: { label: string; value: number | string; tone: string }) {
+  return <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-medium text-slate-500">{label}</p><p className={`mt-1 text-3xl font-bold ${tone}`}>{value}</p></div>;
+}
+
+function BreakdownCard({ title, values }: { title: string; values: Record<string, number> }) {
+  return <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"><h3 className="mb-4 text-lg font-bold text-slate-800">{title}</h3><div className="space-y-3">{Object.entries(values).map(([label, count]) => <div key={label} className="flex items-center justify-between border-b border-slate-100 pb-2"><span className="font-medium text-slate-600">{label}</span><span className="rounded-md bg-slate-100 px-2.5 py-1 text-sm font-semibold text-slate-800">{count}</span></div>)}</div></div>;
+}
+
+function LoadingBlock({ label }: { label: string }) {
+  return <div className="flex items-center gap-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-700"><span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />{label}</div>;
+}
+
+function ErrorBlock({ message, onRetry, disabled }: { message: string; onRetry: () => void | Promise<void>; disabled?: boolean }) {
+  return <div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between"><span>{message}</span><button type="button" onClick={() => { void onRetry(); }} disabled={disabled} className="rounded-md border border-red-300 px-3 py-1.5 font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60">Reintentar</button></div>;
 }

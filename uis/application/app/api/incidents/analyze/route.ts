@@ -9,9 +9,6 @@ const REQUIRED_FIELDS = [
 const VALID_CATEGORIES = ['RETURN_REQUEST', 'DAMAGE', 'DELAYED_DELIVERY', 'WRONG_ADDRESS', 'LOST_PARCEL'];
 const VALID_STATUSES = ['OPEN', 'CLOSED', 'DISCARDED'];
 
-// Variable en memoria para almacenar temporalmente el último resultado exportable
-let lastAnalysisResult: any[] = [];
-
 export async function POST(request: Request) {
   try {
     const data = await request.formData();
@@ -113,19 +110,9 @@ export async function POST(request: Request) {
       avg_satisfaction: avgSatisfaction
     };
 
-    // Guardar para exportación CSV
-    lastAnalysisResult = [
-      { metric: 'total_elements', value: summary.total_elements },
-      { metric: 'valid_records', value: summary.valid_records },
-      { metric: 'invalid_records', value: summary.invalid_records },
-      { metric: 'avg_satisfaction_closed', value: summary.avg_satisfaction },
-      ...Object.entries(summary.category_breakdown).map(([k, v]) => ({ metric: `category_${k}`, value: v })),
-      ...Object.entries(summary.status_breakdown).map(([k, v]) => ({ metric: `status_${k}`, value: v }))
-    ];
-
     return NextResponse.json(summary, { status: 200 });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Error interno al procesar el fichero.' }, { status: 500 });
   }
 }

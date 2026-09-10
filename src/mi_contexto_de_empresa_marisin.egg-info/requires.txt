@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+tinydb
+pydantic
+python-dotenv
+pandas

@@ -5,6 +5,7 @@ import { getCandidates } from "../../talent-pipeline-tracker/services/api";
 import type { Candidate } from "../../talent-pipeline-tracker/types";
 
 type UiState = "idle" | "loading" | "success" | "error";
+const talentErrorMessage = "No se pudieron cargar las candidaturas. Revisa la conexión y vuelve a intentarlo.";
 
 export function TalentPanel() {
   const [statusFilter, setStatusFilter] = useState("");
@@ -12,6 +13,7 @@ export function TalentPanel() {
   const [uiState, setUiState] = useState<UiState>("idle");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const statusDistribution = useMemo(() => {
     return candidates.reduce<Record<string, number>>((acc, item) => {
@@ -30,6 +32,7 @@ export function TalentPanel() {
   const loadCandidates = async () => {
     setUiState("loading");
     setErrorMessage("");
+    setIsLoading(true);
 
     try {
       const data = await getCandidates({
@@ -39,9 +42,11 @@ export function TalentPanel() {
 
       setCandidates(Array.isArray(data) ? data : []);
       setUiState("success");
-    } catch (error) {
+    } catch {
       setUiState("error");
-      setErrorMessage(error instanceof Error ? error.message : "No se pudo cargar el Talent Pipeline Tracker");
+      setErrorMessage(talentErrorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -77,21 +82,22 @@ export function TalentPanel() {
             onClick={() => {
               void loadCandidates();
             }}
+            disabled={isLoading}
             className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
           >
-            Cargar
+            {isLoading ? "Cargando..." : "Cargar"}
           </button>
         </div>
       </div>
 
       {uiState === "idle" ? <p className="text-sm text-slate-300">Pulsa Cargar para consultar candidaturas actuales.</p> : null}
-      {uiState === "loading" ? <p className="text-sm text-cyan-200">Consultando candidaturas...</p> : null}
-      {uiState === "error" ? <p className="text-sm text-rose-300">{errorMessage}</p> : null}
+      {uiState === "loading" ? <LoadingBlock label="Consultando candidaturas..." /> : null}
+      {uiState === "error" ? <ErrorBlock message={errorMessage || talentErrorMessage} onRetry={() => { void loadCandidates(); }} /> : null}
 
       {uiState === "success" ? (
         <>
           <div className="grid gap-3 md:grid-cols-3">
-            <Metric title="Total candidatos" value={String(candidates.length)} />
+            <Metric title="Total candidatos" value={String(candidates?.length ?? 0)} />
             <Metric title="Estados distintos" value={String(Object.keys(statusDistribution).length)} />
             <Metric title="Etapas distintas" value={String(Object.keys(stageDistribution).length)} />
           </div>
@@ -99,17 +105,17 @@ export function TalentPanel() {
           <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
             <article className="rounded-2xl border border-white/10 bg-[var(--panel-soft)] p-4">
               <h3 className="text-sm font-semibold tracking-wide text-cyan-200 uppercase">Listado de candidaturas</h3>
-              {candidates.length === 0 ? (
+              {(candidates?.length ?? 0) === 0 ? (
                 <p className="mt-3 text-sm text-slate-300">No hay resultados para el filtro seleccionado.</p>
               ) : (
                 <ul className="mt-3 max-h-80 space-y-2 overflow-auto pr-1">
-                  {candidates.slice(0, 15).map((candidate) => (
-                    <li key={candidate.id} className="rounded-xl border border-white/10 bg-[#12233e] p-3 text-sm text-slate-100">
-                      <p className="font-semibold">{candidate.name}</p>
-                      <p className="text-xs text-slate-300">{candidate.email}</p>
-                      <p className="mt-1 text-xs text-cyan-100">{candidate.position}</p>
+                  {(candidates ?? []).slice(0, 15).map((candidate) => (
+                    <li key={candidate?.id || candidate?.email || candidate?.name} className="rounded-xl border border-white/10 bg-[#12233e] p-3 text-sm text-slate-100">
+                      <p className="font-semibold">{candidate?.name || "Sin nombre"}</p>
+                      <p className="text-xs text-slate-300">{candidate?.email || "Sin email"}</p>
+                      <p className="mt-1 text-xs text-cyan-100">{candidate?.position || "Sin puesto"}</p>
                       <p className="mt-1 text-xs text-slate-300">
-                        Estado: {candidate.status} · Etapa: {candidate.stage}
+                        Estado: {candidate?.status || "Sin estado"} · Etapa: {candidate?.stage || "Sin etapa"}
                       </p>
                     </li>
                   ))}
@@ -142,6 +148,14 @@ export function TalentPanel() {
       ) : null}
     </section>
   );
+}
+
+function LoadingBlock({ label }: { label: string }) {
+  return <div className="flex items-center gap-3 text-sm text-cyan-200"><span className="h-4 w-4 animate-spin rounded-full border-2 border-cyan-200 border-t-transparent" />{label}</div>;
+}
+
+function ErrorBlock({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return <div role="alert" className="flex flex-col gap-3 rounded-xl border border-rose-300/20 bg-rose-300/10 p-4 text-sm text-rose-200 sm:flex-row sm:items-center sm:justify-between"><span>{message}</span><button type="button" onClick={onRetry} className="rounded-lg border border-rose-200/50 px-3 py-1.5 font-semibold text-rose-100 hover:bg-rose-200/10">Reintentar</button></div>;
 }
 
 function Metric({ title, value }: { title: string; value: string }) {

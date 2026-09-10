@@ -7,5 +7,6 @@ dependencies = [
     "uvicorn",
     "tinydb",
     "pydantic",
-    "python-dotenv"
+    "python-dotenv",
+    "pandas"
 ]
