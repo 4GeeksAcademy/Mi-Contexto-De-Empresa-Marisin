@@ -20,6 +20,7 @@ def get_suppliers(
     category: Optional[str] = None,
     status: Optional[SupplierStatus] = None,
     search: Optional[str] = None,
+    _: Annotated[dict, Depends(get_current_user)] = None,
 ):
     """Obtiene la lista de proveedores con filtros opcionales de país, categoría, estado y búsqueda."""
     all_suppliers = suppliers_table.all()

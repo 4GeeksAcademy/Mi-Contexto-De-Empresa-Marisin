@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
@@ -27,6 +28,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       >
         {children}
       </body>
+=======
+export const metadata = {
+  title: "TrackFlow",
+  description: "Gestión del directorio de proveedores",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="es">
+      <body>{children}</body>
+>>>>>>> origin/feature/auth-frontend
     </html>
   );
 }
