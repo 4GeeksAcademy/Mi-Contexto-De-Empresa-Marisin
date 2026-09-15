@@ -1,5 +1,12 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+# Antes de importar los routers: leen configuración desde el entorno.
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
 from .database import seed_database
 from .routes.auth import router as auth_router
 from .routes.profiles import router as profiles_router
@@ -32,7 +39,7 @@ async def startup_event():
     seed_database()
 
 
-# Incluimos las rutas de proveedores requeridas por la rúbrica
+# Incluimos todos los routers de la API
 app.include_router(suppliers_router)
 app.include_router(users_router)
 app.include_router(auth_router)
