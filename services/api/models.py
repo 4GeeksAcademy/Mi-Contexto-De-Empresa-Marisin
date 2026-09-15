@@ -43,4 +43,93 @@ class Supplier(SupplierCreate):
   updated_at: str = Field(
       ..., description="Timestamp de la última actualización"
   )
-  
+
+
+class UserRole(str, Enum):
+  admin = "admin"
+  manager = "manager"
+  user = "user"
+
+
+class ProfileCreate(BaseModel):
+  name: Optional[str] = Field(default=None, min_length=1)
+  phone: Optional[str] = None
+  address: Optional[str] = None
+
+
+class Profile(ProfileCreate):
+  id: int
+  user_id: int
+
+
+class UserCreate(BaseModel):
+  email: str = Field(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+  password: str = Field(..., min_length=8, exclude=True)
+  name: Optional[str] = Field(default=None, min_length=1)
+  phone: Optional[str] = None
+  address: Optional[str] = None
+
+  @property
+  def profile(self) -> ProfileCreate:
+    return ProfileCreate(name=self.name, phone=self.phone, address=self.address)
+
+  @property
+  def hashed_password(self) -> str:
+    from .security import password_context
+
+    return password_context.hash(self.password)
+
+
+class UserUpdate(BaseModel):
+  email: Optional[str] = Field(default=None, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+  password: Optional[str] = Field(default=None, min_length=8, exclude=True)
+  role: Optional[UserRole] = None
+
+  @property
+  def hashed_password(self) -> Optional[str]:
+    if self.password is None:
+      return None
+
+    from .security import password_context
+
+    return password_context.hash(self.password)
+
+  def model_dump(self, **kwargs):
+    user_data = super().model_dump(**kwargs)
+    password = user_data.pop("password", None)
+    if password is not None:
+      user_data["hashed_password"] = self.hashed_password
+    return user_data
+
+
+class User(BaseModel):
+  id: int
+  email: str
+  hashed_password: str
+  is_active: bool
+  role: UserRole
+  created_at: str
+
+
+class UserResponse(BaseModel):
+  id: int
+  email: str
+  is_active: bool
+  role: UserRole
+  created_at: str
+
+
+class LoginRequest(BaseModel):
+  email: str = Field(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+  password: str
+
+
+class Token(BaseModel):
+  access_token: str
+  token_type: str = "bearer"
+
+
+class MeResponse(BaseModel):
+  email: str
+  role: UserRole
+  profile: Optional[Profile] = None

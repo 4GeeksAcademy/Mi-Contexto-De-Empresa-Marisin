@@ -2,5 +2,10 @@
 node_modules/
 dist/
 build/
+<<<<<<< HEAD
 __pycache__/
 *.py[cod]
+=======
+.env
+__pycache__/
+>>>>>>> origin/feature/auth-api

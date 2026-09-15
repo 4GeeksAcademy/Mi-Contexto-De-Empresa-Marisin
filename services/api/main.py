@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from .database import seed_database
+from .routes.auth import router as auth_router
+from .routes.profiles import router as profiles_router
 from .routes.suppliers import router as suppliers_router
+from .routes.users import router as users_router
 
 app = FastAPI(
     title="TrackFlow - Supplier Directory API",
@@ -16,3 +19,6 @@ async def startup_event():
 
 # Incluimos las rutas de proveedores requeridas por la rúbrica
 app.include_router(suppliers_router)
+app.include_router(users_router)
+app.include_router(auth_router)
+app.include_router(profiles_router)
