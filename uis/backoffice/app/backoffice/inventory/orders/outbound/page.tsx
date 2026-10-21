@@ -44,6 +44,8 @@ export default function OutboundOrderPage() {
 
     async function loadProducts() {
       try {
+        await inventoryApi.verifySession();
+        if (!active) return;
         const result = await inventoryApi.listProducts();
         if (!active) return;
         setProducts(result);
@@ -121,7 +123,7 @@ export default function OutboundOrderPage() {
     setQuantityError("");
     setSuccess("");
     if (!currentProduct || !products.some(product => product.id === currentProduct.id) || !["Los Angeles", "Zaragoza"].includes(warehouse)) {
-      setError("Selecciona un producto con stock consultado y un almacen de origen.");
+      setError("Selecciona un producto con stock consultado y un almac\u00e9n de origen.");
       return;
     }
     if (!validQuantity || exceedsStock) {
@@ -141,7 +143,7 @@ export default function OutboundOrderPage() {
         router.replace("/login");
         return;
       }
-      const message = requestMessage(requestError, "No se pudo registrar la salida de mercancia. Intentalo de nuevo.");
+      const message = requestMessage(requestError, "No se pudo registrar la salida de mercanc\u00eda. Int\u00e9ntalo de nuevo.");
       if (requestError instanceof InventoryApiError && requestError.status === 400) {
         setQuantityError(message);
       } else {
@@ -164,7 +166,7 @@ export default function OutboundOrderPage() {
         <Link href="/backoffice/inventory/products">Volver a productos</Link>
       </header>
 
-      <section className="inventory-inbound" aria-label="Salida de mercancia">
+      <section className="inventory-inbound" aria-label="Salida de mercanc&iacute;a">
         {loading && <p role="status">Cargando productos...</p>}
         {error && (
           <div role="alert" className="inventory-products-error">
@@ -175,7 +177,7 @@ export default function OutboundOrderPage() {
         {success && <p role="status" className="inventory-inbound-success">{success}</p>}
         {!loading && !error && products.length === 0 && <p role="status">No hay productos registrados.</p>}
 
-        <form onSubmit={handleSubmit} aria-label="Registrar salida de mercancia" aria-busy={saving}>
+        <form onSubmit={handleSubmit} aria-label="Registrar salida de mercanc&iacute;a" aria-busy={saving}>
           <fieldset disabled={loading || saving || products.length === 0}>
             <legend>Salida de mercanc&iacute;a</legend>
             <label htmlFor="outbound-product">Producto</label>

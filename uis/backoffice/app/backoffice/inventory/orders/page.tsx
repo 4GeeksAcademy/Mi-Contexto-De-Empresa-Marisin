@@ -35,6 +35,8 @@ export default function InventoryOrdersPage() {
 
     async function loadOrders() {
       try {
+        await inventoryApi.verifySession();
+        if (!active) return;
         const result = await inventoryApi.listOrders();
         if (active) setOrders(result);
       } catch (requestError) {
@@ -46,7 +48,7 @@ export default function InventoryOrdersPage() {
         }
         const message = requestError instanceof Error ? requestError.message.trim() : "";
         setError(!message || message.startsWith("{") || message.startsWith("[")
-          ? "No se pudo cargar el historial de ordenes. Intentalo de nuevo."
+          ? "No se pudo cargar el historial de \u00f3rdenes. Int\u00e9ntalo de nuevo."
           : message);
       } finally {
         if (active) setLoading(false);
@@ -72,7 +74,7 @@ export default function InventoryOrdersPage() {
         </button>
       </header>
 
-      <section aria-label="Historial de ordenes de inventario" aria-busy={loading}>
+      <section aria-label="Historial de &oacute;rdenes de inventario" aria-busy={loading}>
         {loading ? (
           <p role="status" className="inventory-products-status">Cargando historial...</p>
         ) : error ? (

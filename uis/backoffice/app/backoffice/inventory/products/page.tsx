@@ -25,6 +25,7 @@ export default function InventoryProductsPage() {
   useEffect(() => {
     let active = true;
     if (!getAccessToken()?.trim()) {
+      setAuthorized(false);
       router.replace("/login");
       return;
     }
@@ -34,6 +35,8 @@ export default function InventoryProductsPage() {
 
     async function loadProducts() {
       try {
+        await inventoryApi.verifySession();
+        if (!active) return;
         const result = await inventoryApi.listProducts();
         if (active) setProducts(result);
       } catch (requestError) {
@@ -43,7 +46,10 @@ export default function InventoryProductsPage() {
           router.replace("/login");
           return;
         }
-        setError(requestError instanceof Error ? requestError.message : "No se pudo cargar el inventario.");
+        const message = requestError instanceof Error ? requestError.message.trim() : "";
+        setError(!message || message.startsWith("{") || message.startsWith("[")
+          ? "No se pudo cargar el inventario. Int\u00e9ntalo de nuevo."
+          : message);
       } finally {
         if (active) setLoading(false);
       }

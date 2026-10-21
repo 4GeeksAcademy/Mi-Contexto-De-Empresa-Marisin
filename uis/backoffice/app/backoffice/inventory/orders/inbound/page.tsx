@@ -39,6 +39,8 @@ export default function InboundOrderPage() {
 
     async function loadProducts() {
       try {
+        await inventoryApi.verifySession();
+        if (!active) return;
         const result = await inventoryApi.listProducts();
         if (!active) return;
         setProducts(result);
@@ -75,7 +77,7 @@ export default function InboundOrderPage() {
     const product = products.find(item => String(item.id) === productId);
     const units = Number(quantity);
     if (!product || !["Los Angeles", "Zaragoza"].includes(warehouse) || !Number.isSafeInteger(units) || units <= 0) {
-      setError("Selecciona un producto, un almacen y una cantidad entera mayor que cero.");
+      setError("Selecciona un producto, un almac\u00e9n y una cantidad entera mayor que cero.");
       return;
     }
 
@@ -92,7 +94,7 @@ export default function InboundOrderPage() {
         router.replace("/login");
         return;
       }
-      setError(requestMessage(requestError, "No se pudo registrar la entrada de mercancia. Intentalo de nuevo."));
+      setError(requestMessage(requestError, "No se pudo registrar la entrada de mercanc\u00eda. Int\u00e9ntalo de nuevo."));
     } finally {
       setSaving(false);
     }
@@ -122,7 +124,7 @@ export default function InboundOrderPage() {
       {success && <p role="status" className="inventory-inbound-success">{success}</p>}
       {!loading && !error && products.length === 0 && <p role="status">No hay productos registrados.</p>}
 
-      <form onSubmit={handleSubmit} aria-label="Registrar entrada de mercancia" aria-busy={saving}>
+      <form onSubmit={handleSubmit} aria-label="Registrar entrada de mercanc&iacute;a" aria-busy={saving}>
         <fieldset disabled={loading || saving || products.length === 0}>
           <legend>Recepci&oacute;n de mercanc&iacute;a</legend>
           <label htmlFor="inbound-product">Producto</label>

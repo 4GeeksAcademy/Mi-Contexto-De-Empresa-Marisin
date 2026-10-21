@@ -68,10 +68,11 @@ function errorMessage(body: unknown): string | undefined {
 async function inventoryRequest<T>(
   path: string,
   payload?: ProductCreate | InventoryOrderCreate,
+  namespace: "/inventory" | "/auth" = "/inventory",
 ): Promise<T> {
   const token = getAccessToken();
   if (!token?.trim()) {
-    throw new InventoryApiError("Debes iniciar sesion para acceder al inventario.", 401);
+    throw new InventoryApiError("Debes iniciar sesi\u00f3n para acceder al inventario.", 401);
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_INVENTORY_API_URL?.trim().replace(/\/+$/, "");
@@ -82,7 +83,7 @@ async function inventoryRequest<T>(
   const headers = new Headers({ Authorization: `Bearer ${token}` });
   if (payload !== undefined) headers.set("Content-Type", "application/json");
 
-  const response = await fetch(`${baseUrl}/inventory${path}`, {
+  const response = await fetch(`${baseUrl}${namespace}${path}`, {
     method: payload === undefined ? "GET" : "POST",
     headers,
     cache: "no-store",
@@ -94,7 +95,7 @@ async function inventoryRequest<T>(
     body = JSON.parse(text);
   } catch {
     if (response.ok) {
-      throw new InventoryApiError("La API de inventario devolvio una respuesta JSON no valida.", response.status, text);
+      throw new InventoryApiError("La API de inventario devolvi\u00f3 una respuesta JSON no v\u00e1lida.", response.status, text);
     }
     body = text;
   }
@@ -110,6 +111,7 @@ async function inventoryRequest<T>(
 }
 
 export const inventoryApi = {
+  verifySession: (): Promise<void> => inventoryRequest("/me", undefined, "/auth"),
   listProducts: (): Promise<Product[]> => inventoryRequest("/products"),
   getProduct: (productId: number): Promise<Product> =>
     inventoryRequest(`/products/${productId}`),
