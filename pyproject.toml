@@ -10,4 +10,6 @@ dependencies = [
     "python-jose[cryptography]>=3.5.0",
     "libpass[bcrypt]>=1.9.3",
     "python-dotenv>=1.2.3",
+    "sqlmodel>=0.0.24,<0.1",
+    "psycopg2-binary>=2.9.10,<3",
 ]
