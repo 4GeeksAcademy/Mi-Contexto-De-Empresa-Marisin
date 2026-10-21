@@ -1,0 +1,69 @@
+# Plan de Implementación por Fases: Hito Backoffice Interfaz de Gestión de Inventario (TrackFlow)
+
+> **PROPÓSITO DE ESTE DOCUMENTO**: Este fichero contiene las reglas de negocio inquebrantables, las directrices de arquitectura frontend y los Criterios de Aceptación (Acceptance Criteria) obligatorios para la construcción de la sección de inventario en el backoffice de Next.js (`uis/backoffice`). La IA debe revisar estrictamente este documento antes de generar cualquier componente o módulo.
+
+## 📌 Reglas de Negocio Globales & UX (NO NEGOCIABLES)
+1. **Dominio Alineado**: Todos los nombres de entidades, etiquetas de campos y vocabulario deben coincidir rigurosamente con el `company-BRIEFING.md` de TrackFlow (operaciones logísticas, almacenes de Los Ángeles y Zaragoza).
+2. **Capa de Integración Centralizada**: Quedan prohibidas las llamadas `fetch` directas dentro de los componentes visuales. Todo debe canalizarse a través de un módulo centralizado (`lib/inventory.ts`).
+3. **Autenticación Obligatoria y Seguridad**: Todas las peticiones a endpoints protegidos deben incluir la cabecera `Authorization: Bearer <token>` obtenida del sistema de autenticación existente del backoffice. Las cuatro vistas de inventario deben redirigir al login si el usuario no está autenticado.
+4. **Resilencia y Manejo Explícito de Errores**: Nunca se ignoran los errores en silencio. Si la API responde con un `4xx` o `5xx`, se debe extraer el mensaje y mostrarlo de forma visible al usuario (especialmente los `400` de stock insuficiente en formularios de salida).
+5. **Salvaguarda de UX en Salidas**: El formulario de orden de salida debe consultar y mostrar reactivamente el stock disponible actual del producto seleccionado *antes* de permitir el envío, advirtiendo visualmente al usuario si excede las existencias.
+6. **Estricta Solo Lectura en Auditoría**: La página de historial de órdenes es de consulta exclusiva, sin acciones de borrado o edición.
+
+---
+
+## 🚀 FASES DE DESARROLLO
+
+### FASE 1: Configuración Inicial del Entorno (`uis/backoffice`)
+- **Objetivo**: Preparar el directorio de trabajo del frontend y configurar la conexión con el servicio backend.
+- **Acciones**:
+  1. Situarse en la ruta `uis/backoffice` del monorepo.
+  2. Configurar el fichero `.env.local` con la URL base de la API:
+     ```env
+     NEXT_PUBLIC_INVENTORY_API_URL=http://localhost:8000
+     ```
+  3. Verificar que `.env.local` se encuentre correctamente incluido en el `.gitignore`.
+
+### FASE 2: Capa de Integración con la API (`lib/inventory.ts`)
+- **Objetivo**: Centralizar peticiones HTTP, inyección de tokens y gestión de errores.
+- **Acciones**:
+  1. Crear el módulo `lib/inventory.ts` para agrupar las llamadas a los endpoints `/inventory/products` y `/inventory/orders`.
+  2. Implementar la inserción automática del token Bearer en los headers de autorización.
+  3. Añadir lógica de extracción de mensajes de error estructurados para respuestas fallidas de la API (`4xx`, `5xx`).
+
+### FASE 3: Página de Productos y Stock Actual (`/backoffice/inventory/products`)
+- **Objetivo**: Ofrecer visibilidad en tiempo real del inventario global y por almacén con codificación visual.
+- **Acciones**:
+  1. Consumir el endpoint `GET /inventory/products`.
+  2. Mostrar `current_stock` y los atributos de entidad definidos en el briefing de la empresa.
+  3. Implementar indicadores visuales (colores/iconos) para distinguir stock saludable de stock bajo (documentando los umbrales utilizados mediante un comentario).
+  4. Incluir accesos directos (botones/enlaces) en cada fila de producto para crear órdenes de entrada o salida de forma rápida.
+
+### FASE 4: Formulario de Orden de Entrada (`/backoffice/inventory/orders/inbound`)
+- **Objetivo**: Permitir al personal registrar entregas recibidas de mercancía de forma validada.
+- **Acciones**:
+  1. Renderizar formulario conectado a `POST /inventory/orders/inbound`.
+  2. Implementar un selector desplegable basado en nombres de productos (evitando IDs en bruto).
+  3. Gestionar el éxito limpiando el formulario y mostrando confirmación visual; mostrar errores de API (`400`/`500`) de forma explícita en la interfaz.
+  4. Asegurar la protección de la ruta (redirección a login si no hay sesión).
+
+### FASE 5: Formulario de Orden de Salida con Validación Preventiva (`/backoffice/inventory/orders/outbound`)
+- **Objetivo**: Registrar consumos aplicando salvaguardas estrictas de UX contra sobreventas.
+- **Acciones**:
+  1. Renderizar formulario conectado a `POST /inventory/orders/outbound`.
+  2. Implementar la **reactividad de stock**: al seleccionar producto, consultar y mostrar su `current_stock` antes del envío.
+  3. Añadir una advertencia en cliente si la cantidad introducida supera el stock disponible.
+  4. Capturar y mostrar de forma *inline* el mensaje de error legible devuelto por la API ante un `HTTP 400` (stock insuficiente).
+
+### FASE 6: Página de Historial de Órdenes (`/backoffice/inventory/orders`)
+- **Objetivo**: Proveer trazabilidad y auditoría completa de los movimientos de inventario.
+- **Acciones**:
+  1. Consumir el endpoint `GET /inventory/orders`.
+  2. Mostrar en cada fila: nombre del producto, cantidad, tipo de movimiento (con distinción visual clara entre entrada y salida), fecha de creación y `user_uuid` del responsable.
+  3. Garantizar que la interfaz sea estrictamente de **solo lectura** (sin edición ni borrado).
+
+### FASE 7: Protección de Rutas y Verificación Final
+- **Objetivo**: Asegurar el acceso exclusivo para personal autenticado y validar el cumplimiento global.
+- **Acciones**:
+  1. Aplicar la verificación de sesión en las cuatro páginas de inventario (`/products`, `/orders/inbound`, `/orders/outbound`, `/orders`), redirigiendo al login si procede.
+  2. Comprobar que los nombres de campos y entidades respetan el vocabulario del `company-BRIEFING.md`.
