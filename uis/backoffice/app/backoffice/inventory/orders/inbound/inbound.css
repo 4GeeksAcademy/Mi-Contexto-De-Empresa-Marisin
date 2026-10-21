@@ -1,0 +1,62 @@
+.inventory-inbound form {
+  max-width: 560px;
+}
+
+.inventory-inbound fieldset {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.inventory-inbound legend {
+  margin-bottom: 24px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.inventory-inbound label {
+  margin-top: 8px;
+}
+
+.inventory-inbound select,
+.inventory-inbound input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--muted, #91a3bd);
+  border-radius: 6px;
+  background: var(--panel, #111c30);
+  color: inherit;
+  font: inherit;
+}
+
+.inventory-inbound select:focus-visible,
+.inventory-inbound input:focus-visible {
+  outline: 2px solid var(--accent, #2dd4bf);
+  outline-offset: 3px;
+}
+
+.inventory-inbound button[type="submit"] {
+  width: 100%;
+  margin-top: 16px;
+  background: var(--accent, #2dd4bf);
+  color: #0b1220;
+  font-weight: 600;
+}
+
+.inventory-inbound fieldset:disabled {
+  opacity: 0.6;
+}
+
+.inventory-inbound-success {
+  color: #6ee7b7;
+}
+
+.inventory-inbound .inventory-products-error {
+  min-height: 0;
+  padding: 0 0 16px;
+}
