@@ -16,7 +16,12 @@ from ..models import (
     MeResponse,
     ResetPasswordRequest,
 )
-from ..security import create_access_token, get_current_user, hash_password, password_context, verify_password
+from ..security import (
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+    password_context,
+)
 from ..services.profiles import get_profile_by_user_id
 from ..services.users import get_user_by_email
 
@@ -86,7 +91,7 @@ def reset_password(payload: ResetPasswordRequest):
         if not user:
             raise HTTPException(status_code=400, detail="Invalid or expired reset token")
         
-        new_hashed = password_context.hash(payload.new_password)
+        new_hashed = get_password_hash(payload.new_password)
         users_table.update({"hashed_password": new_hashed}, doc_ids=[user.doc_id])
         password_reset_tokens_table.update({"used_at": _now().isoformat()}, doc_ids=[token_record.doc_id])
     return {"message": "Password reset successfully"}
@@ -99,7 +104,7 @@ def change_password(payload: ChangePasswordRequest, current_user: Annotated[dict
     if payload.current_password == payload.new_password:
         raise HTTPException(status_code=400, detail="New password must be different")
     
-    new_hashed = password_context.hash(payload.new_password)
+    new_hashed = get_password_hash(payload.new_password)
     users_table.update(
         {"hashed_password": new_hashed},
         doc_ids=[current_user["id"]],

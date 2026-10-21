@@ -3,11 +3,13 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import SQLModel
 
 # Antes de importar los routers: leen configuración desde el entorno.
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-from .database import seed_database
+from . import models
+from .database import engine, seed_database
 from .routes.auth import router as auth_router
 from .routes.profiles import router as profiles_router
 from .routes.suppliers import router as suppliers_router
@@ -36,6 +38,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
+    if engine is not None:
+        SQLModel.metadata.create_all(engine)
     seed_database()
 
 

@@ -1,7 +1,42 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from sqlmodel import Field as SQLModelField, SQLModel
+
+
+class Product(SQLModel, table=True):
+    __tablename__ = "products"
+
+    id: Optional[int] = SQLModelField(default=None, primary_key=True)
+    sku: str = SQLModelField(index=True, unique=True)
+    name: str
+
+
+class Inbound(SQLModel, table=True):
+    __tablename__ = "inbound_orders"
+
+    id: Optional[int] = SQLModelField(default=None, primary_key=True)
+    product_id: int = SQLModelField(foreign_key="products.id")
+    warehouse: str
+    quantity: int = SQLModelField(gt=0)
+    created_at: datetime = SQLModelField(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    user_uuid: str
+
+
+class Outbound(SQLModel, table=True):
+    __tablename__ = "outbound_orders"
+
+    id: Optional[int] = SQLModelField(default=None, primary_key=True)
+    product_id: int = SQLModelField(foreign_key="products.id")
+    warehouse: str
+    quantity: int = SQLModelField(gt=0)
+    created_at: datetime = SQLModelField(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    user_uuid: str
 
 
 class SupplierStatus(str, Enum):

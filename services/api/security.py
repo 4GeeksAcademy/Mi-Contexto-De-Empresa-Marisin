@@ -12,6 +12,11 @@ load_dotenv()
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
+def get_password_hash(password: str) -> str:
+    return password_context.hash(password)
+
+
 JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
