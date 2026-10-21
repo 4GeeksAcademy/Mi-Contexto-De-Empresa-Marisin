@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -49,3 +50,28 @@ class OutboundOrderResponse(BaseModel):
     quantity: int
     created_at: datetime
     user_uuid: str
+
+
+class ProductSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    sku: str
+    name: str
+
+
+class InventoryUserSummary(BaseModel):
+    user_uuid: str
+    email: Optional[str] = None
+    name: Optional[str] = None
+
+
+class InventoryOrderResponse(BaseModel):
+    id: int
+    order_type: Literal["inbound", "outbound"]
+    product: ProductSummary
+    warehouse: str
+    quantity: int
+    created_at: datetime
+    user_uuid: str
+    user: Optional[InventoryUserSummary] = None
