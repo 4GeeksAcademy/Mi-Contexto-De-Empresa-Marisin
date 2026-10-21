@@ -1,0 +1,122 @@
+.inventory-products {
+  width: min(1200px, 94%);
+  margin: 0 auto;
+  padding: 32px 0;
+  color: var(--text, #e5edf7);
+}
+
+.inventory-products-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.inventory-products h1 {
+  margin: 8px 0;
+  font: 600 28px var(--font-space-grotesk, sans-serif);
+}
+
+.inventory-products-header p {
+  margin: 0;
+  color: var(--muted, #91a3bd);
+}
+
+.inventory-products .inventory-products-brand {
+  color: var(--accent, #2dd4bf);
+  font-size: 14px;
+}
+
+.inventory-products button,
+.inventory-products-actions a {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1px solid var(--muted, #91a3bd);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.inventory-products button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.inventory-products button:focus-visible,
+.inventory-products a:focus-visible,
+.inventory-products-scroll:focus-visible {
+  outline: 2px solid var(--accent, #2dd4bf);
+  outline-offset: 3px;
+}
+
+.inventory-products-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.inventory-products table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.inventory-products caption {
+  padding: 0 0 16px;
+  text-align: left;
+}
+
+.inventory-products th,
+.inventory-products td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--muted, #91a3bd);
+  max-width: 320px;
+  overflow-wrap: anywhere;
+}
+
+.inventory-products thead {
+  background: var(--panel, #111c30);
+}
+
+.inventory-products-quantity {
+  font-variant-numeric: tabular-nums;
+}
+
+.inventory-products-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.inventory-stock {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.inventory-stock::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.inventory-stock-healthy { color: #6ee7b7; }
+.inventory-stock-low { color: #fcd34d; }
+.inventory-stock-empty,
+.inventory-products-error { color: var(--danger, #fb7185); }
+
+.inventory-products-status,
+.inventory-products-error {
+  min-height: 120px;
+  padding: 24px 0;
+}

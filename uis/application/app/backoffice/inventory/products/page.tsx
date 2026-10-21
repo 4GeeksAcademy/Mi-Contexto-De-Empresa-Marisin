@@ -1,0 +1,1 @@
+export { default } from "../../../../../backoffice/app/backoffice/inventory/products/page";
