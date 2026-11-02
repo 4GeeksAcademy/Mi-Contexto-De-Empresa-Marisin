@@ -17,6 +17,16 @@ def get_password_hash(password: str) -> str:
     return password_context.hash(password)
 
 
+def verify_user_password(password: str, user: dict) -> bool:
+    stored_hash = user.get("hashed_password") or user.get("password_hash")
+    if not isinstance(stored_hash, str) or not stored_hash:
+        return False
+    try:
+        return password_context.verify(password, stored_hash)
+    except (TypeError, ValueError):
+        return False
+
+
 JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
@@ -49,6 +59,6 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> dict:
         raise credentials_error from error
 
     user = get_user_by_id(user_id)
-    if not user or not user["is_active"]:
+    if not user or not user.get("is_active", True):
         raise credentials_error
     return user

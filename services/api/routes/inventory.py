@@ -6,7 +6,7 @@ from sqlalchemy import func
 from sqlmodel import Session, select
 
 from ..database import get_db
-from ..models import Inbound, Outbound, Product
+from ..models import SKU, StockEntry, StockExit
 from ..schemas import (
     InboundOrderCreate,
     InboundOrderResponse,
@@ -26,26 +26,26 @@ router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
 
 def _warehouse_balances(
-    session: Session, product_id: int | None = None
+    session: Session, sku_id: int | None = None
 ) -> dict[tuple[int, str], int]:
     balances: defaultdict[tuple[int, str], int] = defaultdict(int)
-    for model, multiplier in ((Inbound, 1), (Outbound, -1)):
+    for model, multiplier in ((StockEntry, 1), (StockExit, -1)):
         query = select(
-            model.product_id,
+            model.sku_id,
             model.warehouse,
             func.sum(model.quantity),
-        ).group_by(model.product_id, model.warehouse)
-        if product_id is not None:
-            query = query.where(model.product_id == product_id)
+        ).group_by(model.sku_id, model.warehouse)
+        if sku_id is not None:
+            query = query.where(model.sku_id == sku_id)
         for row in session.exec(query).all():
             key = (row[0], row[1])
             balances[key] += multiplier * int(row[2] or 0)
     return dict(balances)
 
 
-def _product_response(product: Product, stock: int) -> ProductResponse:
+def _product_response(sku_obj: SKU, stock: int) -> ProductResponse:
     return ProductResponse.model_validate(
-        {**product.model_dump(), "current_stock": stock}
+        {**sku_obj.model_dump(), "current_stock": stock}
     )
 
 
@@ -79,14 +79,14 @@ def _user_summary(user_uuid: str) -> InventoryUserSummary | None:
 
 @router.get("/products", response_model=list[ProductResponse])
 def list_products(session: Annotated[Session, Depends(get_db)]):
-    products = session.exec(select(Product).order_by(Product.id)).all()
+    skus = session.exec(select(SKU).order_by(SKU.id)).all()
     balances = _warehouse_balances(session)
-    stock_by_product: defaultdict[int, int] = defaultdict(int)
-    for (product_id, _warehouse), balance in balances.items():
-        stock_by_product[product_id] += balance
+    stock_by_sku: defaultdict[int, int] = defaultdict(int)
+    for (sku_id, _warehouse), balance in balances.items():
+        stock_by_sku[sku_id] += balance
     return [
-        _product_response(product, stock_by_product[product.id])
-        for product in products
+        _product_response(sku_obj, stock_by_sku[sku_obj.id])
+        for sku_obj in skus
     ]
 
 
@@ -100,14 +100,14 @@ def create_product(
     session: Annotated[Session, Depends(get_db)],
     _: Annotated[dict, Depends(get_current_user)],
 ):
-    existing = session.exec(select(Product).where(Product.sku == payload.sku)).first()
+    existing = session.exec(select(SKU).where(SKU.sku == payload.sku)).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El SKU ya existe.")
-    product = Product(**payload.model_dump())
-    session.add(product)
+    sku_obj = SKU(**payload.model_dump())
+    session.add(sku_obj)
     session.commit()
-    session.refresh(product)
-    return _product_response(product, 0)
+    session.refresh(sku_obj)
+    return _product_response(sku_obj, 0)
 
 
 @router.get("/products/{product_id}", response_model=ProductResponse)
@@ -115,11 +115,11 @@ def get_product(
     product_id: int,
     session: Annotated[Session, Depends(get_db)],
 ):
-    product = session.get(Product, product_id)
-    if product is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado.")
+    sku_obj = session.get(SKU, product_id)
+    if sku_obj is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
     stock = sum(_warehouse_balances(session, product_id).values())
-    return _product_response(product, stock)
+    return _product_response(sku_obj, stock)
 
 
 @router.post(
@@ -132,9 +132,9 @@ def create_inbound_order(
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[dict, Depends(get_current_user)],
 ):
-    if session.get(Product, payload.product_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado.")
-    order = Inbound(**payload.model_dump(), user_uuid=_user_uuid(current_user))
+    if session.get(SKU, payload.sku_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
+    order = StockEntry(**payload.model_dump(), user_uuid=_user_uuid(current_user))
     session.add(order)
     session.commit()
     session.refresh(order)
@@ -151,10 +151,11 @@ def create_outbound_order(
     session: Annotated[Session, Depends(get_db)],
     current_user: Annotated[dict, Depends(get_current_user)],
 ):
-    if session.get(Product, payload.product_id) is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado.")
-    available = _warehouse_balances(session, payload.product_id).get(
-        (payload.product_id, payload.warehouse), 0
+    if session.get(SKU, payload.sku_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
+    
+    available = _warehouse_balances(session, payload.sku_id).get(
+        (payload.sku_id, payload.warehouse), 0
     )
     if payload.quantity > available:
         raise HTTPException(
@@ -164,7 +165,7 @@ def create_outbound_order(
                 f"disponible {available}, solicitado {payload.quantity}."
             ),
         )
-    order = Outbound(**payload.model_dump(), user_uuid=_user_uuid(current_user))
+    order = StockExit(**payload.model_dump(), user_uuid=_user_uuid(current_user))
     session.add(order)
     session.commit()
     session.refresh(order)
@@ -173,10 +174,10 @@ def create_outbound_order(
 
 @router.get("/orders", response_model=list[InventoryOrderResponse])
 def list_orders(session: Annotated[Session, Depends(get_db)]):
-    inbound_orders = session.exec(select(Inbound)).all()
-    outbound_orders = session.exec(select(Outbound)).all()
-    products = {
-        product.id: product for product in session.exec(select(Product)).all()
+    inbound_orders = session.exec(select(StockEntry)).all()
+    outbound_orders = session.exec(select(StockExit)).all()
+    skus = {
+        sku_obj.id: sku_obj for sku_obj in session.exec(select(SKU)).all()
     }
     orders = []
     user_cache: dict[str, InventoryUserSummary | None] = {}
@@ -186,8 +187,8 @@ def list_orders(session: Annotated[Session, Depends(get_db)]):
         ("outbound", outbound_orders),
     ):
         for order in rows:
-            product = products.get(order.product_id)
-            if product is None:
+            sku_obj = skus.get(order.sku_id)
+            if sku_obj is None:
                 continue
             if order.user_uuid not in user_cache:
                 user_cache[order.user_uuid] = _user_summary(order.user_uuid)
@@ -195,7 +196,7 @@ def list_orders(session: Annotated[Session, Depends(get_db)]):
                 InventoryOrderResponse(
                     id=order.id,
                     order_type=order_type,
-                    product=ProductSummary.model_validate(product),
+                    product=ProductSummary.model_validate(sku_obj),
                     warehouse=order.warehouse,
                     quantity=order.quantity,
                     created_at=order.created_at,
