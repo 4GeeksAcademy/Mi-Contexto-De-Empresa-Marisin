@@ -1,0 +1,41 @@
+services:
+  ui:
+    build:
+      context: ./uis
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ./uis:/app
+      - ui_website_node_modules:/app/website/node_modules
+      - ui_backoffice_node_modules:/app/backoffice/node_modules
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      NEXT_PUBLIC_INVENTORY_API_URL: ${NEXT_PUBLIC_INVENTORY_API_URL:-http://api:8000}
+    networks:
+      - trackflow-network
+
+  api:
+    build:
+      context: ./services
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services:/app
+    env_file:
+      - path: ./.env
+        required: false
+    networks:
+      - trackflow-network
+
+networks:
+  trackflow-network:
+    name: trackflow-network
+
+volumes:
+  ui_website_node_modules:
+  ui_backoffice_node_modules:
