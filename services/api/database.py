@@ -1,7 +1,38 @@
+from collections.abc import Iterator
 from datetime import datetime
 import os
+from pathlib import Path
 from threading import RLock
+
+from dotenv import load_dotenv
+from sqlalchemy.engine import make_url
+from sqlalchemy.pool import NullPool
+from sqlmodel import Session, create_engine
 from tinydb import TinyDB
+
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
+
+database_url = os.getenv("DATABASE_URL", "").strip()
+engine = None
+if database_url:
+    connection_url = make_url(database_url)
+    if connection_url.get_backend_name() != "postgresql":
+        raise ValueError("DATABASE_URL must be a PostgreSQL connection URI.")
+    engine = create_engine(
+        connection_url.set(drivername="postgresql+psycopg2"),
+        poolclass=NullPool,
+        connect_args={"sslmode": "require", "connect_timeout": 10},
+    )
+
+
+def get_db() -> Iterator[Session]:
+    if engine is None:
+        raise RuntimeError(
+            "Set DATABASE_URL in .env to the Supabase Transaction pooler URI."
+        )
+    with Session(engine) as session:
+        yield session
+
 
 # Definir la ruta de la base de data local (se creará un fichero JSON)
 DB_PATH = os.path.join(

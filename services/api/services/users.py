@@ -27,11 +27,13 @@ def create_user(user_in: UserCreate) -> dict:
 
 
 def get_user_by_id(user_id: int) -> Optional[dict]:
-    return users_table.get(doc_id=user_id)
+    user = users_table.get(doc_id=user_id)
+    return {**user, "id": user.doc_id} if user is not None else None
 
 
 def get_user_by_email(email: str) -> Optional[dict]:
-    return users_table.get(Query().email == email)
+    user = users_table.get(Query().email == email)
+    return {**user, "id": user.doc_id} if user is not None else None
 
 
 def list_users() -> list[dict]:
