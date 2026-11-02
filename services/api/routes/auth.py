@@ -16,7 +16,7 @@ from ..models import (
     MeResponse,
     ResetPasswordRequest,
 )
-from ..security import create_access_token, get_current_user, hash_password, password_context, verify_password
+from ..security import create_access_token, get_current_user, password_context
 from ..services.profiles import get_profile_by_user_id
 from ..services.users import get_user_by_email
 
