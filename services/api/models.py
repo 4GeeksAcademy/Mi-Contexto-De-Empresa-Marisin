@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -153,4 +153,37 @@ class ChangePasswordRequest(BaseModel):
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class SKUProduct(BaseModel):
+    id: int
+    sku: str
+    name: str
+    client_name: str
+    category: str
+    reference: str
+    current_stock: int = Field(..., ge=0)
+
+
+class InboundOrderCreate(BaseModel):
+    sku_id: int = Field(..., gt=0, strict=True)
+    warehouse: str = Field(..., min_length=1, pattern=r"\S")
+    quantity: int = Field(..., gt=0, strict=True)
+
+
+class OutboundOrderCreate(InboundOrderCreate):
+    exit_type: str = Field(..., min_length=1, pattern=r"\S")
+    tracking_number: Optional[str] = None
+
+
+class InventoryOrder(BaseModel):
+    id: int
+    order_type: Literal["inbound", "outbound"]
+    product: SKUProduct
+    warehouse: str
+    quantity: int = Field(..., gt=0)
+    created_at: datetime
+    user_uuid: str
+    exit_type: Optional[str] = None
+    tracking_number: Optional[str] = None
     

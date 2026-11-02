@@ -1,45 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_INVENTORY_API_URL || "http://localhost:8000";
-
-// Auxiliar para obtener el token del almacenamiento local
-function getAuthToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("access_token") || localStorage.getItem("token");
-}
-
-// Auxiliar para peticiones HTTP centralizadas
-async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
-  const token = getAuthToken();
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...(options.headers as Record<string, string>),
-  };
-
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    let errorMessage = `Error ${response.status}: ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      if (errorData.detail) {
-        errorMessage = typeof errorData.detail === "string" 
-          ? errorData.detail 
-          : JSON.stringify(errorData.detail);
-      }
-    } catch {
-      // Si el cuerpo no es JSON, mantenemos el mensaje de estado
-    }
-    throw new Error(errorMessage);
-  }
-
-  return response.json();
-}
+import { fetchWithAuth } from "./api";
 
 // --- Interfaces de Datos de TrackFlow ---
 export interface SKUProduct {
