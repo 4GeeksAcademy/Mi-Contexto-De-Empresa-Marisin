@@ -1,16 +1,13 @@
 {
-<<<<<<< HEAD
   "name": "backoffice",
   "version": "0.1.0",
-=======
->>>>>>> origin/feature/auth-frontend
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-<<<<<<< HEAD
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "next": "16.2.11",
@@ -26,19 +23,5 @@
     "eslint-config-next": "16.2.11",
     "tailwindcss": "^4",
     "typescript": "^5"
-=======
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "next": "^15.5.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
-  },
-  "devDependencies": {
-    "@types/node": "^24.0.0",
-    "@types/react": "^19.1.0",
-    "@types/react-dom": "^19.1.0",
-    "typescript": "^5.9.0"
->>>>>>> origin/feature/auth-frontend
   }
 }

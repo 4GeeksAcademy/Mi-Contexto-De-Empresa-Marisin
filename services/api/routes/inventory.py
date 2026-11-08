@@ -1,79 +1,207 @@
-from datetime import datetime, timezone
-from typing import Annotated, Literal
+from collections import defaultdict
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
+from sqlmodel import Session, select
 
-from ..database import inventory_db_lock, inventory_orders_table, products_table
-from ..models import InboundOrderCreate, InventoryOrder, OutboundOrderCreate, SKUProduct
+from ..database import get_db
+from ..models import SKU, StockEntry, StockExit
+from ..schemas import (
+    InboundOrderCreate,
+    InboundOrderResponse,
+    InventoryOrderResponse,
+    InventoryUserSummary,
+    OutboundOrderCreate,
+    OutboundOrderResponse,
+    ProductCreate,
+    ProductResponse,
+    ProductSummary,
+)
 from ..security import get_current_user
+from ..services.profiles import get_profile_by_user_id
+from ..services.users import get_user_by_id
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
 
-def _get_product(product_id: int) -> dict:
-    product = products_table.get(doc_id=product_id) if product_id > 0 else None
-    if product is None:
-        raise HTTPException(status_code=404, detail="Product not found")
-    return {**product, "id": product.doc_id}
+def _warehouse_balances(
+    session: Session, sku_id: int | None = None
+) -> dict[tuple[int, str], int]:
+    balances: defaultdict[tuple[int, str], int] = defaultdict(int)
+    for model, multiplier in ((StockEntry, 1), (StockExit, -1)):
+        query = select(
+            model.sku_id,
+            model.warehouse,
+            func.sum(model.quantity),
+        ).group_by(model.sku_id, model.warehouse)
+        if sku_id is not None:
+            query = query.where(model.sku_id == sku_id)
+        for row in session.exec(query).all():
+            key = (row[0], row[1])
+            balances[key] += multiplier * int(row[2] or 0)
+    return dict(balances)
 
 
-@router.get("/products", response_model=list[SKUProduct])
-def get_products(user: Annotated[dict, Depends(get_current_user)]):
-    with inventory_db_lock:
-        return [{**product, "id": product.doc_id} for product in products_table.all()]
+def _product_response(sku_obj: SKU, stock: int) -> ProductResponse:
+    return ProductResponse.model_validate(
+        {**sku_obj.model_dump(), "current_stock": stock}
+    )
 
 
-@router.get("/products/{product_id}", response_model=SKUProduct)
-def get_product(product_id: int, user: Annotated[dict, Depends(get_current_user)]):
-    with inventory_db_lock:
-        return _get_product(product_id)
-
-
-def _create_order(
-    payload: InboundOrderCreate,
-    order_type: Literal["inbound", "outbound"],
-    user: dict,
-) -> dict:
-    with inventory_db_lock:
-        product = _get_product(payload.sku_id)
-        stock = product["current_stock"]
-        if order_type == "outbound" and payload.quantity > stock:
-            raise HTTPException(status_code=409, detail="Insufficient stock")
-
-        product["current_stock"] = (
-            stock + payload.quantity if order_type == "inbound" else stock - payload.quantity
+def _user_uuid(current_user: dict) -> str:
+    identifier = current_user.get("uuid") or current_user.get("user_uuid")
+    if identifier is None:
+        identifier = current_user.get("id")
+    if identifier is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="El usuario autenticado no tiene un identificador válido.",
         )
-        order = {
-            **payload.model_dump(exclude={"sku_id"}),
-            "order_type": order_type,
-            "product": product,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "user_uuid": str(user["id"]),
-        }
-        products_table.update(
-            {"current_stock": product["current_stock"]}, doc_ids=[payload.sku_id]
-        )
-        order_id = inventory_orders_table.insert(order)
-        return {**order, "id": order_id}
+    return str(identifier)
 
 
-@router.post("/orders/inbound", response_model=InventoryOrder, status_code=201)
+def _user_summary(user_uuid: str) -> InventoryUserSummary | None:
+    try:
+        user_id = int(user_uuid)
+    except ValueError:
+        return None
+    user = get_user_by_id(user_id)
+    if user is None:
+        return None
+    profile = get_profile_by_user_id(user_id)
+    return InventoryUserSummary(
+        user_uuid=user_uuid,
+        email=user.get("email"),
+        name=profile.get("name") if profile else None,
+    )
+
+
+@router.get("/products", response_model=list[ProductResponse])
+def list_products(session: Annotated[Session, Depends(get_db)]):
+    skus = session.exec(select(SKU).order_by(SKU.id)).all()
+    balances = _warehouse_balances(session)
+    stock_by_sku: defaultdict[int, int] = defaultdict(int)
+    for (sku_id, _warehouse), balance in balances.items():
+        stock_by_sku[sku_id] += balance
+    return [
+        _product_response(sku_obj, stock_by_sku[sku_obj.id])
+        for sku_obj in skus
+    ]
+
+
+@router.post(
+    "/products",
+    response_model=ProductResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_product(
+    payload: ProductCreate,
+    session: Annotated[Session, Depends(get_db)],
+    _: Annotated[dict, Depends(get_current_user)],
+):
+    existing = session.exec(select(SKU).where(SKU.sku == payload.sku)).first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El SKU ya existe.")
+    sku_obj = SKU(**payload.model_dump())
+    session.add(sku_obj)
+    session.commit()
+    session.refresh(sku_obj)
+    return _product_response(sku_obj, 0)
+
+
+@router.get("/products/{product_id}", response_model=ProductResponse)
+def get_product(
+    product_id: int,
+    session: Annotated[Session, Depends(get_db)],
+):
+    sku_obj = session.get(SKU, product_id)
+    if sku_obj is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
+    stock = sum(_warehouse_balances(session, product_id).values())
+    return _product_response(sku_obj, stock)
+
+
+@router.post(
+    "/orders/inbound",
+    response_model=InboundOrderResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_inbound_order(
     payload: InboundOrderCreate,
-    user: Annotated[dict, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[dict, Depends(get_current_user)],
 ):
-    return _create_order(payload, "inbound", user)
+    if session.get(SKU, payload.sku_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
+    order = StockEntry(**payload.model_dump(), user_uuid=_user_uuid(current_user))
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    return InboundOrderResponse.model_validate(order, from_attributes=True)
 
 
-@router.post("/orders/outbound", response_model=InventoryOrder, status_code=201)
+@router.post(
+    "/orders/outbound",
+    response_model=OutboundOrderResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_outbound_order(
     payload: OutboundOrderCreate,
-    user: Annotated[dict, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[dict, Depends(get_current_user)],
 ):
-    return _create_order(payload, "outbound", user)
+    if session.get(SKU, payload.sku_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
+
+    available = _warehouse_balances(session, payload.sku_id).get(
+        (payload.sku_id, payload.warehouse), 0
+    )
+    if payload.quantity > available:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Stock insuficiente para el SKU en {payload.warehouse}: "
+                f"disponible {available}, solicitado {payload.quantity}."
+            ),
+        )
+    order = StockExit(**payload.model_dump(), user_uuid=_user_uuid(current_user))
+    session.add(order)
+    session.commit()
+    session.refresh(order)
+    return OutboundOrderResponse.model_validate(order, from_attributes=True)
 
 
-@router.get("/orders", response_model=list[InventoryOrder])
-def get_orders(user: Annotated[dict, Depends(get_current_user)]):
-    with inventory_db_lock:
-        return [{**order, "id": order.doc_id} for order in inventory_orders_table.all()]
+@router.get("/orders", response_model=list[InventoryOrderResponse])
+def list_orders(session: Annotated[Session, Depends(get_db)]):
+    inbound_orders = session.exec(select(StockEntry)).all()
+    outbound_orders = session.exec(select(StockExit)).all()
+    skus = {
+        sku_obj.id: sku_obj for sku_obj in session.exec(select(SKU)).all()
+    }
+    orders = []
+    user_cache: dict[str, InventoryUserSummary | None] = {}
+
+    for order_type, rows in (
+        ("inbound", inbound_orders),
+        ("outbound", outbound_orders),
+    ):
+        for order in rows:
+            sku_obj = skus.get(order.sku_id)
+            if sku_obj is None:
+                continue
+            if order.user_uuid not in user_cache:
+                user_cache[order.user_uuid] = _user_summary(order.user_uuid)
+            orders.append(
+                InventoryOrderResponse(
+                    id=order.id,
+                    order_type=order_type,
+                    product=ProductSummary.model_validate(sku_obj.model_dump()),
+                    warehouse=order.warehouse,
+                    quantity=order.quantity,
+                    created_at=order.created_at,
+                    user_uuid=order.user_uuid,
+                    user=user_cache[order.user_uuid],
+                )
+            )
+    return sorted(orders, key=lambda order: order.created_at, reverse=True)

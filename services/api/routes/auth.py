@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..database import auth_db_lock, password_reset_tokens_table, users_table
 from ..email import send_password_reset_email
-from ..models import (
+from ..schemas import (
     ChangePasswordRequest,
     ForgotPasswordRequest,
     LoginRequest,
@@ -16,7 +16,12 @@ from ..models import (
     MeResponse,
     ResetPasswordRequest,
 )
-from ..security import create_access_token, get_current_user, password_context
+from ..security import (
+    create_access_token,
+    get_current_user,
+    get_password_hash,
+    verify_user_password,
+)
 from ..services.profiles import get_profile_by_user_id
 from ..services.users import get_user_by_email
 
@@ -32,8 +37,12 @@ def _now() -> datetime:
 @router.post("/login", response_model=LoginResponse)
 def login(credentials: LoginRequest):
     user = get_user_by_email(str(credentials.email))
-    if not user or not password_context.verify(credentials.password, user["hashed_password"]):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+    if not user or not verify_user_password(credentials.password, user):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     if not user.get("is_active", True):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
@@ -86,7 +95,7 @@ def reset_password(payload: ResetPasswordRequest):
         if not user:
             raise HTTPException(status_code=400, detail="Invalid or expired reset token")
         
-        new_hashed = password_context.hash(payload.new_password)
+        new_hashed = get_password_hash(payload.new_password)
         users_table.update({"hashed_password": new_hashed}, doc_ids=[user.doc_id])
         password_reset_tokens_table.update({"used_at": _now().isoformat()}, doc_ids=[token_record.doc_id])
     return {"message": "Password reset successfully"}
@@ -94,12 +103,12 @@ def reset_password(payload: ResetPasswordRequest):
 
 @router.post("/change-password", status_code=status.HTTP_200_OK)
 def change_password(payload: ChangePasswordRequest, current_user: Annotated[dict, Depends(get_current_user)]):
-    if not password_context.verify(payload.current_password, current_user["hashed_password"]):
+    if not verify_user_password(payload.current_password, current_user):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     if payload.current_password == payload.new_password:
         raise HTTPException(status_code=400, detail="New password must be different")
     
-    new_hashed = password_context.hash(payload.new_password)
+    new_hashed = get_password_hash(payload.new_password)
     users_table.update(
         {"hashed_password": new_hashed},
         doc_ids=[current_user["id"]],
