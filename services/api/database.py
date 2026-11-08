@@ -48,10 +48,25 @@ users_table = db.table("users")
 profiles_table = db.table("profiles")
 password_reset_tokens_table = db.table("password_reset_tokens")
 auth_db_lock = RLock()
+products_table = db.table("products")
+inventory_orders_table = db.table("inventory_orders")
+inventory_db_lock = RLock()
 
 
 def seed_database():
     """Inserta datos iniciales de prueba si la tabla está vacía."""
+    from .models import UserCreate, UserRole
+    from .services.users import create_user, get_user_by_email
+
+    with auth_db_lock:
+        if get_user_by_email("admin@test.com") is None:
+            user = create_user(UserCreate(
+                email="admin@test.com",
+                password="password123",
+                name="Development Administrator",
+            ))
+            users_table.update({"role": UserRole.admin.value}, doc_ids=[user["id"]])
+
     if len(suppliers_table.all()) == 0:
         initial_suppliers = [
             {
@@ -73,3 +88,23 @@ def seed_database():
         ]
         for supplier in initial_suppliers:
             suppliers_table.insert(supplier)
+
+    if not products_table.all():
+        products_table.insert_multiple([
+            {
+                "sku": "TF-001",
+                "name": "Wireless Keyboard",
+                "client_name": "Global Tech Logistics",
+                "category": "Electronics",
+                "reference": "KEY-001",
+                "current_stock": 100,
+            },
+            {
+                "sku": "TF-002",
+                "name": "Shipping Box",
+                "client_name": "Iberia Express Cargo",
+                "category": "Packaging",
+                "reference": "BOX-001",
+                "current_stock": 250,
+            },
+        ])

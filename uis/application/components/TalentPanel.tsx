@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { getCandidates } from "../../talent-pipeline-tracker/services/api";
-import type { Candidate } from "../../talent-pipeline-tracker/types";
+import { getCandidates } from "@talent/services/api";
+import type { Candidate } from "@talent/types";
 
 type UiState = "idle" | "loading" | "success" | "error";
 

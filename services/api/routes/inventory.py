@@ -138,7 +138,7 @@ def create_inbound_order(
     session.add(order)
     session.commit()
     session.refresh(order)
-    return InboundOrderResponse.model_validate(order)
+    return InboundOrderResponse.model_validate(order, from_attributes=True)
 
 
 @router.post(
@@ -153,7 +153,7 @@ def create_outbound_order(
 ):
     if session.get(SKU, payload.sku_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
-    
+
     available = _warehouse_balances(session, payload.sku_id).get(
         (payload.sku_id, payload.warehouse), 0
     )
@@ -169,7 +169,7 @@ def create_outbound_order(
     session.add(order)
     session.commit()
     session.refresh(order)
-    return OutboundOrderResponse.model_validate(order)
+    return OutboundOrderResponse.model_validate(order, from_attributes=True)
 
 
 @router.get("/orders", response_model=list[InventoryOrderResponse])
@@ -196,7 +196,7 @@ def list_orders(session: Annotated[Session, Depends(get_db)]):
                 InventoryOrderResponse(
                     id=order.id,
                     order_type=order_type,
-                    product=ProductSummary.model_validate(sku_obj),
+                    product=ProductSummary.model_validate(sku_obj.model_dump()),
                     warehouse=order.warehouse,
                     quantity=order.quantity,
                     created_at=order.created_at,
