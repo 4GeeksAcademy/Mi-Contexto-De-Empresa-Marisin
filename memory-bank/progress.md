@@ -1,6 +1,7 @@
 # Progress: Estado Actual y Próximos Pasos
 
 ## Estado Actual del Desarrollo
+* **Actualizacion 2026-11-10 (auditoria de rendimiento):** Archivado `plaincontext.md` en `memory-bank/history/2026-11-10_refactor-performance.md` con copia byte a byte. `uis/website/tsconfig.json` y `uis/backoffice/tsconfig.json` usan `target: ES2022`; `uis/website` declara `display: swap`; el layout del backoffice ya incluye titulo y descripcion. Los builds de produccion de ambas aplicaciones compilan correctamente. El `StatCard` y `optimizePackageImports` no aplican porque el backoffice no tiene tarjetas KPI y no hay imports de paquetes-barrel; los preconnect a Google se omiten porque `next/font/google` autoaloja las fuentes. Los controles inspeccionados ya tienen texto visible; no se encontraron botones icon-only sin etiqueta. Lighthouse postcambio pendiente de medir.
 * **Hitos Completados:** Desarrollo de la web pública corporativa, módulos lógicos iniciales en TypeScript y primeros componentes de asistencia.
 * **Fase Actual (Hito 4):** Establecimiento de la infraestructura de ingeniería impulsada por IA, configuración del banco de memoria de TrackFlow, definición de `AGENTS.md`, reglas en `.agents/`, y estructuración del monorepo con Next.js (`./uis/website` y `./uis/backoffice`).
 * **Actualización 2026-08-03:** Se implementó la aplicación pública en `./uis/website` con Next.js App Router + TypeScript + Tailwind CSS, landing corporativa modular, formulario B2B con validaciones estrictas y marcado SEO `Organization` con Schema.org.
