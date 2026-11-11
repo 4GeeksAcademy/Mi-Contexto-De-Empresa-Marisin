@@ -5,6 +5,8 @@ Este informe documenta los resultados finales, las ganancias de rendimiento, la 
 
 Todas las auditorías se ejecutaron estrictamente sobre **builds de producción** (`npm run build` + `npm run start`) servidos en los puertos 3000 y 3001 dentro de sesiones limpias de Chrome Incógnito[cite: 19].
 
+La sección 6 añade una medición local posterior de los cuatro servicios compilados activos. Sus resultados usan Chromium headless sin throttling y deben leerse aparte de la comparativa histórica Lighthouse de las secciones anteriores.
+
 ---
 
 ## 1. Comparativa de Métricas (Baseline vs. Post-Optimización)
@@ -57,3 +59,22 @@ Todas las auditorías se ejecutaron estrictamente sobre **builds de producción*
 - [x] `/audit/after/` — Capturas de pantalla post-optimización guardadas y commiteadas.
 - [x] `AUDIT.md` — Análisis detallado de causa raíz y baseline inicial documentados.
 - [x] `REPORT.md` — Informe comparativo final generado.
+
+## 6. Medición Actual de los Cuatro Servicios (2026-11-11)
+
+Medianas de tres cargas con caché HTTP limpia, en Chromium 158 headless y sin throttling de CPU/red. Viewports: escritorio 1365 × 768 y móvil 390 × 844, sin emulación de hardware móvil.
+
+| Servicio y ruta | Viewport | LCP p50 | CLS p50 | Interacción sintética p50* |
+| :--- | :--- | ---: | ---: | ---: |
+| `uis/application` (`:3004/`) | Escritorio | 180 ms | 0,000 | 16 ms |
+| `uis/application` (`:3004/`) | Móvil | 168 ms | **0,385** | 16 ms |
+| `uis/backoffice` (`:3005/login`) | Escritorio | 180 ms | 0,000 | 16 ms |
+| `uis/backoffice` (`:3005/login`) | Móvil | 148 ms | 0,000 | 16 ms |
+| `uis/talent-pipeline-tracker` (`:3002/`) | Escritorio | 164 ms | 0,000 | 24 ms |
+| `uis/talent-pipeline-tracker` (`:3002/`) | Móvil | 148 ms | 0,000 | 16 ms |
+| `uis/website` (`:3003/`) | Escritorio | 224 ms | 0,000 | 16 ms |
+| `uis/website` (`:3003/`) | Móvil | 188 ms | 0,000 | N/D |
+
+\* Una acción automatizada por carga sobre un control visible, medida con Event Timing. Es una referencia sintética de laboratorio, no INP de campo ni datos CrUX/RUM. `N/D` significa que no se observó un evento reportable. Estos valores no son directamente comparables con los resultados Lighthouse anteriores porque no se aplicó throttling.
+
+El CLS móvil de `uis/application` (0,385) supera el umbral de referencia de 0,1 y queda señalado para investigación. No se modifica la puntuación Lighthouse histórica ni se presenta el INP sintético como un dato de usuarios reales.

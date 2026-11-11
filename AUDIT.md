@@ -3,6 +3,8 @@
 ## Executive Summary
 Este documento proporciona una auditoría detallada de rendimiento, arquitectura y diagnóstico para las aplicaciones frontend del monorepo **TrackFlow** (`uis/website` y `uis/backoffice`)[cite: 19]. Incluye las métricas de partida (*baseline*) obtenidas con Lighthouse en entornos de producción (`npm run build` + `npm run start`), el análisis técnico de causa raíz de cada cuello de botella y la estrategia de refactorización de código[cite: 19, 30].
 
+La tabla histórica de Lighthouse que sigue cubre solo website y backoffice. Las mediciones actuales de los cuatro servicios compilados se documentan en la sección 5 y no son directamente comparables con ese baseline.
+
 ---
 
 ## 1. Initial Lighthouse Baseline Metrics
@@ -60,3 +62,22 @@ En lugar de enumerar únicamente las advertencias generadas por la herramienta, 
 
 > [!IMPORTANT]
 > Auditar sobre `next dev` produce métricas de TBT artificialmente elevadas (> 200ms) debido a las verificaciones de React en desarrollo, la inyección del cliente de Hot Module Replacement (HMR) y la falta de minificación SWC. Toda la auditoría del proyecto se basa estrictamente en builds de producción (`next start`)[cite: 19, 29].
+
+## 5. Core Web Vitals de los Builds Activos (2026-11-11)
+
+Se midieron los cuatro servicios compilados actualmente en ejecución. Cada celda representa la mediana de tres cargas con caché HTTP limpia en Chromium 158 headless, sin throttling de CPU ni red. Los viewports fueron 1365 × 768 (escritorio) y 390 × 844 (viewport móvil; sin emulación de hardware móvil).
+
+| Servicio y ruta | Viewport | LCP p50 | CLS p50 | Interacción sintética p50* |
+| :--- | :--- | ---: | ---: | ---: |
+| `uis/application` (`:3004/`) | Escritorio | 180 ms | 0,000 | 16 ms |
+| `uis/application` (`:3004/`) | Móvil | 168 ms | **0,385** | 16 ms |
+| `uis/backoffice` (`:3005/login`) | Escritorio | 180 ms | 0,000 | 16 ms |
+| `uis/backoffice` (`:3005/login`) | Móvil | 148 ms | 0,000 | 16 ms |
+| `uis/talent-pipeline-tracker` (`:3002/`) | Escritorio | 164 ms | 0,000 | 24 ms |
+| `uis/talent-pipeline-tracker` (`:3002/`) | Móvil | 148 ms | 0,000 | 16 ms |
+| `uis/website` (`:3003/`) | Escritorio | 224 ms | 0,000 | 16 ms |
+| `uis/website` (`:3003/`) | Móvil | 188 ms | 0,000 | N/D |
+
+\* La interacción sintética es una única acción automatizada por carga sobre un control visible (`Cargar`, `Iniciar sesion`, `Registrar Candidatura` o `Servicios`). Es una referencia de laboratorio basada en Event Timing, no INP de campo ni datos CrUX/RUM. `N/D` indica que no se capturó un evento reportable en esas muestras. No se asigna puntuación Lighthouse ni se comparan estos resultados locales sin throttling con el baseline histórico.
+
+**Hallazgo:** el CLS móvil medido en `uis/application` (0,385) supera el umbral de referencia de 0,1 y requiere investigación. El resto de los viewports registró CLS 0,000 en estas ejecuciones.
