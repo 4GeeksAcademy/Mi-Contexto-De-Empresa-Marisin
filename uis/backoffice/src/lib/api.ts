@@ -1,5 +1,12 @@
 const API_URL = "/api/backend";
 
+export class ApiError extends Error {
+  constructor(readonly status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("access_token") || localStorage.getItem("token");
@@ -38,7 +45,7 @@ export async function fetchWithAuth(
           : JSON.stringify(error.detail);
       }
     } catch {}
-    throw new Error(message);
+    throw new ApiError(response.status, message);
   }
 
   return response.json();

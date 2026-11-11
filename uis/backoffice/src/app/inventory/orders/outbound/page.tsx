@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createOutboundOrder, getProducts, SKUProduct } from "@/lib/inventory";
+import { ApiError } from "@/lib/api";
+import { createOutboundOrder, getOrders, getProducts, InventoryOrder, SKUProduct } from "@/lib/inventory";
 
 export default function OutboundOrderPage() {
   const router = useRouter();
@@ -10,6 +11,7 @@ export default function OutboundOrderPage() {
   const initialSkuId = searchParams.get("sku_id");
 
   const [products, setProducts] = useState<SKUProduct[]>([]);
+  const [orders, setOrders] = useState<InventoryOrder[]>([]);
   const [selectedSkuId, setSelectedSkuId] = useState<string>(initialSkuId || "");
   const [warehouse, setWarehouse] = useState<string>("Los Angeles");
   const [quantity, setQuantity] = useState<number>(1);
@@ -22,13 +24,19 @@ export default function OutboundOrderPage() {
 
   // Obtener producto seleccionado y su stock disponible actual
   const selectedProduct = products.find((p) => p.id.toString() === selectedSkuId);
-  const currentStock = selectedProduct ? selectedProduct.current_stock : 0;
+  const currentStock = selectedProduct
+    ? orders.reduce((stock, order) => {
+        if (order.product.id !== selectedProduct.id || order.warehouse !== warehouse) return stock;
+        return stock + (order.order_type === "inbound" ? order.quantity : -order.quantity);
+      }, 0)
+    : 0;
   const isStockExceeded = quantity > currentStock;
 
   useEffect(() => {
-    getProducts()
-      .then((data) => {
+    Promise.all([getProducts(), getOrders()])
+      .then(([data, movements]) => {
         setProducts(data);
+        setOrders(movements);
         if (!initialSkuId && data.length > 0) {
           setSelectedSkuId(data[0].id.toString());
         }
@@ -60,10 +68,14 @@ export default function OutboundOrderPage() {
       setQuantity(1);
       setTrackingNumber("");
 
-      // Actualizar la lista de productos para reflejar el nuevo stock disponible
-      getProducts().then((updated) => setProducts(updated));
-    } catch (err: any) {
-      setErrorMsg(err.message || "Error al procesar la salida de inventario (HTTP 400).");
+      // Actualizar el stock por almacén tras registrar el movimiento.
+      getOrders().then(setOrders);
+    } catch (error: unknown) {
+      if (error instanceof ApiError && error.status === 400) {
+        setErrorMsg(`La API rechazó la salida (HTTP 400): ${error.message}`);
+      } else {
+        setErrorMsg(error instanceof Error ? error.message : "Error al procesar la salida de inventario.");
+      }
     } finally {
       setLoading(false);
     }
@@ -88,8 +100,8 @@ export default function OutboundOrderPage() {
       )}
 
       {errorMsg && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-md font-medium">
-          ⚠️ {errorMsg}
+        <div role="alert" className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-md font-medium">
+          {errorMsg}
         </div>
       )}
 
