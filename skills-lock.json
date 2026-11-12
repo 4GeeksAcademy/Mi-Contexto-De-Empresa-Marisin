@@ -1,6 +1,12 @@
 {
   "version": 2,
   "skills": {
+    "core-web-vitals": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "github",
+      "skillPath": "skills/core-web-vitals/SKILL.md",
+      "computedHash": "de50c203aa9dafa8dee9dd8c06782e3fc610704b83c1c408e4c5ee2337c4cd2a"
+    },
     "performance": {
       "source": "addyosmani/web-quality-skills",
       "sourceType": "github",
