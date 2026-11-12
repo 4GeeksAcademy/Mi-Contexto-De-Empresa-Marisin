@@ -23,10 +23,6 @@ export default function InventoryProductsPage() {
       });
   }, []);
 
-  if (loading) {
-    return <div className="p-6 text-gray-600">Cargando inventario de TrackFlow...</div>;
-  }
-
   if (error) {
     return (
       <div className="p-6">
@@ -75,7 +71,19 @@ export default function InventoryProductsPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {products.map((item) => {
+            {loading
+              ? Array.from({ length: 5 }, (_, index) => (
+                  <tr key={`skeleton-${index}`} className="h-14">
+                    <td className="px-6 py-4"><div className="h-4 w-16 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-32 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-28 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-24 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-20 rounded bg-gray-200" /></td>
+                    <td className="px-6 py-4"><div className="h-4 w-14 rounded bg-gray-200" /></td>
+                  </tr>
+                ))
+              : products.map((item) => {
               const isLowStock = item.current_stock < LOW_STOCK_THRESHOLD;
               return (
                 <tr key={item.id} className="hover:bg-gray-50">
@@ -114,7 +122,7 @@ export default function InventoryProductsPage() {
                   </td>
                 </tr>
               );
-            })}
+              })}
           </tbody>
         </table>
       </div>
