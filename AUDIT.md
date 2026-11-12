@@ -43,15 +43,14 @@ El baseline tenía `target: ES2017` en ambas aplicaciones y la entrega lo cambi�
 
 ## 3. Casos reales de duplicación
 
-### Caso 1: tarjetas con KPIs
-- **Dónde aparece:** El hero del website muestra tres métricas con estructura de tarjeta en `uis/website/components/Hero.tsx:26-38`. `uis/application/components/OperationsPanel.tsx:100-107` renderiza tarjetas `KpiCard`, cuya implementación privada está en `uis/application/components/OperationsPanel.tsx:178-185`.
-- **Por qué es candidato:** Ambos presentan una etiqueta/valor y contexto de métricas operativas. No son componentes idénticos: el hero usa contenido de marketing y otra estructura visual, mientras que el panel muestra datos dinámicos.
-- **Abstracción propuesta:** Crear `packages/shared/components/StatCard.tsx` con la firma `type StatCardProps = { title: string; value: string; detail?: string }; export function StatCard({ title, value, detail }: StatCardProps)`. La usarían `uis/website/components/Hero.tsx` para las tres métricas del hero y `uis/application/components/OperationsPanel.tsx` en lugar de su `KpiCard` local. El componente no existe actualmente; esta es una propuesta, no una implementación.
+### Caso 1: ciclo de carga de inventario (abstracción principal)
+- **Dónde aparece:** Productos obtiene datos mediante `getProducts()` y gestiona `loading`/`error` en `uis/backoffice/src/app/inventory/products/page.tsx:15-27`. Órdenes aplica el mismo ciclo con `getOrders()` en `uis/backoffice/src/app/inventory/orders/page.tsx:12-23`.
+- **Por qué es candidato:** Ambas vistas repiten la gestión de la petición asíncrona, el estado de carga y el error, aunque usan tipos y funciones de acceso distintos.
+- **Abstracción propuesta:** Implementar `useInventoryData<T>(load: () => Promise<T>): { data: T | null; loading: boolean; error: string | null }` en `uis/backoffice/src/hooks/useInventoryData.ts`, e importarlo en las páginas de productos y órdenes para reemplazar su estado y efectos duplicados. Este hook aún no existe; no se presenta como implementado.
 
-### Caso 2: ciclo de fetch, loading y error
-- **Dónde aparece:** La página de productos carga con `getProducts()` y actualiza `loading`/`error` en `uis/backoffice/src/app/inventory/products/page.tsx:15-27`. El historial de órdenes repite el patrón con `getOrders()` en `uis/backoffice/src/app/inventory/orders/page.tsx:12-23`.
-- **Por qué es candidato:** Ambas páginas mantienen el mismo ciclo de carga asíncrona, transición de estado y presentación de error, aunque consuman endpoints y tipos distintos.
-- **Abstracción:** Un hook tipado `useInventoryData` podría encapsular `data`, `loading` y `error`, recibiendo la función de carga de cada página. Aún no existe; solo se considerará resuelto cuando esté implementado, importado y usado en ambas páginas.
+### Caso 2: tarjetas de resumen
+- **Estado actual:** No hay una tarjeta de resumen repetida en las páginas actuales de productos y órdenes; añadirla sería una funcionalidad nueva, no una extracción de duplicación existente.
+- **Propuesta opcional:** Si se implementan esos resúmenes, crear `uis/backoffice/src/components/StatCard.tsx` con `type StatCardProps = { title: string; value: string; detail?: string }` y usarlo localmente en ambas páginas. No se propone extraerlo a `packages/shared` ni reutilizarlo fuera del backoffice.
 
 ## 4. Entorno de medición
 
