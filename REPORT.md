@@ -1,80 +1,74 @@
-# Informe de Auditoría y Optimización de Rendimiento (REPORT.md)
+# Informe de rendimiento: website y backoffice
 
-## Resumen Ejecutivo
-Este informe documenta los resultados finales, las ganancias de rendimiento, la refactorización arquitectónica y las evidencias del uso de agentes de IA a lo largo de los frontends del monorepo **TrackFlow** (`uis/website` y `uis/backoffice`).
+## Resumen y metodología
 
-Todas las auditorías se ejecutaron estrictamente sobre **builds de producción** (`npm run build` + `npm run start`) servidos en los puertos 3000 y 3001 dentro de sesiones limpias de Chrome Incógnito[cite: 19].
+Se comparan Lighthouse antes y después en `uis/website` (`/`, puerto 3000) y `uis/backoffice` (`/inventory/products`, con sesión iniciada, puerto 3001). Las mediciones se hicieron en producción (`build` + `start`), Chrome incógnito, mediante URL reenviada de Codespaces y con la API disponible en el puerto 8000. La latencia añadida por el túnel forma parte de las condiciones.
 
-La sección 6 añade una medición local posterior de los cuatro servicios compilados activos. Sus resultados usan Chromium headless sin throttling y deben leerse aparte de la comparativa histórica Lighthouse de las secciones anteriores.
+El baseline corresponde al commit `98e1b1b7f1c1c71b672ed211eb5b639ea84c1d70`. Cada captura representa una ejecución; no se infieren medianas ni distribución. Hay dos capturas posteriores desktop y una mobile de la website. Las capturas posteriores del backoffice se tomaron con un build posterior a `e736c54`. INP y TTFB no se capturaron. Las comparaciones describen los valores observados, pero no aíslan por sí solas el efecto causal de un commit.
 
----
+En las tablas, puntuaciones en el orden Performance / Accessibility / Best Practices / SEO; métricas en el orden FCP / LCP / TBT / CLS / Speed Index.
 
-## 1. Comparativa de Métricas (Baseline vs. Post-Optimización)
+## Comparativa antes/después
 
-### Tabla Resumen
+### Website — `/`
 
-| Aplicación y Entorno | Puntuación Baseline | Baseline LCP | Baseline TBT | Puntuación Optimizada | LCP Optimizado | TBT Optimizado | Estado |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Website (`:3000`) — Escritorio** | 98 | 0.9s | 0ms | **100** | **0.4s** | **0ms** | Cumplido (Puntuación 100) |
-| **Website (`:3000`) — Móvil** | 97 | 2.1s | 130ms | **98** | **2.2s** | **80ms** | Cumplido (Reducción de TBT) |
-| **Backoffice (`:3001`) — Escritorio** | 98 | 1.15s | 0ms | **100** | **0.5s** | **0ms** | Cumplido (Puntuación 100) |
-| **Backoffice (`:3001`) — Móvil** | 74 | 5.3s | 300ms | **99** | **1.8s** | **80ms** | **Gran Victoria (LCP 5.3s → 1.8s)** |
+| Modo y ejecución posterior | Antes | Después | Diferencia (después − antes) |
+|---|---|---|---|
+| Desktop, 14:36 | 99 / 85 / 96 / 60; 0,6 s / 0,8 s / 0 ms / 0 / 0,8 s | 100 / 85 / 96 / 60; 0,4 s / 0,4 s / 0 ms / 0 / 0,4 s | +1 / 0 / 0 / 0; −0,2 s / −0,4 s / 0 ms / 0 / −0,4 s |
+| Desktop, 15:21 | 99 / 85 / 96 / 60; 0,6 s / 0,8 s / 0 ms / 0 / 0,8 s | 100 / 85 / 96 / 60; 0,4 s / 0,5 s / 0 ms / 0 / 0,4 s | +1 / 0 / 0 / 0; −0,2 s / −0,3 s / 0 ms / 0 / −0,4 s |
+| Mobile, 15:03 | 98 / 85 / 96 / 60; 1,0 s / 2,0 s / 130 ms / 0 / 2,1 s | 99 / 85 / 96 / 60; 1,0 s / 2,0 s / 50 ms / 0 / 1,0 s | +1 / 0 / 0 / 0; 0 s / 0 s / −80 ms / 0 / −1,1 s |
 
----
+### Backoffice — `/inventory/products` con sesión
 
-## 2. Principales Mejoras y Solución de Problemas Reales
+| Modo y ejecución posterior | Antes | Después | Diferencia (después − antes) |
+|---|---|---|---|
+| Desktop, 21:12 | 100 / 88 / 96 / 40; 0,3 s / 0,5 s / 0 ms / 0 / 0,9 s | 100 / 93 / 96 / 60; 0,3 s / 0,5 s / 0 ms / 0,009 / 0,5 s | 0 / +5 / 0 / +20; 0 s / 0 s / 0 ms / +0,009 / −0,4 s |
+| Mobile, 21:13 | 100 / 88 / 96 / 40; 0,8 s / 1,7 s / 60 ms / 0 / 1,6 s | 99 / 93 / 96 / 60; 0,8 s / 1,7 s / 80 ms / 0 / 1,5 s | −1 / +5 / 0 / +20; 0 s / 0 s / +20 ms / 0 / −0,1 s |
 
-### 1. Solución del Cuello de Botella en Backoffice Móvil (LCP 5.3s → 1.8s / TBT 300ms → 80ms)
-- **Causa Raíz Resuelta:** Ejecución síncrona sobrecargada en el hilo principal durante el renderizado de datos y competencia en la carga de fuentes.
-- **Impacto:** Eliminar los envoltorios de transpilación innecesarios de ES2020 permitió al motor del navegador parsear y ejecutar los chunks de JavaScript más rápido bajo perfiles de CPU restringidos. El LCP se redujo un **66%** y el TBT un **73%**, elevando la puntuación de rendimiento móvil de **74 a 99**.
+## Cambios y evidencia
 
-### 2. Cumplimiento de Estándares de SEO y Accesibilidad
-- **Causa Raíz Resuelta:** Ausencia de metadatos a nivel de documento (`<title>` y `<meta name="description">`) en el layout raíz de `backoffice`.
-- **Impacto:** Se inyectaron estructuras declarativas de metadatos estáticos en `uis/backoffice/src/app/layout.tsx`. La puntuación de Accesibilidad de Backoffice aumentó de **88 a 93**, estableciendo una estructura de SEO completa en ambas aplicaciones.
+### Hero de la website — [8255f4c](https://github.com/4GeeksAcademy/Mi-Contexto-De-Empresa-Marisin/commit/8255f4c)
 
-### 3. Modernización del Target de JavaScript (ES2017/ES2020 → ES2022)
-- **Causa Raíz Resuelta:** Targets desactualizados en TypeScript que forzaban polyfills y funciones envolventes para sintaxis moderna (como *optional chaining* o campos de clase).
-- **Impacto:** Se actualizaron los targets en `tsconfig.json` en ambas aplicaciones del workspace (`uis/website` y `uis/backoffice`), disminuyendo el tamaño total del bundle procesado y alcanzando puntuaciones máximas de rendimiento en escritorio (**100**) en ambos frontends.
+- **Síntoma:** el análisis previo observó que la animación `.fade-up` del hero podía ocultar inicialmente el contenido que contiene el H1 ([AUDIT.md](./AUDIT.md), [Hero.tsx](./uis/website/components/Hero.tsx):4, [globals.css](./uis/website/app/globals.css):59-91).
+- **Causa considerada:** una opacidad inicial aplicada al contenedor del LCP podía retrasar su presentación; era una hipótesis de código, no una causa probada por traza.
+- **Cambio:** se mantuvo el movimiento de transformación y se evitó que la variante del hero comenzara con opacidad cero.
+- **Métrica observada:** LCP desktop pasó de 0,8 s a 0,4 s y 0,5 s en las dos capturas posteriores; mobile se mantuvo en 2,0 s. Son diferencias entre capturas y no una atribución causal aislada al commit.
+- **Origen:** el análisis del hero provino del feedback del profesor y quedó documentado antes de instalar las skills. Las skills se leyeron después y aportaron metodología de medición y la distinción entre TBT e INP; no originaron este cambio. Más detalle en [audit/skills.md](./audit/skills.md).
 
----
+### Metadatos del backoffice — [975b821](https://github.com/4GeeksAcademy/Mi-Contexto-De-Empresa-Marisin/commit/975b821)
 
-## 3. Refactorización de Código y Arquitectura Compartida
+- **Cambio verificado:** el commit añadió `title` y `description` al metadata del layout ([layout.tsx](./uis/backoffice/src/app/layout.tsx):5-9; comprobado con `git show 975b821`).
+- **Métrica observada:** SEO pasó de 40 a 60. La incorporación de título y descripción es un cambio SEO y respalda esa relación; las capturas no permiten atribuir cuánto del cambio corresponde a cada audit.
+- **Accesibilidad:** también se observó 88 a 93, pero los metadatos de título/descripción no explican ese cambio. No se atribuye a este commit.
+- **Rendimiento:** este cambio no se presenta como optimización de rendimiento.
 
-### Componente Abstraído: Reutilización de Tarjeta de Métricas / Estado (`StatCard`)
-- **Estrategia de Refactorización:** Se aisló la lógica de renderizado visual de métricas (anteriormente duplicada entre los KPIs de marketing y los resúmenes operativos de inventario) en la capa compartida del monorepo (`shared/` / `@repo/shared`)[cite: 19, 21].
-- **Integridad y Calidad:** Ambas aplicaciones compilan sin regresiones, errores de tipo ni fallos en la estructura del layout (validado mediante `npm run build`).
+### Restauración del target TypeScript — [894fb1c](https://github.com/4GeeksAcademy/Mi-Contexto-De-Empresa-Marisin/commit/894fb1c)
 
----
+- **Cambio:** se restauró `target: ES2017` en ambos `tsconfig.json` ([website](./uis/website/tsconfig.json):3; [backoffice](./uis/backoffice/tsconfig.json):3), el valor del baseline.
+- **Métrica:** no se atribuye a este cambio ningún movimiento de Lighthouse. La comparación no demuestra que cambiar el target a ES2022 redujera polyfills, bundle o TBT.
 
-## 4. Evidencias de Uso de Skills y Agentes
+### Skeleton de productos — [bf6b388](https://github.com/4GeeksAcademy/Mi-Contexto-De-Empresa-Marisin/commit/bf6b388)
 
-- **Evidencia de Uso de Skills:** Se utilizaron las capacidades de inspección del agente para analizar las características de los builds de producción de Next.js y las dependencias en runtime (`node_modules/next/dist/docs`).
-- **Gestión de Contexto:** Las instrucciones de ejecución y los registros de decisiones arquitectónicas se almacenaron en `plaincontext.md` y se archivaron en `memory-bank/history/2026-11-10_refactor-performance.md` para garantizar una trazabilidad y auditoría completas.
+- **Síntoma:** antes de recibir los productos, el estado de carga no conservaba el encabezado ni la estructura de la tabla.
+- **Cambio:** se mantienen header y tabla y se muestran filas skeleton de altura fija ([products/page.tsx](./uis/backoffice/src/app/inventory/products/page.tsx):24-73).
+- **Guía:** la referencia CLS recomienda reservar espacio y mantener contenedores estables para contenido asíncrono. El skeleton aplica esa recomendación; la guía no exige específicamente un skeleton.
+- **Métrica observada:** CLS desktop pasó de 0 a 0,009; en mobile permaneció en 0. No se atribuye el aumento desktop al skeleton ni se afirma una mejora de CLS. LCP permaneció en 0,5 s desktop y 1,7 s mobile.
 
----
+### Hook compartido — [e736c54](https://github.com/4GeeksAcademy/Mi-Contexto-De-Empresa-Marisin/commit/e736c54)
 
-## 5. Estado de Entregables y Artefactos
+- **Cambio:** `useInventoryData` (`data`, `loading`, `error`; función de carga como parámetro) se implementó en [useInventoryData.ts](./uis/backoffice/src/hooks/useInventoryData.ts):5-38 y se usa en [products/page.tsx](./uis/backoffice/src/app/inventory/products/page.tsx):9-11 y [orders/page.tsx](./uis/backoffice/src/app/inventory/orders/page.tsx):6-8.
+- **Tamaño del cambio:** el commit registra +48 y −34 líneas netas en su diff.
+- **Métrica:** refactor de estado/efectos; no se afirma una mejora medible de Lighthouse.
 
-- [x] `/audit/before/` — Capturas de pantalla iniciales guardadas y commiteadas.
-- [x] `/audit/after/` — Capturas de pantalla post-optimización guardadas y commiteadas.
-- [x] `AUDIT.md` — Análisis detallado de causa raíz y baseline inicial documentados.
-- [x] `REPORT.md` — Informe comparativo final generado.
+## Cambios no relacionados con rendimiento
 
-## 6. Medición Actual de los Cuatro Servicios (2026-11-11)
+- El cambio de metadata de `975b821` corresponde a SEO; el aumento observado de Accessibility no queda explicado por él ni se atribuye a cambios no comprobados.
+- `uis/backoffice/src/app/page.tsx:4` redirige `/` a `/login`; es navegación, no una optimización de rendimiento.
+- `uis/backoffice/src/app/inventory/orders/outbound/page.tsx:26-33` calcula stock disponible a partir de movimientos del producto y almacén seleccionados; es lógica funcional.
+- El antiguo salto de LCP de 5,3 s a 1,8 s comparaba `next dev` con producción. Al no ser el mismo entorno, no es una comparación válida y no se presenta como resultado de esta auditoría.
 
-Medianas de tres cargas con caché HTTP limpia, en Chromium 158 headless y sin throttling de CPU/red. Viewports: escritorio 1365 × 768 y móvil 390 × 844, sin emulación de hardware móvil.
+## Valoración
 
-| Servicio y ruta | Viewport | LCP p50 | CLS p50 | Interacción sintética p50* |
-| :--- | :--- | ---: | ---: | ---: |
-| `uis/application` (`:3004/`) | Escritorio | 180 ms | 0,000 | 16 ms |
-| `uis/application` (`:3004/`) | Móvil | 168 ms | **0,385** | 16 ms |
-| `uis/backoffice` (`:3005/login`) | Escritorio | 180 ms | 0,000 | 16 ms |
-| `uis/backoffice` (`:3005/login`) | Móvil | 148 ms | 0,000 | 16 ms |
-| `uis/talent-pipeline-tracker` (`:3002/`) | Escritorio | 164 ms | 0,000 | 24 ms |
-| `uis/talent-pipeline-tracker` (`:3002/`) | Móvil | 148 ms | 0,000 | 16 ms |
-| `uis/website` (`:3003/`) | Escritorio | 224 ms | 0,000 | 16 ms |
-| `uis/website` (`:3003/`) | Móvil | 188 ms | 0,000 | N/D |
+La mayor mejora de LCP observada fue en website desktop: de 0,8 s a 0,4 s o 0,5 s según la captura. El LCP mobile de la website no mejoró: siguió en 2,0 s. En el backoffice, LCP se mantuvo en 0,5 s desktop y 1,7 s mobile; el CLS desktop pasó a 0,009, el Performance mobile bajó de 100 a 99 y el TBT mobile subió de 60 ms a 80 ms. Estos cambios observados no prueban causalidad por sí solos.
 
-\* Una acción automatizada por carga sobre un control visible, medida con Event Timing. Es una referencia sintética de laboratorio, no INP de campo ni datos CrUX/RUM. `N/D` significa que no se observó un evento reportable. Estos valores no son directamente comparables con los resultados Lighthouse anteriores porque no se aplicó throttling.
-
-El CLS móvil de `uis/application` (0,385) supera el umbral de referencia de 0,1 y queda señalado para investigación. No se modifica la puntuación Lighthouse histórica ni se presenta el INP sintético como un dato de usuarios reales.
+SEO del backoffice quedó en 60 y Accessibility en 93; ambos conservan margen. No se dispone de las auditorías detalladas para diagnosticar otras causas. INP y TTFB no fueron capturados, por lo que no se concluye sobre esas métricas.
