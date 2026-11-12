@@ -1,83 +1,67 @@
 # Codebase Audit & Web Performance Analysis (AUDIT.md)
 
-## Executive Summary
-Este documento proporciona una auditoría detallada de rendimiento, arquitectura y diagnóstico para las aplicaciones frontend del monorepo **TrackFlow** (`uis/website` y `uis/backoffice`)[cite: 19]. Incluye las métricas de partida (*baseline*) obtenidas con Lighthouse en entornos de producción (`npm run build` + `npm run start`), el análisis técnico de causa raíz de cada cuello de botella y la estrategia de refactorización de código[cite: 19, 30].
+## Resumen ejecutivo
+Esta auditoría documenta las mediciones de Lighthouse del website y el backoffice, además de los problemas de rendimiento que se verificarán con cambios y mediciones posteriores.
 
-La tabla histórica de Lighthouse que sigue cubre solo website y backoffice. Las mediciones actuales de los cuatro servicios compilados se documentan en la sección 5 y no son directamente comparables con ese baseline.
-
----
-
-## 1. Initial Lighthouse Baseline Metrics
-
-Las mediciones iniciales se realizaron sobre servidores de producción para garantizar un entorno exento de la sobrecarga del entorno de desarrollo (`next dev`)[cite: 19].
-
-| Aplicación / Vista | Modo | Performance | LCP | TBT | CLS | Accessibility | Best Practices | SEO |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Website (`:3000/`)** | Desktop | **98** | 0.9s | 0ms | 0 | 85 | 100 | 60 |
-| **Website (`:3000/`)** | Mobile | **97** | 2.1s | 130ms | 0 | 85 | 100 | 60 |
-| **Backoffice (`:3001/inventory/products`)** | Desktop | **98** | 1.15s | 0ms | 0 | 88 | 100 | 40 |
-| **Backoffice (`:3001/inventory/products`)** | Mobile | **74** ⚠️ | **5.3s** ⚠️ | **300ms** ⚠️ | 0 | 88 | 100 | 40 |
+El baseline corresponde al commit `98e1b1b7f1c1c71b672ed211eb5b639ea84c1d70` y se midió en producción (`build` + `start`), no en `next dev`. Fecha de medición: 12 de noviembre de 2026. Lighthouse se ejecutó en Chrome incógnito, mediante las URLs reenviadas de Codespaces para los puertos 3000/3001, con la API en el puerto 8000. La conexión reenviada añade latencia; las mediciones posteriores deberán usar el mismo entorno. Se utilizaron los presets Desktop y Mobile; sus dimensiones numéricas no están registradas.
 
 ---
 
-## 2. Diagnóstico Técnico y Análisis de Causa Raíz
+## 1. Métricas baseline de Lighthouse
 
-En lugar de enumerar únicamente las advertencias generadas por la herramienta, a continuación se detallan las razones arquitectónicas y de compilación que originaron las degradaciones observadas[cite: 30]:
+| Aplicación / ruta | Modo | Performance | Accessibility | Best Practices | SEO | FCP | LCP | TBT | CLS | Speed Index | INP | TTFB |
+| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :--- | :--- |
+| Website `/` | Desktop | 99 | 85 | 96 | 60 | 0,6 s | 0,8 s | 0 ms | 0 | 0,8 s | No capturado | No capturado |
+| Website `/` | Mobile | 98 | 85 | 96 | 60 | 1,0 s | 2,0 s | 130 ms | 0 | 2,1 s | No capturado | No capturado |
+| Backoffice `/inventory/products` (sesión iniciada) | Desktop | 100 | 88 | 96 | 40 | 0,3 s | 0,5 s | 0 ms | 0 | 0,9 s | No capturado | No capturado |
+| Backoffice `/inventory/products` (sesión iniciada) | Mobile | 100 | 88 | 96 | 40 | 0,8 s | 1,7 s | 60 ms | 0 | 1,6 s | No capturado | No capturado |
 
-### Problema 1: Degradación Severa de LCP (5.3s) y TBT (300ms) en Backoffice Móvil
-- **Síntoma:** El indicador LCP en la vista `/inventory/products` móvil alcanza los 5.3s[cite: 27], penalizando la puntuación general hasta 74[cite: 27].
-- **Causa Raíz Identificada:**
-  1. **Sobrecarga de Transpilación JavaScript (`target: ES2017/ES2020`):** La configuración por defecto en `tsconfig.json` forzaba al compilador de Next.js (SWC) a generar funciones envolventes y *polyfills* de sintaxis moderna (operador *optional chaining*, *nullish coalescing*, etc.). Esto infló el tamaño del *bundle* JavaScript parsed en el hilo principal del móvil, aumentando la latencia de ejecución (*Total Blocking Time*).
-  2. **Renderizado de la Tabla sin Bloqueo Gradual:** El listado de SKUs e inventario realizaba el renderizado de forma síncrona en hidratación antes de liberar el hilo de pintado del elemento de mayor tamaño (LCP).
-
-### Problema 2: Puntuación Bajas de SEO (60 en Website / 40 en Backoffice)
-- **Síntoma:** Audits deficientes en los motores de búsqueda a pesar de tener una estructura visual correcta[cite: 26, 28].
-- **Causa Raíz Identificada:**
-  1. **Ausencia de Metadatos Declarativos:** El archivo `layout.tsx` de `backoffice` carecía de las exportaciones de `Metadata` de Next.js (`<title>` y `<meta name="description">`), impidiendo la indexación correcta del documento inicial.
-  2. **Etiquetas semánticas incompletas:** Falta de directivas de indexación explícitas en las cabeceras HTML de la aplicación corporativa.
-
-### Problema 3: Oportunidades de Accesibilidad y Fuentes (85 - 88)
-- **Síntoma:** Contrastes leves y pequeños retrasos en el intercambio de fuentes tipográficas[cite: 26, 28].
-- **Causa Raíz Identificada:**
-  1. **Font Display Strategy:** La carga de tipos de letra no declaraba explícitamente el atributo `display: "swap"`, provocando parpadeos o bloqueos breves de renderizado de texto (*FOIT*) durante la inicialización de la página.
+TBT es la métrica de bloqueo registrada. INP y TTFB no fueron capturados y no se estiman.
 
 ---
 
-## 3. Estrategia y Plan de Refactorización de Código
+## 2. Hallazgos verificados y pendientes de medir
 
-### Caso 1: Abstracción de Componente Reutilizable (`StatCard` / UI Metrics)
-- **Ubicación:** Componentes de métricas duplicados conceptualmente en el Landing de `website` y los paneles de inventario del `backoffice`[cite: 19].
-- **Justificación de Refactorización:** Extraer la tarjeta de datos a la capa modular compartida (`shared/`) para estandarizar estilos, clases Tailwind y mejorar la mantenibilidad del código entre aplicaciones[cite: 19, 21].
+### LCP del hero del website
+- **Síntoma medido:** En el baseline móvil, LCP fue 2,0 s; en desktop, 0,8 s.
+- **Evidencia:** El `h1` está dentro de un contenedor `.fade-up` (`uis/website/components/Hero.tsx:4`); con movimiento habilitado, `uis/website/app/globals.css:59-60` aplica una animación de 0,7 s cuya clave inicial fija `opacity: 0` (`uis/website/app/globals.css:76-79`).
+- **Causa probable:** La opacidad inicial puede retrasar la presentación del contenido que contiene el LCP. Es una hipótesis apoyada por el código, todavía no un resultado medido.
+- **Cambio/métrica:** Pendiente de aplicar la corrección y volver a medir con el mismo Lighthouse, ruta, viewport y entorno. No se afirma una mejora todavía.
 
-### Caso 2: Modernización del Compilador TypeScript
-- **Acción:** Actualizar `"target": "ES2022"` en `uis/website/tsconfig.json` y `uis/backoffice/tsconfig.json`[cite: 19].
-- **Justificación:** Los navegadores modernos soportan estas características de forma nativa, lo que elimina código duplicado de *polyfills* y acelera el tiempo de parseo del motor V8/JavaScript.
+### Estado de carga de productos
+- **Síntoma:** Mientras se cargan los productos, la página devuelve solo el texto “Cargando inventario de TrackFlow...” (`uis/backoffice/src/app/inventory/products/page.tsx:26-27`), sin mostrar el encabezado ni la estructura de la tabla.
+- **Causa probable:** El contenido inicial puede cambiar de forma al llegar los datos. Sin embargo, el CLS baseline fue 0 en ambos viewports, así que no hay evidencia de un problema de CLS en esa medición.
+- **Cambio/métrica:** Un skeleton de altura estable es una opción a medir; no se presentará como mejora si LCP/CLS no mejora.
 
-### Caso 3: Inyección de Metadatos de SEO y Atributos ARIA
-- **Acción:** Enriquecer `uis/backoffice/src/app/layout.tsx` con metadatos estructurados (`title`, `description`) y revisar elementos interactivos[cite: 19, 23].
+### SEO y accesibilidad
+- **Síntoma medido:** SEO fue 60 en website y 40 en backoffice; Accessibility fue 85 y 88, respectivamente.
+- **Causa:** No atribuida todavía. No se cuenta con la lista de auditorías fallidas de Lighthouse que permita identificar causas. Tampoco se inferirá que los metadatos explican el SEO ni que existe un defecto de accesibilidad por la puntuación agregada.
+- **Siguiente paso:** Inspeccionar los audits concretos antes de cambiar SEO o accesibilidad. En el backoffice, verificar además si alguna directiva de no-indexación es intencional.
 
----
+### Alcance del cambio de `tsconfig`
+El baseline tenía `target: ES2017` en ambas aplicaciones y la entrega lo cambió a `ES2022`. Ese cambio no demuestra que Next.js haya eliminado polyfills ni que haya reducido TBT; se retira esa explicación causal y no se considera una optimización de rendimiento.
 
-## 4. Diferencias de Entorno: `next dev` vs `next start`
+## 3. Casos reales de duplicación
 
-> [!IMPORTANT]
-> Auditar sobre `next dev` produce métricas de TBT artificialmente elevadas (> 200ms) debido a las verificaciones de React en desarrollo, la inyección del cliente de Hot Module Replacement (HMR) y la falta de minificación SWC. Toda la auditoría del proyecto se basa estrictamente en builds de producción (`next start`)[cite: 19, 29].
+### Caso 1: tarjetas con KPIs
+- **Dónde aparece:** El hero del website muestra tres métricas con estructura de tarjeta en `uis/website/components/Hero.tsx:26-38`. `uis/application/components/OperationsPanel.tsx:100-107` renderiza tarjetas `KpiCard`, cuya implementación privada está en `uis/application/components/OperationsPanel.tsx:178-185`.
+- **Por qué es candidato:** Ambos presentan una etiqueta/valor y contexto de métricas operativas. No son componentes idénticos: el hero usa contenido de marketing y otra estructura visual, mientras que el panel muestra datos dinámicos.
+- **Abstracción propuesta:** Crear `packages/shared/components/StatCard.tsx` con la firma `type StatCardProps = { title: string; value: string; detail?: string }; export function StatCard({ title, value, detail }: StatCardProps)`. La usarían `uis/website/components/Hero.tsx` para las tres métricas del hero y `uis/application/components/OperationsPanel.tsx` en lugar de su `KpiCard` local. El componente no existe actualmente; esta es una propuesta, no una implementación.
 
-## 5. Core Web Vitals de los Builds Activos (2026-11-11)
+### Caso 2: ciclo de fetch, loading y error
+- **Dónde aparece:** La página de productos carga con `getProducts()` y actualiza `loading`/`error` en `uis/backoffice/src/app/inventory/products/page.tsx:15-27`. El historial de órdenes repite el patrón con `getOrders()` en `uis/backoffice/src/app/inventory/orders/page.tsx:12-23`.
+- **Por qué es candidato:** Ambas páginas mantienen el mismo ciclo de carga asíncrona, transición de estado y presentación de error, aunque consuman endpoints y tipos distintos.
+- **Abstracción:** Un hook tipado `useInventoryData` podría encapsular `data`, `loading` y `error`, recibiendo la función de carga de cada página. Aún no existe; solo se considerará resuelto cuando esté implementado, importado y usado en ambas páginas.
 
-Se midieron los cuatro servicios compilados actualmente en ejecución. Cada celda representa la mediana de tres cargas con caché HTTP limpia en Chromium 158 headless, sin throttling de CPU ni red. Los viewports fueron 1365 × 768 (escritorio) y 390 × 844 (viewport móvil; sin emulación de hardware móvil).
+## 4. Entorno de medición
 
-| Servicio y ruta | Viewport | LCP p50 | CLS p50 | Interacción sintética p50* |
-| :--- | :--- | ---: | ---: | ---: |
-| `uis/application` (`:3004/`) | Escritorio | 180 ms | 0,000 | 16 ms |
-| `uis/application` (`:3004/`) | Móvil | 168 ms | **0,385** | 16 ms |
-| `uis/backoffice` (`:3005/login`) | Escritorio | 180 ms | 0,000 | 16 ms |
-| `uis/backoffice` (`:3005/login`) | Móvil | 148 ms | 0,000 | 16 ms |
-| `uis/talent-pipeline-tracker` (`:3002/`) | Escritorio | 164 ms | 0,000 | 24 ms |
-| `uis/talent-pipeline-tracker` (`:3002/`) | Móvil | 148 ms | 0,000 | 16 ms |
-| `uis/website` (`:3003/`) | Escritorio | 224 ms | 0,000 | 16 ms |
-| `uis/website` (`:3003/`) | Móvil | 188 ms | 0,000 | N/D |
+El baseline se tomó sobre builds de producción (`build` + `start`), no sobre `next dev`, en Chrome incógnito, usando las URLs reenviadas de Codespaces y la API en el puerto 8000. La latencia de la URL reenviada forma parte del entorno y deberá mantenerse para la comparación posterior. No hay TTFB ni INP capturados.
 
-\* La interacción sintética es una única acción automatizada por carga sobre un control visible (`Cargar`, `Iniciar sesion`, `Registrar Candidatura` o `Servicios`). Es una referencia de laboratorio basada en Event Timing, no INP de campo ni datos CrUX/RUM. `N/D` indica que no se capturó un evento reportable en esas muestras. No se asigna puntuación Lighthouse ni se comparan estos resultados locales sin throttling con el baseline histórico.
+## 5. Cambios no relacionados con rendimiento
 
-**Hallazgo:** el CLS móvil medido en `uis/application` (0,385) supera el umbral de referencia de 0,1 y requiere investigación. El resto de los viewports registró CLS 0,000 en estas ejecuciones.
+- `uis/backoffice/src/app/page.tsx:4` redirige `/` a `/login`. Es un cambio de navegación y no se presenta como una mejora de rendimiento.
+- `uis/backoffice/src/app/inventory/orders/outbound/page.tsx:27-32` calcula el stock disponible sumando movimientos del producto seleccionado filtrados por almacén. Es un cambio funcional y no se presenta como una mejora de rendimiento.
+
+## Trabajo futuro
+
+- Revisar si hay cambios de CLS en `uis/application` con una medición reproducible y evidencia verificable.
