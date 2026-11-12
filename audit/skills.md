@@ -17,7 +17,7 @@ La inspección de código produce hipótesis, no fallos medidos. Las capturas Li
 
 ### Cambio aplicado antes de la lectura de las skills
 
-- **Hero/LCP.** La hipótesis sobre la animación del hero vino del feedback del profesor y quedó en `AUDIT.md` (commit `47ed1d7`), antes de instalar `performance` (`4a11cde`). El cambio `8255f4c` nace de ese análisis: conserva el movimiento de transformación, pero evita la opacidad inicial del contenedor que contiene el H1 ([Hero.tsx](../uis/website/components/Hero.tsx):4; [globals.css](../uis/website/app/globals.css):59-91). Las skills se leyeron después; son compatibles con la decisión, pero no la originaron. Su aporte real fue la metodología para separar datos de campo y laboratorio, repetir mediciones y reportar mediana/rango, además de aclarar que TBT no es INP. En las capturas archivadas, el LCP desktop pasó del valor base de 0,8 s a 0,4 s y 0,5 s; en mobile permaneció en 2,0 s. Son diferencias observadas, no una mejora causal atribuible al commit: las revisiones medidas difieren y no hay trazas equivalentes.
+- **Hero/LCP.** La hipótesis sobre la animación del hero vino del feedback del profesor y quedó en `AUDIT.md` (commit `47ed1d7`), antes de instalar `performance` (`4a11cde`). El cambio `8255f4c` nace de ese análisis: conserva el movimiento de transformación, pero evita la opacidad inicial del contenedor que contiene el H1 ([Hero.tsx](../uis/website/components/Hero.tsx):4; [globals.css](../uis/website/app/globals.css):59-98). Las skills se leyeron después; son compatibles con la decisión, pero no la originaron. Su aporte real fue la metodología para separar datos de campo y laboratorio, repetir mediciones y reportar mediana/rango, además de aclarar que TBT no es INP. En las capturas archivadas, el LCP desktop pasó del valor base de 0,8 s a 0,4 s y 0,5 s; en mobile permaneció en 2,0 s. Son diferencias observadas, no una mejora causal atribuible al commit: las revisiones medidas difieren y no hay trazas equivalentes.
 
 ### CORRECCIONES REQUERIDAS
 
@@ -33,28 +33,40 @@ La inspección de código produce hipótesis, no fallos medidos. Las capturas Li
 ### Cambios previos y métricas
 
 - `8255f4c`: mitigó la hipótesis del H1/hero descrita arriba. En desktop se observó LCP 0,8 → 0,4/0,5 s, FCP 0,6 → 0,4 s y Speed Index 0,8 → 0,4 s; en mobile LCP siguió en 2,0 s y FCP en 1,0 s. CLS siguió en 0. No se puede aislar el efecto del cambio con estos datos.
-- `975b821`: añadió `display: "swap"` a las fuentes y cambió `target` a ES2022. `display: "swap"` satisface la recomendación de no bloquear texto por fuentes (`uis/website/app/layout.tsx:8,14`), pero ese commit precede a la instalación/revisión de la skill. No hay medición que aísle una métrica movida por estas modificaciones; el cambio de `target` no se cuenta como mejora de rendimiento demostrada.
+- `975b821`: añadió `display: "swap"` a las fuentes y cambió `target` a ES2022. `display: "swap"` satisface la recomendación de no bloquear texto por fuentes (`uis/website/app/layout.tsx:8,14`), pero ese commit precede a la instalación/revisión de la skill. El target ES2022 se revirtió a ES2017 en `894fb1c` (`uis/website/tsconfig.json:3`; `uis/backoffice/tsconfig.json:3`). No hay medición que aísle una métrica movida por esos cambios; el target no se cuenta como mejora de rendimiento demostrada.
 
 ## Backoffice
 
 ### CORRECCIONES REQUERIDAS
 
-- **No se demuestra una corrección obligatoria de CLS**: el baseline documentado para `/inventory/products` registra CLS 0 (`AUDIT.md:16-17`). El estado de carga merece verificación (siguiente sección), pero no se presenta como regresión confirmada.
+- **No se identifica una corrección obligatoria adicional por umbral de CLS**: las mediciones de laboratorio de `/inventory/products` son 0 antes y 0,009 desktop / 0 mobile después. No hay datos de campo ni traza que permita atribuir un nodo o una causa.
 
 ### SUGERENCIAS
 
-- Medir el cambio de geometría durante la autenticación y la carga de productos. El layout muestra “Verificando sesión...” hasta validar la sesión (`uis/backoffice/src/app/inventory/layout.tsx:10,13-35`), y productos reemplaza el mensaje de carga por el encabezado y la tabla (`uis/backoffice/src/app/inventory/products/page.tsx:11,14-27,78`). Son hipótesis de estabilidad; el baseline de `/inventory/products` registra CLS 0 (`AUDIT.md:16-17`), pero no hay una traza de esos cambios de estado.
+- La referencia CLS recomienda contenedores estables y espacio reservado para contenido asíncrono. El skeleton de productos sigue esta recomendación: mantiene el header y la tabla y renderiza filas de altura fija (`uis/backoffice/src/app/inventory/products/page.tsx:24-73`). No se atribuye al skeleton el CLS desktop 0,009 observado después; mobile continuó en 0. El build posterior de las capturas del backoffice incluye `e736c54`.
+- Medir el cambio de geometría durante la autenticación y la carga de productos. El layout muestra “Verificando sesión...” hasta validar la sesión (`uis/backoffice/src/app/inventory/layout.tsx:10,13-35`). La captura no incluye una traza que atribuya los cambios de estado a un nodo desplazado.
 - Para INP, ejercitar el inicio de sesión y las acciones de inventario en un dispositivo representativo; no hay interacciones medidas ni datos de campo.
 - Medir bundles por ruta antes de añadir imports dinámicos, memoización o virtualización. Las páginas de login e inventario son componentes cliente (`login/page.tsx:1`; `inventory/products/page.tsx:1`), pero no se midieron sus bundles ni se observó una lista de más de 100 productos que justifique virtualizarla.
-- La ruta `/inventory/products` con sesión iniciada tiene un baseline distinto, registrado en [AUDIT.md](../AUDIT.md):14-17: LCP 0,5 s desktop y 1,7 s mobile, TBT 0/60 ms y CLS 0. No mezclar sus valores con otras rutas.
+- El baseline de `/inventory/products` con sesión iniciada está en [AUDIT.md](../AUDIT.md):16-17; la comparación posterior está en [REPORT.md](../REPORT.md). LCP fue 0,5 s desktop y 1,7 s mobile antes y después, TBT 0/60 ms antes y 0/80 ms después, CLS 0 antes y 0,009/0 después. No mezclar sus valores con otras rutas.
 
 ### Cambios previos y métricas
 
 - `975b821` actualizó el `target` a ES2022 y añadió metadatos del layout. El target no demuestra reducción de polyfills, TBT ni otra métrica; no se atribuye una mejora de rendimiento a ese commit. Los metadatos son SEO y quedan fuera del alcance de esta revisión.
 
+### Mediciones de backoffice (`/inventory/products`, sesión iniciada)
+
+Las puntuaciones se muestran en el orden Performance / Accessibility / Best Practices / SEO; las métricas, en el orden FCP / LCP / TBT / CLS / Speed Index. Baseline antes del cambio y capturas después de un build posterior a `e736c54`. Cada captura es una ejecución; INP y TTFB no fueron capturados.
+
+| Viewport | Antes | Después |
+|---|---|---|
+| Desktop | 100 / 88 / 96 / 40; 0,3 s / 0,5 s / 0 ms / 0 / 0,9 s | 100 / 93 / 96 / 60; 0,3 s / 0,5 s / 0 ms / 0,009 / 0,5 s (21:12; [captura](./after/backoffice-desktop.png)) |
+| Mobile | 100 / 88 / 96 / 40; 0,8 s / 1,7 s / 60 ms / 0 / 1,6 s | 99 / 93 / 96 / 60; 0,8 s / 1,7 s / 80 ms / 0 / 1,5 s (21:13; [captura](./after/backoffice-mobile.png)) |
+
+El SEO observado pasó de 40 a 60; el layout contiene `title` y `description` desde `975b821` (`uis/backoffice/src/app/layout.tsx:5-9`), pero no se afirma que esos metadatos expliquen cada audit. Accessibility pasó de 88 a 93 y no se atribuye a los metadatos. Performance móvil bajó de 100 a 99 y TBT móvil subió de 60 ms a 80 ms; LCP no cambió en ninguno de los viewports.
+
 ## Mediciones de la website (Lighthouse)
 
-Valores transcritos de las capturas Lighthouse del 12 de noviembre de 2026. La hora es la que aparece en la captura; no se registró zona horaria. El baseline de [AUDIT.md](../AUDIT.md):6-20 se documentó como build de producción, Chrome incógnito, URL reenviada de Codespaces y presets Desktop/Mobile. Las capturas posteriores son de la misma ruta `/`, pero no anotan versión de Lighthouse, dimensiones numéricas, throttling ni caché; no se puede certificar equivalencia completa de condiciones.
+Valores transcritos de las capturas Lighthouse del 12 de noviembre de 2026. La hora es la que aparece en la captura; no se registró zona horaria. El entorno y baseline están documentados en [AUDIT.md](../AUDIT.md):5-19: build de producción, Chrome incógnito, URL reenviada de Codespaces y presets Desktop/Mobile. Las capturas posteriores son de la misma ruta `/`, pero no anotan versión de Lighthouse, dimensiones numéricas, throttling ni caché; no se puede certificar equivalencia completa de condiciones.
 
 ### ANTES
 
