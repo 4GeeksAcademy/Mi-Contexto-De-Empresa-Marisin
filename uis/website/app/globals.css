@@ -60,6 +60,10 @@ main {
     animation: fadeUp 0.7s ease-out both;
   }
 
+  .fade-up.fade-up-lcp {
+    animation-name: fadeUpTransform;
+  }
+
   .fade-up.delay-1 {
     animation-delay: 0.1s;
   }
@@ -80,6 +84,15 @@ main {
   }
   to {
     opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeUpTransform {
+  from {
+    transform: translateY(16px);
+  }
+  to {
     transform: translateY(0);
   }
 }
