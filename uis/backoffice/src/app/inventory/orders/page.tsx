@@ -1,24 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { getOrders, InventoryOrder } from "@/lib/inventory";
+import { useInventoryData } from "@/hooks/useInventoryData";
+import { getOrders } from "@/lib/inventory";
 
 export default function InventoryOrdersHistoryPage() {
-  const [orders, setOrders] = useState<InventoryOrder[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getOrders()
-      .then((data) => {
-        setOrders(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
+  const { data, loading, error } = useInventoryData(getOrders);
+  const orders = data ?? [];
 
   if (loading) return <div className="p-6 text-gray-600">Cargando historial de órdenes...</div>;
 

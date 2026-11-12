@@ -1,27 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { getProducts, SKUProduct } from "@/lib/inventory";
+import { useInventoryData } from "@/hooks/useInventoryData";
+import { getProducts } from "@/lib/inventory";
 
 const LOW_STOCK_THRESHOLD = 50;
 
 export default function InventoryProductsPage() {
-  const [products, setProducts] = useState<SKUProduct[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getProducts()
-      .then((data) => {
-        setProducts(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, []);
+  const { data, loading, error } = useInventoryData(getProducts);
+  const products = data ?? [];
 
   if (error) {
     return (
