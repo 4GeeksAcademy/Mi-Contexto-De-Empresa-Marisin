@@ -50,6 +50,8 @@ class CountryEnum(str, Enum):
 
 
 class SupplierCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: str = PydanticField(..., min_length=1, description="Nombre del proveedor")
     country: CountryEnum = PydanticField(..., description="País en el que opera")
     categories: List[str] = PydanticField(..., min_length=1, description="Categorías de productos")
@@ -58,16 +60,33 @@ class SupplierCreate(BaseModel):
 
 
 class SupplierUpdateRate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     rate_usd: float = PydanticField(..., gt=0, description="Nueva tarifa (debe ser mayor a 0)")
 
 
 class SupplierUpdateStatus(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     status: SupplierStatus = PydanticField(..., description="Nuevo estado del proveedor")
 
 
-class Supplier(SupplierCreate):
+class SupplierPublic(BaseModel):
     id: str = PydanticField(..., description="ID único asignado por TinyDB")
-    updated_at: str = PydanticField(..., description="Timestamp de la última actualización")
+    name: str
+    country: CountryEnum
+    categories: List[str]
+    rate_usd: float
+    status: SupplierStatus
+
+
+class SupplierListItem(BaseModel):
+    id: str
+    name: str
+    country: CountryEnum
+    categories: List[str]
+    rate_usd: float
+    status: SupplierStatus
 
 
 class UserRole(str, Enum):

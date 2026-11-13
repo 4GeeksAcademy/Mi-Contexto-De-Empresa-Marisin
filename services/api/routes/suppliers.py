@@ -1,10 +1,11 @@
 from datetime import datetime
-from typing import Annotated, List, Optional
+from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from ..database import suppliers_table
 from ..models import (
-    Supplier,
     SupplierCreate,
+    SupplierListItem,
+    SupplierPublic,
     SupplierStatus,
     SupplierUpdateRate,
     SupplierUpdateStatus,
@@ -14,7 +15,7 @@ from ..security import get_current_user
 router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
 
 
-@router.get("", response_model=List[Supplier])
+@router.get("", response_model=list[SupplierListItem])
 def get_suppliers(
     country: Optional[str] = None,
     category: Optional[str] = None,
@@ -38,34 +39,34 @@ def get_suppliers(
         if search and search.lower() not in supplier_data["name"].lower():
             continue
 
-        results.append(supplier_data)
+        results.append(SupplierListItem.model_validate(supplier_data))
 
     return results
 
 
-@router.get("/{supplier_id}", response_model=Supplier)
+@router.get("/{supplier_id}", response_model=SupplierPublic)
 def get_supplier_by_id(supplier_id: int, _: Annotated[dict, Depends(get_current_user)]):
     """Devuelve el detalle de un proveedor por su ID."""
     if not suppliers_table.contains(doc_id=supplier_id):
         raise HTTPException(status_code=404, detail="Supplier not found")
 
     item = suppliers_table.get(doc_id=supplier_id)
-    return {**item, "id": str(supplier_id)}
+    return SupplierPublic.model_validate({**item, "id": str(supplier_id)})
 
 
-@router.post("", response_model=Supplier, status_code=201)
+@router.post("", response_model=SupplierPublic, status_code=201)
 def create_supplier(supplier_in: SupplierCreate, _: Annotated[dict, Depends(get_current_user)]):
     """Registra un nuevo proveedor en el directorio."""
-    new_data = supplier_in.dict()
+    new_data = supplier_in.model_dump(mode="json")
     new_data["updated_at"] = datetime.utcnow().isoformat()
 
     doc_id = suppliers_table.insert(new_data)
     created = suppliers_table.get(doc_id=doc_id)
 
-    return {**created, "id": str(doc_id)}
+    return SupplierPublic.model_validate({**created, "id": str(doc_id)})
 
 
-@router.patch("/{supplier_id}/rate", response_model=Supplier)
+@router.patch("/{supplier_id}/rate", response_model=SupplierPublic)
 def update_supplier_rate(
     supplier_id: int,
     rate_in: SupplierUpdateRate,
@@ -84,10 +85,10 @@ def update_supplier_rate(
     )
 
     updated = suppliers_table.get(doc_id=supplier_id)
-    return {**updated, "id": str(supplier_id)}
+    return SupplierPublic.model_validate({**updated, "id": str(supplier_id)})
 
 
-@router.patch("/{supplier_id}/status", response_model=Supplier)
+@router.patch("/{supplier_id}/status", response_model=SupplierPublic)
 def update_supplier_status(
     supplier_id: int,
     status_in: SupplierUpdateStatus,
@@ -106,10 +107,14 @@ def update_supplier_status(
     )
 
     updated = suppliers_table.get(doc_id=supplier_id)
-    return {**updated, "id": str(supplier_id)}
+    return SupplierPublic.model_validate({**updated, "id": str(supplier_id)})
 
 
-@router.delete("/{supplier_id}", status_code=204)
+@router.delete(
+    "/{supplier_id}",
+    response_model=None,
+    status_code=204,
+)
 def delete_supplier(supplier_id: int, _: Annotated[dict, Depends(get_current_user)]):
     """Elimina un proveedor del directorio."""
     if not suppliers_table.contains(doc_id=supplier_id):

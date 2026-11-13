@@ -175,11 +175,11 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 
 | Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
 |---|---|---|---|---|---|---|---|---|
-| GET | `/suppliers` | Listar proveedores con filtros opcionales | `uis/application/app/suppliers/page.tsx`: `id`, `name`, `country`, `categories`, `rate_usd`, `status` | `List[Supplier]` | ⚠️ | Query: `country`, `category`, `status`, `search` | `List[Supplier]` | Pendiente (Fase 2) |
-| GET | `/suppliers/{supplier_id}` | Obtener proveedor por ID | No encontrado en `uis/` | `Supplier` | ⚠️ | Path `supplier_id: int` | `Supplier` | Pendiente (Fase 2) |
-| POST | `/suppliers` | Crear proveedor | No encontrado en `uis/` | `Supplier` | ⚠️ | `SupplierCreate` | `Supplier` | Pendiente (Fase 2) |
-| PATCH | `/suppliers/{supplier_id}/rate` | Actualizar tarifa | No encontrado en `uis/` | `Supplier` | ⚠️ | Path + `SupplierUpdateRate` | `Supplier` | Pendiente (Fase 2) |
-| PATCH | `/suppliers/{supplier_id}/status` | Actualizar estado | No encontrado en `uis/` | `Supplier` | ⚠️ | Path + `SupplierUpdateStatus` | `Supplier` | Pendiente (Fase 2) |
+| GET | `/suppliers` | Listar proveedores con filtros opcionales | `uis/application/app/suppliers/page.tsx`: `id`, `name`, `country`, `categories`, `rate_usd`, `status` | `List[Supplier]` | ⚠️ | Query: `country`, `category`, `status`, `search` | `SupplierListItem[]` | ✅ |
+| GET | `/suppliers/{supplier_id}` | Obtener proveedor por ID | No encontrado en `uis/` | `Supplier` | ⚠️ | Path `supplier_id: int` | `SupplierPublic` | ✅ |
+| POST | `/suppliers` | Crear proveedor | No encontrado en `uis/` | `Supplier` | ⚠️ | `SupplierCreate` (`extra="forbid"`) | `SupplierPublic` | ✅ |
+| PATCH | `/suppliers/{supplier_id}/rate` | Actualizar tarifa | No encontrado en `uis/` | `Supplier` | ⚠️ | Path + `SupplierUpdateRate` (`extra="forbid"`) | `SupplierPublic` | ✅ |
+| PATCH | `/suppliers/{supplier_id}/status` | Actualizar estado | No encontrado en `uis/` | `Supplier` | ⚠️ | Path + `SupplierUpdateStatus` (`extra="forbid"`) | `SupplierPublic` | ✅ |
 | DELETE | `/suppliers/{supplier_id}` | Eliminar proveedor | No encontrado en `uis/` | Sin body, HTTP 204; sin `response_model` | ⚠️ | Path `supplier_id: int` | Ninguno (204) | ✅ Excepción: HTTP 204 sin cuerpo, `response_model=None` |
 
 #### Fichas SUPPLIERS
@@ -191,7 +191,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
 - **Sobra/riesgo:** `updated_at` es un timestamp de auditoría que la tabla no lee.
 - **Mejora / relación:** esquema ligero propio para listado; no hay relaciones anidadas.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py` (separar salida de `SupplierCreate`), `services/api/routes/suppliers.py`.
+- **Implementación Fase 2:** cada TinyDB dict se valida con `SupplierListItem`; salida: `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
+- **Archivos:** `services/api/models.py`, `services/api/routes/suppliers.py`.
 
 ##### `GET /suppliers/{supplier_id}` — `services.api.routes.suppliers.get_supplier_by_id`
 
@@ -200,7 +201,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
 - **Sobra/riesgo:** no se halló consumidor en `uis/`; `updated_at` no tiene uso comprobado.
 - **Mejora / relación:** proyección explícita de detalle; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py`, `services/api/routes/suppliers.py`.
+- **Implementación Fase 2:** `SupplierPublic.model_validate` valida el dict TinyDB; salida: `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
+- **Archivos:** `services/api/models.py`, `services/api/routes/suppliers.py`.
 
 ##### `POST /suppliers` — `services.api.routes.suppliers.create_supplier`
 
@@ -209,7 +211,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
 - **Sobra/riesgo:** `updated_at` no tiene consumidor encontrado; `Supplier` hereda los campos de `SupplierCreate`, acoplando entrada y salida.
 - **Mejora / relación:** esquema de salida independiente, sin timestamp no utilizado; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py`, `services/api/routes/suppliers.py`.
+- **Implementación Fase 2:** `SupplierCreate` rechaza extras; la salida se valida como `SupplierPublic` sin `updated_at`.
+- **Archivos:** `services/api/models.py`, `services/api/routes/suppliers.py`.
 
 ##### `PATCH /suppliers/{supplier_id}/rate` — `services.api.routes.suppliers.update_supplier_rate`
 
@@ -218,7 +221,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
 - **Sobra/riesgo:** no se encontró consumidor; `updated_at` no se usa en `uis/`.
 - **Mejora / relación:** proyección de salida independiente del body de actualización; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py`, `services/api/routes/suppliers.py`.
+- **Implementación Fase 2:** `SupplierUpdateRate` rechaza extras; salida TinyDB validada por `SupplierPublic`, omite `updated_at`.
+- **Archivos:** `services/api/models.py`, `services/api/routes/suppliers.py`.
 
 ##### `PATCH /suppliers/{supplier_id}/status` — `services.api.routes.suppliers.update_supplier_status`
 
@@ -227,7 +231,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
 - **Sobra/riesgo:** no se encontró consumidor; `updated_at` no se usa en `uis/`.
 - **Mejora / relación:** proyección de salida independiente del body de actualización; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py`, `services/api/routes/suppliers.py`.
+- **Implementación Fase 2:** `SupplierUpdateStatus` rechaza extras; salida TinyDB validada por `SupplierPublic`, omite `updated_at`.
+- **Archivos:** `services/api/models.py`, `services/api/routes/suppliers.py`.
 
 ##### `DELETE /suppliers/{supplier_id}` — `services.api.routes.suppliers.delete_supplier`
 
@@ -236,7 +241,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** ninguno; conservar 204.
 - **Sobra/riesgo:** no se encontró consumidor en `uis/`; no debe añadirse un cuerpo que cambie el contrato 204.
 - **Mejora / relación:** excepción explícita documentada para respuesta sin cuerpo; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/routes/suppliers.py` y documentación de la excepción.
+- **Implementación Fase 2:** `response_model=None` explícito; se mantiene HTTP 204 sin cuerpo como excepción justificada.
+- **Archivos:** `services/api/routes/suppliers.py`, `docs/serialization-audit.md`.
 
 ### USERS
 
