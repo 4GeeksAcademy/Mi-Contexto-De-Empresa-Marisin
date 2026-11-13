@@ -17,7 +17,7 @@ Que NINGÚN endpoint devuelva objetos de base de datos crudos (ORM, SQLModel, Ti
 3. **Sin regresiones.** Si quitas un campo de una respuesta, comprueba antes con búsqueda en `uis/` y `packages/` (o `shared/`) que ningún consumidor lo lee. Si se usa, mantenlo y justifícalo en el doc. Si cambias un tipo compartido de TypeScript, actualízalo de forma mínima.
 4. **Detecta la versión de Pydantic** (v1 o v2) y usa la sintaxis correcta: `model_config = ConfigDict(from_attributes=True)` / `model_validate` en v2. Para datos de TinyDB (dicts), valida con el esquema en lugar de devolver el dict.
 5. **Esquemas de entrada y salida nunca se mezclan.** Un esquema de respuesta jamás se usa como cuerpo de petición, y viceversa.
-6. **No hagas push ni abras el PR.** Haz commits locales; el push y el PR los hago yo.
+6. No hagas push ni abras el PR. Haz solo commits locales con formato convencional y descripción en español (p. ej. `feat(auth): añadir esquemas de respuesta explícitos`).
 7. El registro de progreso de este proyecto es SOLO `prompts/serialization-audit/progress.md`. No confundir con `memory-bank/progress.md`: si AGENTS.md exige actualizar memory-bank, hazlo además, pero nunca en su lugar.
 
 # FASE 0 — DESCUBRIMIENTO Y BASELINE (antes de modificar nada)
@@ -63,7 +63,11 @@ Crea el documento ANTES de implementar, con esta estructura:
    - Forgot password: respuesta genérica idéntica exista o no el email (evita la enumeración de usuarios).
    - Reset password: mensaje genérico de confirmación.
    - `GET /auth/me`: SÍ puede devolver el `email` del usuario autenticado (lo necesita la vista de perfil), pero nunca la contraseña.
-7. Haz commits atómicos con mensajes convencionales (p. ej. `feat(auth): add explicit response schemas`, `feat(<router>): add list item schema`, `docs: serialization audit`).
+7. Haz commits atómicos con prefijo convencional y descripción en español. Ejemplos:
+   - `feat(auth): añadir esquemas de respuesta explícitos`
+   - `feat(<router>): añadir esquema ligero para listados`
+   - `test: añadir tests de contrato de serialización`
+   - `docs: añadir auditoría de serialización`
 
 # FASE 3 — VERIFICACIÓN
 1. Añade un test de contrato (p. ej. `tests/test_serialization_contracts.py`) que:
