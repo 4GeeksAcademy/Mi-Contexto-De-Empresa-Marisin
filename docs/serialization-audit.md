@@ -324,3 +324,29 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 ## CHECKPOINT
 
 Fases 0, 1 y 2 completadas y documentadas; los estados originales permanecen intactos y todos los estados finales están en ✅. No se ejecutó Fase 3, tal como solicitó el usuario.
+
+## Verificación
+
+### Pruebas automatizadas
+
+| Ejecución | Resultado |
+|---|---|
+| Baseline, antes de implementar | `pytest -q`: `no tests ran in 0.05s`, código de salida 5; 0 passed, 0 failed, 0 errors. `tests/` no contenía archivos `test_*.py` (solo `__pycache__`). |
+| Fase 3, después de añadir contratos | `pytest -q`: 7 passed, 3 warnings, código de salida 0. Los warnings son deprecaciones de `TestClient`/httpx y `FastAPI.on_event`. Se configuró `pythonpath = ["."]` en `pyproject.toml` para que pytest encuentre el paquete `services` desde la raíz del repositorio. |
+
+`tests/test_serialization_contracts.py` comprueba los response models (con excepción limitada a los DELETE 204 documentados), las respuestas de registro/login/forgot/reset sin email ni claves de contraseña, respuestas protegidas de auth sin email, rechazo de campos extra, contratos PATCH de proveedores y la proyección `InventoryOrderListItem.product` limitada a `sku` y `name`. Los datos TinyDB son temporales en memoria; inventory se valida inspeccionando los esquemas, sin conexión a Supabase.
+
+### Typecheck y arranque del backoffice
+
+Se eliminó la caché generada `uis/backoffice/.next` y se repitió `npm --prefix uis/backoffice run typecheck`: terminó con código 0 y sin diagnósticos. Los errores anteriores estaban en tipos generados dentro de `.next/types/validator.ts` y no reaparecieron tras limpiar ese artefacto; no se detectaron errores de TypeScript en los archivos modificados.
+
+Tras limpiar la caché, `npm --prefix uis/backoffice run dev` quedó listo y `GET /inventory/orders` respondió HTTP 200. No se reprodujo el `SyntaxError` observado durante la Fase 2; la evidencia apunta a un problema transitorio asociado al estado generado anterior, pero no permite atribuirle una causa más específica. La página `uis/backoffice/src/app/inventory/orders/page.tsx` sigue accediendo únicamente a `product.name` y `product.sku`, ambos incluidos en `Pick<SKUProduct, "sku" | "name">`; el typecheck completo pasó.
+
+### Pruebas manuales en `/docs`
+
+Pendientes de ejecución por el usuario:
+
+| Endpoint | Petición | Respuesta | ¿Coincide con el esquema? | Captura |
+|---|---|---|---|---|
+
+Las pruebas manuales y sus capturas siguen pendientes. Por ello, no se marcan como revisados los criterios de aceptación finales.
