@@ -77,6 +77,8 @@ class UserRole(str, Enum):
 
 
 class ProfileCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: Optional[str] = PydanticField(default=None, min_length=1)
     phone: Optional[str] = None
     address: Optional[str] = None

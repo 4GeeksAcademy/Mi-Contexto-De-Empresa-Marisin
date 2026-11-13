@@ -21,6 +21,13 @@ class ProfilePublic(BaseModel):
     address: Optional[str] = None
 
 
+class ProfileDetail(BaseModel):
+    id: int
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+
 class MeResponse(BaseModel):
     email: str
     profile: Optional[ProfilePublic] = None

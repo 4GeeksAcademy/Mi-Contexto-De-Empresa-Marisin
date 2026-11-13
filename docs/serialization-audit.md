@@ -135,9 +135,9 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 
 | Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
 |---|---|---|---|---|---|---|---|---|
-| GET | `/profiles/me` | Leer perfil propio | No encontrado como llamada directa; la pantalla carga perfil a través de `/auth/me` | `Profile` | ⚠️ | Ninguno (Bearer) | `Profile` | Pendiente (Fase 2) |
-| PUT | `/profiles/me` | Actualizar perfil propio | `uis/application/app/account/profile/page.tsx`: envía y lee `name`, `phone`, `address` | `Profile` | ⚠️ | `ProfileCreate` | `Profile` | Pendiente (Fase 2) |
-| GET | `/profiles/{profile_id}` | Leer perfil por ID con control de acceso | No encontrado en `uis/` | `Profile` | ⚠️ | Path `profile_id: int` + Bearer | `Profile` | Pendiente (Fase 2) |
+| GET | `/profiles/me` | Leer perfil propio | No encontrado como llamada directa; la pantalla carga perfil a través de `/auth/me` | `Profile` | ⚠️ | Ninguno (Bearer) | `ProfilePublic` | ✅ |
+| PUT | `/profiles/me` | Actualizar perfil propio | `uis/application/app/account/profile/page.tsx`: envía y lee `name`, `phone`, `address` | `Profile` | ⚠️ | `ProfileCreate` (`extra="forbid"`) | `ProfilePublic` | ✅ |
+| GET | `/profiles/{profile_id}` | Leer perfil por ID con control de acceso | No encontrado en `uis/` | `Profile` | ⚠️ | Path `profile_id: int` + Bearer | `ProfileDetail` | ✅ |
 
 #### Fichas PROFILES
 
@@ -148,7 +148,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `name`, `phone`, `address`.
 - **Sobra/riesgo:** IDs no leídos por un consumidor directo; `user_id` es clave foránea. La UI actual obtiene estos datos desde `/auth/me`.
 - **Mejora / relación:** salida pública mínima, sin anidar ni devolver el usuario.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/profiles.py`.
+- **Implementación Fase 2:** `ProfilePublic.model_validate` valida el dict TinyDB y devuelve `name`, `phone`, `address`; omite IDs.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/profiles.py`.
 
 ##### `PUT /profiles/me` — `services.api.routes.profiles.update_my_profile`
 
@@ -157,7 +158,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `name`, `phone`, `address`, que son los campos que la UI aplica al formulario actualizado.
 - **Sobra/riesgo:** `id` y `user_id` no los lee el consumidor; el segundo expone una relación interna.
 - **Mejora / relación:** respuesta de actualización con campos del perfil usados; sin objeto anidado.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/profiles.py`.
+- **Implementación Fase 2:** `ProfileCreate` prohíbe extras; la salida validada `ProfilePublic` contiene solo `name`, `phone`, `address`.
+- **Archivos:** `services/api/models.py`, `services/api/schemas.py`, `services/api/routes/profiles.py`.
 
 ##### `GET /profiles/{profile_id}` — `services.api.routes.profiles.read_profile`
 
@@ -166,7 +168,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `id`, `name`, `phone`, `address`.
 - **Sobra/riesgo:** no se encontró consumidor en `uis/`; `user_id` revela la clave de propietario sin una necesidad comprobada.
 - **Mejora / relación:** respuesta de detalle identificada por `id`; omitir la clave foránea, sin anidar el usuario.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/profiles.py`.
+- **Implementación Fase 2:** `ProfileDetail.model_validate` valida dict TinyDB y devuelve `id`, `name`, `phone`, `address`; omite `user_id`.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/profiles.py`.
 
 ### SUPPLIERS
 
