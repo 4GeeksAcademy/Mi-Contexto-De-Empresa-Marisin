@@ -4,7 +4,7 @@
 - [x] Fase 1 — Auditoría (docs/serialization-audit.md)
 - [x] CHECKPOINT — aprobación recibida el 2026-11-13; Fase 2 autorizada
 - [ ] Fase 2 — Implementación
-  - [ ] auth
+  - [x] auth — validado por importación de la app y generación OpenAPI (18 paths)
   - [ ] users
   - [ ] profiles
   - [ ] suppliers
@@ -19,4 +19,5 @@
 - 2026-11-13 · Busqué consumidores en `uis/`: encontré usos de login/me, flujos de contraseña, alta de usuario, perfil, listado de proveedores y operaciones de inventario; no encontré consumidores para los endpoints de detalle/administración restantes. No hay skills de FastAPI/backend/API/security/testing en `skills/` ni `skills-lock.json`. Fichero tocado: `prompts/serialization-audit/progress.md`. Commit: `f7fe3ed`.
 - 2026-11-13 · Creé `docs/serialization-audit.md` con inventario de 25 endpoints, baseline, consumidores, estados originales y propuestas Fase 2; no se implementó Fase 2. Ficheros tocados: `docs/serialization-audit.md`, `prompts/serialization-audit/progress.md`. Commit: `f7fe3ed`.
 - 2026-11-13 · Verifiqué el cambio documental con `git diff --check`; `npm run dev` respondió HTTP 200 en `127.0.0.1:3000` y luego detuve el servidor iniciado para la prueba. No se modificó TypeScript, por lo que no aplica typecheck. Registro de memoria actualizado antes del commit. Commit: `f7fe3ed`.
-- 2026-11-13 · Aprobación de Fase 1 recibida; ajusté la auditoría con el inventario de skills/rules solicitado, baseline sin tests, registro destacado en AUTH, `extra="forbid"` en inputs y excepción 204 con estado final ✅. Ficheros: `docs/serialization-audit.md`, `prompts/serialization-audit/progress.md`, actualización de la entrada existente en `memory-bank/progress.md`. Commit: `1c08e43`.
+- 2026-11-13 · Aprobación de Fase 1 recibida; ajusté la auditoría con el inventario de skills/rules solicitado, baseline sin tests, registro destacado en AUTH, `extra="forbid"` en inputs y excepción 204 con estado final ✅. Ficheros: `docs/serialization-audit.md`, `prompts/serialization-audit/progress.md`, actualización de la entrada existente en `memory-bank/progress.md`. Commit: `1c08e43` (hash registrado en `adb2f1a`).
+- 2026-11-13 · Router auth: añadí `MessageResponse`, inputs `extra="forbid"` y `ProfilePublic`; declaré response models en los tres endpoints de mensajes y reduje `/auth/me` a email + perfil mínimo. Diagnósticos Pylance sin errores; app importada y OpenAPI generó 18 paths. Smoke check `npm run dev`: HTTP 200 (se observó una línea `SyntaxError` del frontend durante arranque, sin impedir HTTP 200; no se modificó frontend). Ficheros: `services/api/routes/auth.py`, `services/api/schemas.py`, `docs/serialization-audit.md`, este registro y actualización de la entrada existente en `memory-bank/progress.md`. Commit auth: pendiente.

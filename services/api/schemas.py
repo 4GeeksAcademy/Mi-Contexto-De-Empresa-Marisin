@@ -1,11 +1,11 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
-
-from .models import Profile, UserRole
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: str = Field(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: str
 
@@ -15,22 +15,37 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class ProfilePublic(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+
 class MeResponse(BaseModel):
     email: str
-    role: UserRole
-    profile: Optional[Profile] = None
+    profile: Optional[ProfilePublic] = None
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 class ForgotPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: str = Field(..., min_length=3)
 
 
 class ResetPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     token: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
 
 
 class ChangePasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     current_password: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
 

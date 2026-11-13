@@ -43,11 +43,11 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 
 | Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
 |---|---|---|---|---|---|---|---|---|
-| POST | `/auth/login` | Autenticar y emitir access token | `uis/application/app/login/page.tsx`, `uis/application/app/register/page.tsx`, `uis/backoffice/src/lib/api.ts`: leen `access_token` | `LoginResponse` (`access_token`, `token_type`) | ✅ | `LoginRequest` | `LoginResponse` | Pendiente (Fase 2) |
-| GET | `/auth/me` | Devolver usuario autenticado y perfil | `uis/application/app/account/profile/page.tsx`: `email`, `profile.name/phone/address`; `uis/backoffice/src/app/inventory/layout.tsx`: solo éxito HTTP | `MeResponse` con `Profile` anidado | ⚠️ | Ninguno (Bearer) | `MeResponse` | Pendiente (Fase 2) |
-| POST | `/auth/forgot-password` | Solicitar recuperación de contraseña | `uis/application/app/forgot-password/page.tsx`: éxito HTTP; ignora el JSON | Sin modelo; dict `{"message": ...}` | ❌ | `ForgotPasswordRequest` | Dict sin tipo declarado | Pendiente (Fase 2) |
-| POST | `/auth/reset-password` | Restablecer contraseña con token | `uis/application/app/reset-password/page.tsx`: éxito HTTP y redirección; ignora el JSON | Sin modelo; dict `{"message": ...}` | ❌ | `ResetPasswordRequest` | Dict sin tipo declarado | Pendiente (Fase 2) |
-| POST | `/auth/change-password` | Cambiar contraseña autenticada | `uis/application/app/account/change-password/page.tsx`: lee `message` | Sin modelo; dict `{"message": ...}` | ❌ | `ChangePasswordRequest` + Bearer | Dict sin tipo declarado | Pendiente (Fase 2) |
+| POST | `/auth/login` | Autenticar y emitir access token | `uis/application/app/login/page.tsx`, `uis/application/app/register/page.tsx`, `uis/backoffice/src/lib/api.ts`: leen `access_token` | `LoginResponse` (`access_token`, `token_type`) | ✅ | `LoginRequest` | `LoginResponse` | ✅ |
+| GET | `/auth/me` | Devolver usuario autenticado y perfil | `uis/application/app/account/profile/page.tsx`: `email`, `profile.name/phone/address`; `uis/backoffice/src/app/inventory/layout.tsx`: solo éxito HTTP | `MeResponse` con `Profile` anidado | ⚠️ | Ninguno (Bearer) | `MeResponse` (`email`, perfil mínimo) | ✅ |
+| POST | `/auth/forgot-password` | Solicitar recuperación de contraseña | `uis/application/app/forgot-password/page.tsx`: éxito HTTP; ignora el JSON | Sin modelo; dict `{"message": ...}` | ❌ | `ForgotPasswordRequest` (`extra="forbid"`) | `MessageResponse` | ✅ |
+| POST | `/auth/reset-password` | Restablecer contraseña con token | `uis/application/app/reset-password/page.tsx`: éxito HTTP y redirección; ignora el JSON | Sin modelo; dict `{"message": ...}` | ❌ | `ResetPasswordRequest` (`extra="forbid"`) | `MessageResponse` | ✅ |
+| POST | `/auth/change-password` | Cambiar contraseña autenticada | `uis/application/app/account/change-password/page.tsx`: lee `message` | Sin modelo; dict `{"message": ...}` | ❌ | `ChangePasswordRequest` (`extra="forbid"`) + Bearer | `MessageResponse` | ✅ |
 
 #### Fichas AUTH
 
@@ -58,7 +58,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `email`; `profile` opcional con `name`, `phone`, `address`.
 - **Sobra/riesgo:** `profile.id`, `profile.user_id` y `role` no los lee la UI actual; `user_id` es una clave de relación. Se conserva `email` porque la pantalla de cuenta la muestra.
 - **Mejora / relación:** proyección anidada mínima del perfil; no devolver IDs internos en el objeto anidado.
-- **Archivos:** Fase 1 no modificó código backend. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/auth.py`.
+- **Implementación Fase 2:** `MeResponse` devuelve `email` y `ProfilePublic` (`name`, `phone`, `address`); se valida el dict de TinyDB con `ProfilePublic.model_validate`. Se omitieron `role`, `id` y `user_id`; la búsqueda previa en los consumidores de `uis/` no encontró lectura de `role`.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/auth.py`.
 
 ##### `POST /auth/forgot-password` — `services.api.routes.auth.forgot_password`
 
@@ -67,7 +68,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `message: str`, manteniendo una respuesta idéntica exista o no el email.
 - **Sobra/sensible:** la respuesta actual no incluye email, pero su forma no está tipada.
 - **Mejora / relación:** `MessageResponse` y `response_model` explícito; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/auth.py`.
+- **Implementación Fase 2:** `response_model=MessageResponse`, con el mensaje genérico igual para email registrado/no registrado.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/auth.py`.
 
 ##### `POST /auth/reset-password` — `services.api.routes.auth.reset_password`
 
@@ -76,7 +78,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `message: str`.
 - **Sobra/sensible:** no debe devolver token, contraseña ni email; hoy el dict solo contiene mensaje.
 - **Mejora / relación:** `MessageResponse` y `response_model`; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/auth.py`.
+- **Implementación Fase 2:** `response_model=MessageResponse`; no se añaden campos de token, email o contraseña.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/auth.py`.
 
 ##### `POST /auth/change-password` — `services.api.routes.auth.change_password`
 
@@ -85,7 +88,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `message: str`, que es el campo leído por la UI.
 - **Sobra/sensible:** no devolver ninguna de las contraseñas ni datos del usuario.
 - **Mejora / relación:** `MessageResponse` y `response_model`; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/auth.py`.
+- **Implementación Fase 2:** `response_model=MessageResponse`; el body conserva el único campo leído por la UI.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/auth.py`.
 
 ### INVENTORY
 
