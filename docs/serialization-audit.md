@@ -39,7 +39,7 @@ Las columnas `Estado final` describen el resultado esperado/aplicado según el a
 
 ### AUTH
 
-El registro se implementa en `services/api/routes/users.py`, función `register_user`, mediante `POST /users`. Se incluye en esta sección por ser el flujo de registro de autenticación; su fila única está en la tabla USERS para evitar duplicar el endpoint.
+El registro se implementa en `services/api/routes/users.py`, función `register_user`, mediante `POST /users`. Se incluye en esta sección por ser el flujo de registro de autenticación; su fila única está en la tabla USERS para evitar duplicar el endpoint. La respuesta implementada es `MessageResponse` y no incluye email.
 
 | Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
 |---|---|---|---|---|---|---|---|---|
@@ -239,10 +239,10 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 
 | Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
 |---|---|---|---|---|---|---|---|---|
-| POST | `/users` | Registrar usuario y perfil | `uis/application/app/register/page.tsx`: solo comprueba `response.ok`, no lee JSON | `UserResponse` | ⚠️ | `UserCreate` | `UserResponse` | Pendiente (Fase 2) |
-| GET | `/users` | Listar usuarios autenticados | No encontrado en `uis/` | `list[UserResponse]` | ⚠️ | Ninguno (Bearer) | `UserResponse[]` | Pendiente (Fase 2) |
-| GET | `/users/{user_id}` | Obtener usuario por ID | No encontrado en `uis/` | `UserResponse` | ⚠️ | Path `user_id: int` + Bearer | `UserResponse` | Pendiente (Fase 2) |
-| PUT | `/users/{user_id}` | Actualizar usuario | No encontrado en `uis/` | `UserResponse` | ⚠️ | Path + `UserUpdate` + Bearer | `UserResponse` | Pendiente (Fase 2) |
+| POST | `/users` | Registrar usuario y perfil | `uis/application/app/register/page.tsx`: solo comprueba `response.ok`, no lee JSON | `UserResponse` | ⚠️ | `UserCreate` (`extra="forbid"`) | `MessageResponse` | ✅ |
+| GET | `/users` | Listar usuarios autenticados | No encontrado en `uis/` | `list[UserResponse]` | ⚠️ | Ninguno (Bearer) | `UserListItem[]` | ✅ |
+| GET | `/users/{user_id}` | Obtener usuario por ID | No encontrado en `uis/` | `UserResponse` | ⚠️ | Path `user_id: int` + Bearer | `UserPublic` | ✅ |
+| PUT | `/users/{user_id}` | Actualizar usuario | No encontrado en `uis/` | `UserResponse` | ⚠️ | Path + `UserUpdate` (`extra="forbid"`) + Bearer | `UserPublic` | ✅ |
 | DELETE | `/users/{user_id}` | Eliminar usuario | No encontrado en `uis/` | Sin body, HTTP 204; sin `response_model` | ⚠️ | Path `user_id: int` + Bearer | Ninguno (204) | ✅ Excepción: HTTP 204 sin cuerpo, `response_model=None` |
 
 #### Fichas USERS
@@ -254,7 +254,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `message: str`; la UI solo depende del éxito HTTP y después inicia sesión.
 - **Sobra/sensible:** el email está expresamente excluido por la regla de respuesta de registro; `created_at`, `is_active` y `role` no se leen en el flujo.
 - **Mejora / relación:** `MessageResponse`; no devolver credenciales ni datos del usuario.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/users.py`, `services/api/models.py` para endurecer el esquema de entrada.
+- **Implementación Fase 2:** `register_user` crea el usuario y devuelve `MessageResponse(message="Cuenta creada correctamente")`; email, password y hashes no están en la respuesta. `UserCreate` prohíbe campos extra.
+- **Archivos:** `services/api/models.py`, `services/api/routes/users.py`, `services/api/schemas.py`.
 
 ##### `GET /users` — `services.api.routes.users.get_users`
 
@@ -263,7 +264,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo propuesto:** `id`, `email`, `is_active`, `role`; `created_at` se omite como timestamp de auditoría sin uso encontrado. No se halló consumidor en `uis/`; confirmar cualquier consumidor externo antes de retirar campos adicionales.
 - **Sobra/sensible:** `created_at` no tiene uso comprobado; el email no lo consume una UI actual, pero se conserva provisionalmente como identificador de cuenta del recurso.
 - **Mejora / relación:** modelo ligero de listado con campos explícitos; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/users.py`.
+- **Implementación Fase 2:** `UserListItem` valida cada dict de TinyDB; incluye `id`, `email`, `is_active`, `role` y omite `created_at`/hash.
+- **Archivos:** `services/api/models.py`, `services/api/routes/users.py`.
 
 ##### `GET /users/{user_id}` — `services.api.routes.users.get_user`
 
@@ -272,7 +274,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo propuesto:** `id`, `email`, `is_active`, `role`; omitir `created_at`. No se encontró consumidor de UI; comprobar consumidores externos antes de retirar el email.
 - **Sobra/sensible:** timestamp de auditoría no usado; email no aparece en consumidores `uis/`.
 - **Mejora / relación:** esquema de detalle explícito; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/users.py`.
+- **Implementación Fase 2:** `UserPublic.model_validate` valida el dict de TinyDB y devuelve `id`, `email`, `is_active`, `role`; omite timestamp/hash.
+- **Archivos:** `services/api/models.py`, `services/api/routes/users.py`.
 
 ##### `PUT /users/{user_id}` — `services.api.routes.users.put_user`
 
@@ -281,7 +284,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo propuesto:** `id`, `email`, `is_active`, `role`; omitir `created_at`. El email se mantiene provisionalmente para reflejar una actualización de email; no hay consumidor encontrado en `uis/`.
 - **Sobra/sensible:** `created_at` no tiene uso comprobado. La respuesta no incluye `hashed_password`.
 - **Mejora / relación:** salida independiente y explícita; endurecer el esquema de entrada con `extra="forbid"` sin mezclarlo con la salida.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/users.py`, `services/api/models.py`.
+- **Implementación Fase 2:** `UserUpdate` rechaza claves desconocidas; `UserPublic.model_validate` devuelve `id`, `email`, `is_active`, `role` y filtra timestamp/hash.
+- **Archivos:** `services/api/models.py`, `services/api/routes/users.py`.
 
 ##### `DELETE /users/{user_id}` — `services.api.routes.users.remove_user`
 

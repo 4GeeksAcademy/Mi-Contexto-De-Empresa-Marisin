@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Literal, Optional
-from pydantic import BaseModel, Field as PydanticField
+from pydantic import BaseModel, ConfigDict, Field as PydanticField
 from sqlmodel import Field as SQLField, SQLModel
 
 class SKU(SQLModel, table=True):
@@ -88,6 +88,8 @@ class Profile(ProfileCreate):
 
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: str = PydanticField(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: str = PydanticField(..., min_length=8, exclude=True)
     name: Optional[str] = PydanticField(default=None, min_length=1)
@@ -106,6 +108,8 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: Optional[str] = PydanticField(default=None, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: Optional[str] = PydanticField(default=None, min_length=8, exclude=True)
     role: Optional[UserRole] = None
@@ -136,12 +140,18 @@ class User(BaseModel):
     created_at: str
 
 
-class UserResponse(BaseModel):
+class UserPublic(BaseModel):
     id: int
     email: str
     is_active: bool
     role: UserRole
-    created_at: str
+
+
+class UserListItem(BaseModel):
+    id: int
+    email: str
+    is_active: bool
+    role: UserRole
 
 
 class LoginRequest(BaseModel):
