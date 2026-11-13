@@ -95,12 +95,12 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 
 | Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
 |---|---|---|---|---|---|---|---|---|
-| GET | `/inventory/products` | Listar productos y stock calculado | `uis/backoffice/src/app/inventory/products/page.tsx`, órdenes inbound/outbound: `id`, `sku`, `name`, `client_name`, `category`, `reference`, `current_stock` | `list[ProductResponse]` | ✅ | Ninguno | `ProductResponse[]` | Pendiente (Fase 2) |
-| POST | `/inventory/products` | Crear SKU | No encontrado en `uis/` | `ProductResponse` | ✅ | `ProductCreate` | `ProductResponse` | Pendiente (Fase 2) |
-| GET | `/inventory/products/{product_id}` | Obtener SKU por ID | No encontrado; `getProductById` solo aparece definido en `uis/backoffice/src/lib/inventory.ts` | `ProductResponse` | ✅ | Path `product_id: int` | `ProductResponse` | Pendiente (Fase 2) |
-| POST | `/inventory/orders/inbound` | Registrar entrada de stock | `uis/backoffice/src/app/inventory/orders/inbound/page.tsx`: espera el éxito, ignora el JSON | `InboundOrderResponse` | ⚠️ | `InboundOrderCreate` | `InboundOrderResponse` | Pendiente (Fase 2) |
-| POST | `/inventory/orders/outbound` | Registrar salida de stock | `uis/backoffice/src/app/inventory/orders/outbound/page.tsx`: espera el éxito, ignora el JSON | `OutboundOrderResponse` | ⚠️ | `OutboundOrderCreate` | `OutboundOrderResponse` | Pendiente (Fase 2) |
-| GET | `/inventory/orders` | Listar entradas y salidas | `uis/backoffice/src/app/inventory/orders/page.tsx`: `id`, `order_type`, `product.name/sku`, `warehouse`, `quantity`, `created_at`, `user_uuid` | `list[InventoryOrderResponse]` | ⚠️ | Ninguno | `InventoryOrderResponse[]` | Pendiente (Fase 2) |
+| GET | `/inventory/products` | Listar productos y stock calculado | `uis/backoffice/src/app/inventory/products/page.tsx`, órdenes inbound/outbound: `id`, `sku`, `name`, `client_name`, `category`, `reference`, `current_stock` | `list[ProductResponse]` | ✅ | Ninguno | `ProductResponse[]` | ✅ |
+| POST | `/inventory/products` | Crear SKU | No encontrado en `uis/` | `ProductResponse` | ✅ | `ProductCreate` (`extra="forbid"`) | `ProductResponse` | ✅ |
+| GET | `/inventory/products/{product_id}` | Obtener SKU por ID | No encontrado; `getProductById` solo aparece definido en `uis/backoffice/src/lib/inventory.ts` | `ProductResponse` | ✅ | Path `product_id: int` | `ProductResponse` | ✅ |
+| POST | `/inventory/orders/inbound` | Registrar entrada de stock | `uis/backoffice/src/app/inventory/orders/inbound/page.tsx`: espera el éxito, ignora el JSON | `InboundOrderResponse` | ⚠️ | `InboundOrderCreate` (`extra="forbid"`) | `InboundOrderResponse` | ✅ |
+| POST | `/inventory/orders/outbound` | Registrar salida de stock | `uis/backoffice/src/app/inventory/orders/outbound/page.tsx`: espera el éxito, ignora el JSON | `OutboundOrderResponse` | ⚠️ | `OutboundOrderCreate` (`extra="forbid"`) | `OutboundOrderResponse` | ✅ |
+| GET | `/inventory/orders` | Listar entradas y salidas | `uis/backoffice/src/app/inventory/orders/page.tsx`: `id`, `order_type`, `product.name/sku`, `warehouse`, `quantity`, `created_at`, `user_uuid` | `list[InventoryOrderResponse]` | ⚠️ | Ninguno | `InventoryOrderListItem[]` | ✅ |
 
 #### Fichas INVENTORY
 
@@ -111,7 +111,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `id`, `sku_id`, `warehouse`, `quantity`, `created_at`.
 - **Sobra/sensible:** la página no lee el body de respuesta; `user_uuid` es un identificador interno y no se consume en esta respuesta.
 - **Mejora / relación:** proyección de confirmación de entrada; conservar `sku_id` como referencia escalar, sin anidar el SKU.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/inventory.py`.
+- **Implementación Fase 2:** `InboundOrderCreate` prohíbe extras; `InboundOrderResponse` valida atributos ORM y omite `user_uuid`, que no consume el cliente de esta respuesta.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/inventory.py`.
 
 ##### `POST /inventory/orders/outbound` — `services.api.routes.inventory.create_outbound_order`
 
@@ -120,7 +121,8 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** `id`, `sku_id`, `warehouse`, `quantity`, `exit_type`, `tracking_number`, `created_at`.
 - **Sobra/sensible:** la página ignora el JSON; `user_uuid` no se consume en esta respuesta.
 - **Mejora / relación:** proyección de confirmación de salida; mantener `sku_id` escalar, sin objeto de producto.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/inventory.py`.
+- **Implementación Fase 2:** `OutboundOrderCreate` prohíbe extras; `OutboundOrderResponse` valida atributos ORM y omite `user_uuid`, que no consume el cliente de esta respuesta.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/inventory.py`.
 
 ##### `GET /inventory/orders` — `services.api.routes.inventory.list_orders`
 
@@ -128,8 +130,9 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Devuelve hoy:** `id`, `order_type`, `product` (`id`, `sku`, `name`, `client_name`, `category`, `reference`), `warehouse`, `quantity`, `created_at`, `user_uuid` y `user` opcional (`user_uuid`, `email`, `name`).
 - **Payload objetivo:** `id`, `order_type`, `product` (`name`, `sku`), `warehouse`, `quantity`, `created_at`, `user_uuid`.
 - **Sobra/sensible:** la UI no lee campos del producto salvo `name` y `sku`, ni el objeto `user`; el email tampoco es necesario para la vista. `user_uuid` sí se muestra y debe mantenerse.
-- **Mejora / relación:** esquema ligero de listado; producto como proyección anidada `{name, sku}`; sin objeto `user`, conservando `user_uuid` por uso comprobado.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/inventory.py`; no se identifica cambio necesario en TypeScript si esos campos se conservan.
+- **Mejora / relación:** esquema ligero `InventoryOrderListItem`; producto como proyección anidada `{name, sku}`; no hay objeto `user`; se conserva `user_uuid` porque la UI lo muestra.
+- **Implementación Fase 2:** la ruta ya no consulta usuarios/perfiles para crear una relación no consumida; devuelve `InventoryOrderListItem` con los siete campos objetivo.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/inventory.py`, `uis/backoffice/src/lib/inventory.ts` (tipo ajustado a la proyección `{sku, name}`; no se modificaron vistas ni estilos).
 
 ### PROFILES
 
@@ -303,21 +306,21 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 - **Payload objetivo:** ninguno; conservar 204.
 - **Sobra/riesgo:** no se encontró consumidor en `uis/`; añadir un body alteraría el contrato actual.
 - **Mejora / relación:** documentar explícitamente la excepción 204 sin cuerpo; sin relaciones.
-- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/routes/users.py` y documentación de la excepción.
+- **Implementación Fase 2:** `response_model=None` explícito; se mantiene HTTP 204 sin cuerpo como excepción justificada.
+- **Archivos:** `services/api/routes/users.py`, `docs/serialization-audit.md`.
 
-## 5. Cambios propuestos para la Fase 2 (no implementados)
+## 5. Cambios realizados en la Fase 2
 
-1. Añadir `MessageResponse` tipado y declararlo en forgot/reset/change password; mantener la respuesta genérica de forgot password y no devolver email, contraseña ni token de restablecimiento.
-2. Separar modelos Pydantic de entrada y salida. Añadir `extra="forbid"` a los esquemas escribibles existentes y definir proyecciones explícitas de salida en `services/api/schemas.py` y, donde corresponda a los modelos actuales, `services/api/models.py`.
-3. Reducir `/auth/me` al email que la pantalla necesita y al perfil anidado limitado a `name`, `phone`, `address`; conservar login como está.
-4. Mantener sin cambios las respuestas de producto, que incluyen los campos usados por la UI. En las respuestas de creación de órdenes retirar `user_uuid` no leído; en el listado usar producto `{name, sku}`, retirar el objeto `user` no leído y conservar `user_uuid`, que la UI muestra.
-5. Crear salidas de perfil que no expongan `user_id`; devolver en `/profiles/me` solo `name`, `phone`, `address`.
-6. Separar la salida de proveedor de `SupplierCreate`, eliminar `updated_at` no consumido y conservar los seis campos del proveedor usados por la tabla.
-7. Hacer que el registro responda con mensaje de confirmación, sin email. Añadir salidas explícitas de usuario sin `created_at`; conservar provisionalmente email en lecturas/actualización hasta confirmar si hay consumidores externos.
-8. Mantener las dos eliminaciones como HTTP 204 sin cuerpo, declarar `response_model=None` y documentarlas como excepción justificada.
-9. Añadir `extra="forbid"` en todos los esquemas de entrada de escritura, incluidos `ProductCreate` aunque su endpoint estuviera clasificado ✅, y los inputs de auth, usuarios, perfiles, proveedores y órdenes.
-10. Añadir `response_model` a las rutas de mensajes y a las respuestas serializadas afectadas. No modificar frontend salvo que la verificación posterior encuentre un campo realmente consumido que no pueda conservarse.
+1. Añadí `MessageResponse` y response models explícitos a forgot/reset/change password; forgot password conserva mensaje genérico y no devuelve email.
+2. Separé los modelos de entrada y salida, con `extra="forbid"` en inputs de auth, usuarios, perfiles, proveedores y productos/órdenes de inventario.
+3. `/auth/me` devuelve email y perfil limitado a `name`, `phone`, `address`.
+4. Las órdenes de inventario omiten `user_uuid` en las confirmaciones y usan una proyección de listado con producto `{name, sku}`; conservan `user_uuid` en el listado por uso de la UI.
+5. Los perfiles devuelven proyecciones sin `user_id`.
+6. Los proveedores usan modelos de salida explícitos sin `updated_at`, manteniendo los seis campos usados por la tabla.
+7. El registro devuelve confirmación sin email; las salidas de usuario excluyen `created_at` y hashes.
+8. Las eliminaciones mantienen HTTP 204 sin cuerpo y declaran `response_model=None`; ambas excepciones están documentadas.
+9. Se actualizó únicamente `uis/backoffice/src/lib/inventory.ts` para tipar el producto anidado con los dos campos que realmente devuelve y consume la UI; no se modificaron vistas ni estilos.
 
 ## CHECKPOINT
 
-El usuario aprobó la Fase 1 el 2026-11-13 con los ajustes enumerados en este documento. El inventario original y baseline permanecen preservados; la implementación de Fase 2 empieza tras el commit de esta actualización. La Fase 3 no se ejecutará en esta tarea.
+Fases 0, 1 y 2 completadas y documentadas; los estados originales permanecen intactos y todos los estados finales están en ✅. No se ejecutó Fase 3, tal como solicitó el usuario.

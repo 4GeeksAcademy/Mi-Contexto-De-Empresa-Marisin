@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -59,6 +59,8 @@ class ChangePasswordRequest(BaseModel):
 
 # --- SKU Schemas ---
 class ProductCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     sku: str = Field(..., description="Código único del SKU")
     name: str = Field(..., description="Nombre del producto")
     client_name: str = Field(..., description="Cliente B2B propietario")
@@ -79,6 +81,8 @@ class ProductResponse(ProductSummary):
 
 # --- Order Schemas ---
 class InboundOrderCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     sku_id: int = Field(..., description="ID relacional del SKU")
     warehouse: str = Field(..., description="Almacén de destino (Los Angeles o Zaragoza)")
     quantity: int = Field(..., gt=0, description="Cantidad a ingresar")
@@ -89,9 +93,10 @@ class InboundOrderResponse(BaseModel):
     warehouse: str
     quantity: int
     created_at: datetime
-    user_uuid: str
 
 class OutboundOrderCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     sku_id: int = Field(..., description="ID relacional del SKU")
     warehouse: str = Field(..., description="Almacén de origen (Los Angeles o Zaragoza)")
     quantity: int = Field(..., gt=0, description="Cantidad a retirar")
@@ -106,20 +111,18 @@ class OutboundOrderResponse(BaseModel):
     exit_type: str
     tracking_number: Optional[str]
     created_at: datetime
-    user_uuid: str
 
 # --- Historial de Órdenes unificado ---
-class InventoryUserSummary(BaseModel):
-    user_uuid: str
-    email: Optional[str] = None
-    name: Optional[str] = None
+class ProductOrderSummary(BaseModel):
+    sku: str
+    name: str
 
-class InventoryOrderResponse(BaseModel):
+
+class InventoryOrderListItem(BaseModel):
     id: int
-    order_type: str  # 'inbound' o 'outbound'
-    product: ProductSummary
+    order_type: Literal["inbound", "outbound"]
+    product: ProductOrderSummary
     warehouse: str
     quantity: int
     created_at: datetime
     user_uuid: str
-    user: Optional[InventoryUserSummary] = None

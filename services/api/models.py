@@ -176,6 +176,8 @@ class UserListItem(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: str = PydanticField(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: str
 
@@ -192,15 +194,21 @@ class MeResponse(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: str = PydanticField(..., min_length=3)
 
 
 class ResetPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     token: str = PydanticField(..., min_length=1)
     new_password: str = PydanticField(..., min_length=8)
 
 
 class ChangePasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     current_password: str = PydanticField(..., min_length=1)
     new_password: str = PydanticField(..., min_length=8)
 
@@ -221,6 +229,8 @@ class SKUProduct(BaseModel):
 
 
 class InboundOrderCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     sku_id: int = PydanticField(..., gt=0, strict=True)
     warehouse: str = PydanticField(..., min_length=1, pattern=r"\S")
     quantity: int = PydanticField(..., gt=0, strict=True)

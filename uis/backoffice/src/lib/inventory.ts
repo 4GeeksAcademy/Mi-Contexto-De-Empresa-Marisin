@@ -28,7 +28,7 @@ export interface OutboundOrderPayload {
 export interface InventoryOrder {
   id: number;
   order_type: "inbound" | "outbound";
-  product: SKUProduct;
+  product: Pick<SKUProduct, "sku" | "name">;
   warehouse: string;
   quantity: number;
   created_at: string;
