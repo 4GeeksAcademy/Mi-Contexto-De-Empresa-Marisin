@@ -1,7 +1,7 @@
 # Auditoría inicial de serialización de la API
 
 **Fecha:** 2026-11-13
-**Alcance:** Fases 0 y 1. No se ha implementado ningún cambio de serialización.
+**Alcance inicial:** Fases 0 y 1. La implementación de Fase 2 se inicia tras la aprobación del usuario el 2026-11-13.
 
 ## 1. Resumen ejecutivo
 
@@ -16,16 +16,16 @@ Riesgos principales:
 - Los modelos de perfil y proveedor incluyen claves/timestamps que no consume la UI. `Supplier` hereda de `SupplierCreate`, mezclando actualmente campos de entrada y salida en su definición.
 - Los borrados de proveedores y usuarios son respuestas vacías HTTP 204: no serializan un objeto, pero no declaran `response_model`.
 
-El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida **5** (0 passed, 0 failed, 0 errors; no se recolectaron tests). Es un resultado previo a cualquier cambio.
+El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida **5** (0 passed, 0 failed, 0 errors; no se recolectaron tests). La carpeta `tests/` contiene únicamente `__pycache__`; no contiene ningún `test_*.py`. Por tanto, el baseline real es cero tests, y los tests de contrato previstos para Fase 3 serán la primera suite de pytest del backend. Es un resultado previo a cualquier cambio.
 
 ## 2. Metodología
 
 - Localicé la aplicación en `services/api/main.py` y los routers `auth`, `inventory`, `profiles`, `suppliers` y `users` en `services/api/routes/`.
 - Inspeccioné `app.routes`. En el entorno disponible contiene rutas de documentación de Starlette y cinco `_IncludedRouter`, no instancias `APIRoute` directamente. Para recorrer todas las rutas reales, inspeccioné los `APIRoute` de `original_router.routes` de esos routers incluidos y anoté método, path, `response_model` y `endpoint.__module__ + "." + endpoint.__name__`.
 - Busqué paths y llamadas de API en `uis/` y comprobé los componentes, clientes y tipos que leen respuestas. “No encontrado” significa que no hallé un consumidor de esa ruta en `uis/`, no que no pueda existir un consumidor externo.
-- La búsqueda de skills en `skills/` no encontró skills de backend, FastAPI, diseño de API, seguridad o testing; tampoco se encontró `skills-lock.json`. No se aplicaron skills.
+- Revisé `skills/`, `skills/code-review/`, `.agents/skills/`, `.agents/rules/` y `skills-lock.json`. No existe `skills-lock.json` en esta rama. `skills/code-review/` solo contiene `.gitkeep`; no hay una skill de revisión que aplicar. Revisé `.agents/skills/logistics-validator/SKILL.md`, pero no la apliqué: exige `weight_kg` y `destination` para objetos de logística/envíos, campos que no forman parte de los contratos de SKU y movimientos de inventario auditados; añadirlos sería inventar requisitos ajenos al alcance. Revisé `.agents/rules/coding-standards.md`; se aplica a cambios TypeScript/frontend, que no se requieren para conservar los campos leídos por la UI. Por ello, no se aplicó ninguna skill: la inspección de consumidores y schemas se hizo directamente contra el código fuente.
 - El Python disponible informó Pydantic **2.13.5**. El activador de `.venv` está restringido por la política de contenido de la organización; no intenté acceder a ese archivo por otro medio. Por tanto, la versión constatada es la del Python disponible, no una afirmación sobre un entorno virtual inaccesible. Para las propuestas Pydantic v2, la sintaxis pertinente es `model_validate` y `ConfigDict(from_attributes=True)` cuando se valide desde atributos ORM.
-- No se modificó ni ejecutó código de la Fase 2.
+- Tras la aprobación del usuario, Fase 2 se ejecuta por router y en este orden: auth, users, profiles, suppliers, inventory. La Fase 3 permanece fuera del alcance.
 
 ## 3. Criterios de clasificación
 
@@ -33,11 +33,13 @@ El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida *
 - **⚠️ Parcialmente serializado:** tiene un modelo incompleto/excesivo o requiere una excepción documentada. Los endpoints 204 sin cuerpo se incluyen aquí: no serializan datos, pero conviene declarar explícitamente la excepción y mantener el 204.
 - **❌ Sin serializar:** devuelve un dict sin `response_model`, aunque el contenido actual sea un mensaje.
 
-`Estado final` queda pendiente: la Fase 2 no se ha aprobado ni implementado.
+Las columnas `Estado final` describen el resultado esperado/aplicado según el avance router por router. Se mantienen los estados originales sin cambios.
 
 ## 4. Inventario por router
 
 ### AUTH
+
+El registro se implementa en `services/api/routes/users.py`, función `register_user`, mediante `POST /users`. Se incluye en esta sección por ser el flujo de registro de autenticación; su fila única está en la tabla USERS para evitar duplicar el endpoint.
 
 | Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
 |---|---|---|---|---|---|---|---|---|
@@ -171,7 +173,7 @@ El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida *
 | POST | `/suppliers` | Crear proveedor | No encontrado en `uis/` | `Supplier` | ⚠️ | `SupplierCreate` | `Supplier` | Pendiente (Fase 2) |
 | PATCH | `/suppliers/{supplier_id}/rate` | Actualizar tarifa | No encontrado en `uis/` | `Supplier` | ⚠️ | Path + `SupplierUpdateRate` | `Supplier` | Pendiente (Fase 2) |
 | PATCH | `/suppliers/{supplier_id}/status` | Actualizar estado | No encontrado en `uis/` | `Supplier` | ⚠️ | Path + `SupplierUpdateStatus` | `Supplier` | Pendiente (Fase 2) |
-| DELETE | `/suppliers/{supplier_id}` | Eliminar proveedor | No encontrado en `uis/` | Sin body, HTTP 204; sin `response_model` | ⚠️ | Path `supplier_id: int` | Ninguno (204) | Pendiente (Fase 2) |
+| DELETE | `/suppliers/{supplier_id}` | Eliminar proveedor | No encontrado en `uis/` | Sin body, HTTP 204; sin `response_model` | ⚠️ | Path `supplier_id: int` | Ninguno (204) | ✅ Excepción: HTTP 204 sin cuerpo, `response_model=None` |
 
 #### Fichas SUPPLIERS
 
@@ -237,7 +239,7 @@ El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida *
 | GET | `/users` | Listar usuarios autenticados | No encontrado en `uis/` | `list[UserResponse]` | ⚠️ | Ninguno (Bearer) | `UserResponse[]` | Pendiente (Fase 2) |
 | GET | `/users/{user_id}` | Obtener usuario por ID | No encontrado en `uis/` | `UserResponse` | ⚠️ | Path `user_id: int` + Bearer | `UserResponse` | Pendiente (Fase 2) |
 | PUT | `/users/{user_id}` | Actualizar usuario | No encontrado en `uis/` | `UserResponse` | ⚠️ | Path + `UserUpdate` + Bearer | `UserResponse` | Pendiente (Fase 2) |
-| DELETE | `/users/{user_id}` | Eliminar usuario | No encontrado en `uis/` | Sin body, HTTP 204; sin `response_model` | ⚠️ | Path `user_id: int` + Bearer | Ninguno (204) | Pendiente (Fase 2) |
+| DELETE | `/users/{user_id}` | Eliminar usuario | No encontrado en `uis/` | Sin body, HTTP 204; sin `response_model` | ⚠️ | Path `user_id: int` + Bearer | Ninguno (204) | ✅ Excepción: HTTP 204 sin cuerpo, `response_model=None` |
 
 #### Fichas USERS
 
@@ -295,9 +297,10 @@ El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida *
 5. Crear salidas de perfil que no expongan `user_id`; devolver en `/profiles/me` solo `name`, `phone`, `address`.
 6. Separar la salida de proveedor de `SupplierCreate`, eliminar `updated_at` no consumido y conservar los seis campos del proveedor usados por la tabla.
 7. Hacer que el registro responda con mensaje de confirmación, sin email. Añadir salidas explícitas de usuario sin `created_at`; conservar provisionalmente email en lecturas/actualización hasta confirmar si hay consumidores externos.
-8. Mantener las dos eliminaciones como HTTP 204 sin cuerpo y documentarlas como excepción; no convertirlas en respuestas con body.
-9. Añadir `response_model` a las rutas de mensajes y a las respuestas serializadas afectadas. No modificar frontend salvo que la verificación posterior encuentre un campo realmente consumido que no pueda conservarse.
+8. Mantener las dos eliminaciones como HTTP 204 sin cuerpo, declarar `response_model=None` y documentarlas como excepción justificada.
+9. Añadir `extra="forbid"` en todos los esquemas de entrada de escritura, incluidos `ProductCreate` aunque su endpoint estuviera clasificado ✅, y los inputs de auth, usuarios, perfiles, proveedores y órdenes.
+10. Añadir `response_model` a las rutas de mensajes y a las respuestas serializadas afectadas. No modificar frontend salvo que la verificación posterior encuentre un campo realmente consumido que no pueda conservarse.
 
 ## CHECKPOINT
 
-La Fase 1 está documentada; las columnas `Estado final` permanecen pendientes. No se han aplicado cambios de Fase 2. El inventario original y el baseline están preservados arriba para revisión y aprobación.
+El usuario aprobó la Fase 1 el 2026-11-13 con los ajustes enumerados en este documento. El inventario original y baseline permanecen preservados; la implementación de Fase 2 empieza tras el commit de esta actualización. La Fase 3 no se ejecutará en esta tarea.
