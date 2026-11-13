@@ -1,0 +1,303 @@
+# Auditoría inicial de serialización de la API
+
+**Fecha:** 2026-11-13
+**Alcance:** Fases 0 y 1. No se ha implementado ningún cambio de serialización.
+
+## 1. Resumen ejecutivo
+
+Se inventariaron **25 endpoints** en cinco routers: **4 ✅**, **18 ⚠️** y **3 ❌** en su estado original.
+
+Riesgos principales:
+
+- `POST /auth/forgot-password`, `POST /auth/reset-password` y `POST /auth/change-password` devuelven diccionarios sin `response_model`.
+- El registro (`POST /users`) usa `UserResponse`, que incluye `email`, aunque `uis/application/app/register/page.tsx` solo comprueba el estado HTTP y continúa con el login.
+- `MeResponse` anida `Profile`, que incluye `id` y `user_id`; la pantalla de cuenta solo utiliza `name`, `phone` y `address`, además del email del usuario.
+- `GET /inventory/orders` devuelve una proyección completa del producto y un objeto `user` con email/nombre. La UI solo lee `product.name`, `product.sku` y `user_uuid`; este último se muestra y debe conservarse.
+- Los modelos de perfil y proveedor incluyen claves/timestamps que no consume la UI. `Supplier` hereda de `SupplierCreate`, mezclando actualmente campos de entrada y salida en su definición.
+- Los borrados de proveedores y usuarios son respuestas vacías HTTP 204: no serializan un objeto, pero no declaran `response_model`.
+
+El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida **5** (0 passed, 0 failed, 0 errors; no se recolectaron tests). Es un resultado previo a cualquier cambio.
+
+## 2. Metodología
+
+- Localicé la aplicación en `services/api/main.py` y los routers `auth`, `inventory`, `profiles`, `suppliers` y `users` en `services/api/routes/`.
+- Inspeccioné `app.routes`. En el entorno disponible contiene rutas de documentación de Starlette y cinco `_IncludedRouter`, no instancias `APIRoute` directamente. Para recorrer todas las rutas reales, inspeccioné los `APIRoute` de `original_router.routes` de esos routers incluidos y anoté método, path, `response_model` y `endpoint.__module__ + "." + endpoint.__name__`.
+- Busqué paths y llamadas de API en `uis/` y comprobé los componentes, clientes y tipos que leen respuestas. “No encontrado” significa que no hallé un consumidor de esa ruta en `uis/`, no que no pueda existir un consumidor externo.
+- La búsqueda de skills en `skills/` no encontró skills de backend, FastAPI, diseño de API, seguridad o testing; tampoco se encontró `skills-lock.json`. No se aplicaron skills.
+- El Python disponible informó Pydantic **2.13.5**. El activador de `.venv` está restringido por la política de contenido de la organización; no intenté acceder a ese archivo por otro medio. Por tanto, la versión constatada es la del Python disponible, no una afirmación sobre un entorno virtual inaccesible. Para las propuestas Pydantic v2, la sintaxis pertinente es `model_validate` y `ConfigDict(from_attributes=True)` cuando se valide desde atributos ORM.
+- No se modificó ni ejecutó código de la Fase 2.
+
+## 3. Criterios de clasificación
+
+- **✅ Ya serializado:** tiene `response_model` explícito y la proyección es adecuada al consumidor encontrado.
+- **⚠️ Parcialmente serializado:** tiene un modelo incompleto/excesivo o requiere una excepción documentada. Los endpoints 204 sin cuerpo se incluyen aquí: no serializan datos, pero conviene declarar explícitamente la excepción y mantener el 204.
+- **❌ Sin serializar:** devuelve un dict sin `response_model`, aunque el contenido actual sea un mensaje.
+
+`Estado final` queda pendiente: la Fase 2 no se ha aprobado ni implementado.
+
+## 4. Inventario por router
+
+### AUTH
+
+| Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
+|---|---|---|---|---|---|---|---|---|
+| POST | `/auth/login` | Autenticar y emitir access token | `uis/application/app/login/page.tsx`, `uis/application/app/register/page.tsx`, `uis/backoffice/src/lib/api.ts`: leen `access_token` | `LoginResponse` (`access_token`, `token_type`) | ✅ | `LoginRequest` | `LoginResponse` | Pendiente (Fase 2) |
+| GET | `/auth/me` | Devolver usuario autenticado y perfil | `uis/application/app/account/profile/page.tsx`: `email`, `profile.name/phone/address`; `uis/backoffice/src/app/inventory/layout.tsx`: solo éxito HTTP | `MeResponse` con `Profile` anidado | ⚠️ | Ninguno (Bearer) | `MeResponse` | Pendiente (Fase 2) |
+| POST | `/auth/forgot-password` | Solicitar recuperación de contraseña | `uis/application/app/forgot-password/page.tsx`: éxito HTTP; ignora el JSON | Sin modelo; dict `{"message": ...}` | ❌ | `ForgotPasswordRequest` | Dict sin tipo declarado | Pendiente (Fase 2) |
+| POST | `/auth/reset-password` | Restablecer contraseña con token | `uis/application/app/reset-password/page.tsx`: éxito HTTP y redirección; ignora el JSON | Sin modelo; dict `{"message": ...}` | ❌ | `ResetPasswordRequest` | Dict sin tipo declarado | Pendiente (Fase 2) |
+| POST | `/auth/change-password` | Cambiar contraseña autenticada | `uis/application/app/account/change-password/page.tsx`: lee `message` | Sin modelo; dict `{"message": ...}` | ❌ | `ChangePasswordRequest` + Bearer | Dict sin tipo declarado | Pendiente (Fase 2) |
+
+#### Fichas AUTH
+
+##### `GET /auth/me` — `services.api.routes.auth.read_me`
+
+- **Recibe:** identidad autenticada por dependencia; sin body.
+- **Devuelve hoy:** `email`, `role` y `profile` (`id`, `user_id`, `name`, `phone`, `address`).
+- **Payload objetivo:** `email`; `profile` opcional con `name`, `phone`, `address`.
+- **Sobra/riesgo:** `profile.id`, `profile.user_id` y `role` no los lee la UI actual; `user_id` es una clave de relación. Se conserva `email` porque la pantalla de cuenta la muestra.
+- **Mejora / relación:** proyección anidada mínima del perfil; no devolver IDs internos en el objeto anidado.
+- **Archivos:** Fase 1 no modificó código backend. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/auth.py`.
+
+##### `POST /auth/forgot-password` — `services.api.routes.auth.forgot_password`
+
+- **Recibe:** `ForgotPasswordRequest.email`.
+- **Devuelve hoy:** dict con `message` genérico; no declara modelo de salida.
+- **Payload objetivo:** `message: str`, manteniendo una respuesta idéntica exista o no el email.
+- **Sobra/sensible:** la respuesta actual no incluye email, pero su forma no está tipada.
+- **Mejora / relación:** `MessageResponse` y `response_model` explícito; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/auth.py`.
+
+##### `POST /auth/reset-password` — `services.api.routes.auth.reset_password`
+
+- **Recibe:** `ResetPasswordRequest.token`, `new_password`.
+- **Devuelve hoy:** dict con `message`; sin modelo declarado.
+- **Payload objetivo:** `message: str`.
+- **Sobra/sensible:** no debe devolver token, contraseña ni email; hoy el dict solo contiene mensaje.
+- **Mejora / relación:** `MessageResponse` y `response_model`; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/auth.py`.
+
+##### `POST /auth/change-password` — `services.api.routes.auth.change_password`
+
+- **Recibe:** `ChangePasswordRequest.current_password`, `new_password` y Bearer.
+- **Devuelve hoy:** dict con `message`; sin modelo declarado.
+- **Payload objetivo:** `message: str`, que es el campo leído por la UI.
+- **Sobra/sensible:** no devolver ninguna de las contraseñas ni datos del usuario.
+- **Mejora / relación:** `MessageResponse` y `response_model`; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/auth.py`.
+
+### INVENTORY
+
+| Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
+|---|---|---|---|---|---|---|---|---|
+| GET | `/inventory/products` | Listar productos y stock calculado | `uis/backoffice/src/app/inventory/products/page.tsx`, órdenes inbound/outbound: `id`, `sku`, `name`, `client_name`, `category`, `reference`, `current_stock` | `list[ProductResponse]` | ✅ | Ninguno | `ProductResponse[]` | Pendiente (Fase 2) |
+| POST | `/inventory/products` | Crear SKU | No encontrado en `uis/` | `ProductResponse` | ✅ | `ProductCreate` | `ProductResponse` | Pendiente (Fase 2) |
+| GET | `/inventory/products/{product_id}` | Obtener SKU por ID | No encontrado; `getProductById` solo aparece definido en `uis/backoffice/src/lib/inventory.ts` | `ProductResponse` | ✅ | Path `product_id: int` | `ProductResponse` | Pendiente (Fase 2) |
+| POST | `/inventory/orders/inbound` | Registrar entrada de stock | `uis/backoffice/src/app/inventory/orders/inbound/page.tsx`: espera el éxito, ignora el JSON | `InboundOrderResponse` | ⚠️ | `InboundOrderCreate` | `InboundOrderResponse` | Pendiente (Fase 2) |
+| POST | `/inventory/orders/outbound` | Registrar salida de stock | `uis/backoffice/src/app/inventory/orders/outbound/page.tsx`: espera el éxito, ignora el JSON | `OutboundOrderResponse` | ⚠️ | `OutboundOrderCreate` | `OutboundOrderResponse` | Pendiente (Fase 2) |
+| GET | `/inventory/orders` | Listar entradas y salidas | `uis/backoffice/src/app/inventory/orders/page.tsx`: `id`, `order_type`, `product.name/sku`, `warehouse`, `quantity`, `created_at`, `user_uuid` | `list[InventoryOrderResponse]` | ⚠️ | Ninguno | `InventoryOrderResponse[]` | Pendiente (Fase 2) |
+
+#### Fichas INVENTORY
+
+##### `POST /inventory/orders/inbound` — `services.api.routes.inventory.create_inbound_order`
+
+- **Recibe:** `sku_id`, `warehouse`, `quantity` (`InboundOrderCreate`).
+- **Devuelve hoy:** `id`, `sku_id`, `warehouse`, `quantity`, `created_at`, `user_uuid`.
+- **Payload objetivo:** `id`, `sku_id`, `warehouse`, `quantity`, `created_at`.
+- **Sobra/sensible:** la página no lee el body de respuesta; `user_uuid` es un identificador interno y no se consume en esta respuesta.
+- **Mejora / relación:** proyección de confirmación de entrada; conservar `sku_id` como referencia escalar, sin anidar el SKU.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/inventory.py`.
+
+##### `POST /inventory/orders/outbound` — `services.api.routes.inventory.create_outbound_order`
+
+- **Recibe:** `sku_id`, `warehouse`, `quantity`, `exit_type`, `tracking_number` (`OutboundOrderCreate`).
+- **Devuelve hoy:** `id`, `sku_id`, `warehouse`, `quantity`, `exit_type`, `tracking_number`, `created_at`, `user_uuid`.
+- **Payload objetivo:** `id`, `sku_id`, `warehouse`, `quantity`, `exit_type`, `tracking_number`, `created_at`.
+- **Sobra/sensible:** la página ignora el JSON; `user_uuid` no se consume en esta respuesta.
+- **Mejora / relación:** proyección de confirmación de salida; mantener `sku_id` escalar, sin objeto de producto.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/inventory.py`.
+
+##### `GET /inventory/orders` — `services.api.routes.inventory.list_orders`
+
+- **Recibe:** sin body.
+- **Devuelve hoy:** `id`, `order_type`, `product` (`id`, `sku`, `name`, `client_name`, `category`, `reference`), `warehouse`, `quantity`, `created_at`, `user_uuid` y `user` opcional (`user_uuid`, `email`, `name`).
+- **Payload objetivo:** `id`, `order_type`, `product` (`name`, `sku`), `warehouse`, `quantity`, `created_at`, `user_uuid`.
+- **Sobra/sensible:** la UI no lee campos del producto salvo `name` y `sku`, ni el objeto `user`; el email tampoco es necesario para la vista. `user_uuid` sí se muestra y debe mantenerse.
+- **Mejora / relación:** esquema ligero de listado; producto como proyección anidada `{name, sku}`; sin objeto `user`, conservando `user_uuid` por uso comprobado.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/inventory.py`; no se identifica cambio necesario en TypeScript si esos campos se conservan.
+
+### PROFILES
+
+| Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
+|---|---|---|---|---|---|---|---|---|
+| GET | `/profiles/me` | Leer perfil propio | No encontrado como llamada directa; la pantalla carga perfil a través de `/auth/me` | `Profile` | ⚠️ | Ninguno (Bearer) | `Profile` | Pendiente (Fase 2) |
+| PUT | `/profiles/me` | Actualizar perfil propio | `uis/application/app/account/profile/page.tsx`: envía y lee `name`, `phone`, `address` | `Profile` | ⚠️ | `ProfileCreate` | `Profile` | Pendiente (Fase 2) |
+| GET | `/profiles/{profile_id}` | Leer perfil por ID con control de acceso | No encontrado en `uis/` | `Profile` | ⚠️ | Path `profile_id: int` + Bearer | `Profile` | Pendiente (Fase 2) |
+
+#### Fichas PROFILES
+
+##### `GET /profiles/me` — `services.api.routes.profiles.read_my_profile`
+
+- **Recibe:** identidad autenticada; sin body.
+- **Devuelve hoy:** `id`, `user_id`, `name`, `phone`, `address`.
+- **Payload objetivo:** `name`, `phone`, `address`.
+- **Sobra/riesgo:** IDs no leídos por un consumidor directo; `user_id` es clave foránea. La UI actual obtiene estos datos desde `/auth/me`.
+- **Mejora / relación:** salida pública mínima, sin anidar ni devolver el usuario.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/profiles.py`.
+
+##### `PUT /profiles/me` — `services.api.routes.profiles.update_my_profile`
+
+- **Recibe:** `ProfileCreate.name`, `phone`, `address`.
+- **Devuelve hoy:** `id`, `user_id`, `name`, `phone`, `address`.
+- **Payload objetivo:** `name`, `phone`, `address`, que son los campos que la UI aplica al formulario actualizado.
+- **Sobra/riesgo:** `id` y `user_id` no los lee el consumidor; el segundo expone una relación interna.
+- **Mejora / relación:** respuesta de actualización con campos del perfil usados; sin objeto anidado.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/profiles.py`.
+
+##### `GET /profiles/{profile_id}` — `services.api.routes.profiles.read_profile`
+
+- **Recibe:** `profile_id` y Bearer.
+- **Devuelve hoy:** `id`, `user_id`, `name`, `phone`, `address`.
+- **Payload objetivo:** `id`, `name`, `phone`, `address`.
+- **Sobra/riesgo:** no se encontró consumidor en `uis/`; `user_id` revela la clave de propietario sin una necesidad comprobada.
+- **Mejora / relación:** respuesta de detalle identificada por `id`; omitir la clave foránea, sin anidar el usuario.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/profiles.py`.
+
+### SUPPLIERS
+
+| Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
+|---|---|---|---|---|---|---|---|---|
+| GET | `/suppliers` | Listar proveedores con filtros opcionales | `uis/application/app/suppliers/page.tsx`: `id`, `name`, `country`, `categories`, `rate_usd`, `status` | `List[Supplier]` | ⚠️ | Query: `country`, `category`, `status`, `search` | `List[Supplier]` | Pendiente (Fase 2) |
+| GET | `/suppliers/{supplier_id}` | Obtener proveedor por ID | No encontrado en `uis/` | `Supplier` | ⚠️ | Path `supplier_id: int` | `Supplier` | Pendiente (Fase 2) |
+| POST | `/suppliers` | Crear proveedor | No encontrado en `uis/` | `Supplier` | ⚠️ | `SupplierCreate` | `Supplier` | Pendiente (Fase 2) |
+| PATCH | `/suppliers/{supplier_id}/rate` | Actualizar tarifa | No encontrado en `uis/` | `Supplier` | ⚠️ | Path + `SupplierUpdateRate` | `Supplier` | Pendiente (Fase 2) |
+| PATCH | `/suppliers/{supplier_id}/status` | Actualizar estado | No encontrado en `uis/` | `Supplier` | ⚠️ | Path + `SupplierUpdateStatus` | `Supplier` | Pendiente (Fase 2) |
+| DELETE | `/suppliers/{supplier_id}` | Eliminar proveedor | No encontrado en `uis/` | Sin body, HTTP 204; sin `response_model` | ⚠️ | Path `supplier_id: int` | Ninguno (204) | Pendiente (Fase 2) |
+
+#### Fichas SUPPLIERS
+
+##### `GET /suppliers` — `services.api.routes.suppliers.get_suppliers`
+
+- **Recibe:** filtros opcionales `country`, `category`, `status`, `search`; identidad autenticada.
+- **Devuelve hoy:** lista con `id`, `name`, `country`, `categories`, `rate_usd`, `status`, `updated_at`.
+- **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
+- **Sobra/riesgo:** `updated_at` es un timestamp de auditoría que la tabla no lee.
+- **Mejora / relación:** esquema ligero propio para listado; no hay relaciones anidadas.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py` (separar salida de `SupplierCreate`), `services/api/routes/suppliers.py`.
+
+##### `GET /suppliers/{supplier_id}` — `services.api.routes.suppliers.get_supplier_by_id`
+
+- **Recibe:** `supplier_id`; identidad autenticada.
+- **Devuelve hoy:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`, `updated_at`.
+- **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
+- **Sobra/riesgo:** no se halló consumidor en `uis/`; `updated_at` no tiene uso comprobado.
+- **Mejora / relación:** proyección explícita de detalle; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py`, `services/api/routes/suppliers.py`.
+
+##### `POST /suppliers` — `services.api.routes.suppliers.create_supplier`
+
+- **Recibe:** `SupplierCreate.name`, `country`, `categories`, `rate_usd`, `status`; identidad autenticada.
+- **Devuelve hoy:** los campos de creación más `id` y `updated_at`.
+- **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
+- **Sobra/riesgo:** `updated_at` no tiene consumidor encontrado; `Supplier` hereda los campos de `SupplierCreate`, acoplando entrada y salida.
+- **Mejora / relación:** esquema de salida independiente, sin timestamp no utilizado; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py`, `services/api/routes/suppliers.py`.
+
+##### `PATCH /suppliers/{supplier_id}/rate` — `services.api.routes.suppliers.update_supplier_rate`
+
+- **Recibe:** `supplier_id`, `SupplierUpdateRate.rate_usd`; identidad autenticada.
+- **Devuelve hoy:** proveedor completo, incluidos `id` y `updated_at`.
+- **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
+- **Sobra/riesgo:** no se encontró consumidor; `updated_at` no se usa en `uis/`.
+- **Mejora / relación:** proyección de salida independiente del body de actualización; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py`, `services/api/routes/suppliers.py`.
+
+##### `PATCH /suppliers/{supplier_id}/status` — `services.api.routes.suppliers.update_supplier_status`
+
+- **Recibe:** `supplier_id`, `SupplierUpdateStatus.status`; identidad autenticada.
+- **Devuelve hoy:** proveedor completo, incluidos `id` y `updated_at`.
+- **Payload objetivo:** `id`, `name`, `country`, `categories`, `rate_usd`, `status`.
+- **Sobra/riesgo:** no se encontró consumidor; `updated_at` no se usa en `uis/`.
+- **Mejora / relación:** proyección de salida independiente del body de actualización; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/models.py`, `services/api/routes/suppliers.py`.
+
+##### `DELETE /suppliers/{supplier_id}` — `services.api.routes.suppliers.delete_supplier`
+
+- **Recibe:** `supplier_id` e identidad autenticada; sin body.
+- **Devuelve hoy:** `None`, HTTP 204; no hay objeto para serializar ni `response_model`.
+- **Payload objetivo:** ninguno; conservar 204.
+- **Sobra/riesgo:** no se encontró consumidor en `uis/`; no debe añadirse un cuerpo que cambie el contrato 204.
+- **Mejora / relación:** excepción explícita documentada para respuesta sin cuerpo; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/routes/suppliers.py` y documentación de la excepción.
+
+### USERS
+
+| Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
+|---|---|---|---|---|---|---|---|---|
+| POST | `/users` | Registrar usuario y perfil | `uis/application/app/register/page.tsx`: solo comprueba `response.ok`, no lee JSON | `UserResponse` | ⚠️ | `UserCreate` | `UserResponse` | Pendiente (Fase 2) |
+| GET | `/users` | Listar usuarios autenticados | No encontrado en `uis/` | `list[UserResponse]` | ⚠️ | Ninguno (Bearer) | `UserResponse[]` | Pendiente (Fase 2) |
+| GET | `/users/{user_id}` | Obtener usuario por ID | No encontrado en `uis/` | `UserResponse` | ⚠️ | Path `user_id: int` + Bearer | `UserResponse` | Pendiente (Fase 2) |
+| PUT | `/users/{user_id}` | Actualizar usuario | No encontrado en `uis/` | `UserResponse` | ⚠️ | Path + `UserUpdate` + Bearer | `UserResponse` | Pendiente (Fase 2) |
+| DELETE | `/users/{user_id}` | Eliminar usuario | No encontrado en `uis/` | Sin body, HTTP 204; sin `response_model` | ⚠️ | Path `user_id: int` + Bearer | Ninguno (204) | Pendiente (Fase 2) |
+
+#### Fichas USERS
+
+##### `POST /users` — `services.api.routes.users.register_user`
+
+- **Recibe:** `UserCreate.email`, `password`, `name`, `phone`, `address`.
+- **Devuelve hoy:** `id`, `email`, `is_active`, `role`, `created_at`; `UserResponse` no incluye `hashed_password`.
+- **Payload objetivo:** `message: str`; la UI solo depende del éxito HTTP y después inicia sesión.
+- **Sobra/sensible:** el email está expresamente excluido por la regla de respuesta de registro; `created_at`, `is_active` y `role` no se leen en el flujo.
+- **Mejora / relación:** `MessageResponse`; no devolver credenciales ni datos del usuario.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/users.py`, `services/api/models.py` para endurecer el esquema de entrada.
+
+##### `GET /users` — `services.api.routes.users.get_users`
+
+- **Recibe:** identidad autenticada; sin body.
+- **Devuelve hoy:** lista de `id`, `email`, `is_active`, `role`, `created_at`.
+- **Payload objetivo propuesto:** `id`, `email`, `is_active`, `role`; `created_at` se omite como timestamp de auditoría sin uso encontrado. No se halló consumidor en `uis/`; confirmar cualquier consumidor externo antes de retirar campos adicionales.
+- **Sobra/sensible:** `created_at` no tiene uso comprobado; el email no lo consume una UI actual, pero se conserva provisionalmente como identificador de cuenta del recurso.
+- **Mejora / relación:** modelo ligero de listado con campos explícitos; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/users.py`.
+
+##### `GET /users/{user_id}` — `services.api.routes.users.get_user`
+
+- **Recibe:** `user_id` e identidad autenticada; sin body.
+- **Devuelve hoy:** `id`, `email`, `is_active`, `role`, `created_at`.
+- **Payload objetivo propuesto:** `id`, `email`, `is_active`, `role`; omitir `created_at`. No se encontró consumidor de UI; comprobar consumidores externos antes de retirar el email.
+- **Sobra/sensible:** timestamp de auditoría no usado; email no aparece en consumidores `uis/`.
+- **Mejora / relación:** esquema de detalle explícito; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/users.py`.
+
+##### `PUT /users/{user_id}` — `services.api.routes.users.put_user`
+
+- **Recibe:** `user_id`, campos opcionales `email`, `password`, `role` (`UserUpdate`) e identidad autenticada.
+- **Devuelve hoy:** `id`, `email`, `is_active`, `role`, `created_at`.
+- **Payload objetivo propuesto:** `id`, `email`, `is_active`, `role`; omitir `created_at`. El email se mantiene provisionalmente para reflejar una actualización de email; no hay consumidor encontrado en `uis/`.
+- **Sobra/sensible:** `created_at` no tiene uso comprobado. La respuesta no incluye `hashed_password`.
+- **Mejora / relación:** salida independiente y explícita; endurecer el esquema de entrada con `extra="forbid"` sin mezclarlo con la salida.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/schemas.py`, `services/api/routes/users.py`, `services/api/models.py`.
+
+##### `DELETE /users/{user_id}` — `services.api.routes.users.remove_user`
+
+- **Recibe:** `user_id` e identidad autenticada; sin body.
+- **Devuelve hoy:** sin cuerpo, HTTP 204; no hay objeto que serializar ni `response_model`.
+- **Payload objetivo:** ninguno; conservar 204.
+- **Sobra/riesgo:** no se encontró consumidor en `uis/`; añadir un body alteraría el contrato actual.
+- **Mejora / relación:** documentar explícitamente la excepción 204 sin cuerpo; sin relaciones.
+- **Archivos:** sin cambios en Fase 1. Propuesta Fase 2: `services/api/routes/users.py` y documentación de la excepción.
+
+## 5. Cambios propuestos para la Fase 2 (no implementados)
+
+1. Añadir `MessageResponse` tipado y declararlo en forgot/reset/change password; mantener la respuesta genérica de forgot password y no devolver email, contraseña ni token de restablecimiento.
+2. Separar modelos Pydantic de entrada y salida. Añadir `extra="forbid"` a los esquemas escribibles existentes y definir proyecciones explícitas de salida en `services/api/schemas.py` y, donde corresponda a los modelos actuales, `services/api/models.py`.
+3. Reducir `/auth/me` al email que la pantalla necesita y al perfil anidado limitado a `name`, `phone`, `address`; conservar login como está.
+4. Mantener sin cambios las respuestas de producto, que incluyen los campos usados por la UI. En las respuestas de creación de órdenes retirar `user_uuid` no leído; en el listado usar producto `{name, sku}`, retirar el objeto `user` no leído y conservar `user_uuid`, que la UI muestra.
+5. Crear salidas de perfil que no expongan `user_id`; devolver en `/profiles/me` solo `name`, `phone`, `address`.
+6. Separar la salida de proveedor de `SupplierCreate`, eliminar `updated_at` no consumido y conservar los seis campos del proveedor usados por la tabla.
+7. Hacer que el registro responda con mensaje de confirmación, sin email. Añadir salidas explícitas de usuario sin `created_at`; conservar provisionalmente email en lecturas/actualización hasta confirmar si hay consumidores externos.
+8. Mantener las dos eliminaciones como HTTP 204 sin cuerpo y documentarlas como excepción; no convertirlas en respuestas con body.
+9. Añadir `response_model` a las rutas de mensajes y a las respuestas serializadas afectadas. No modificar frontend salvo que la verificación posterior encuentre un campo realmente consumido que no pueda conservarse.
+
+## CHECKPOINT
+
+La Fase 1 está documentada; las columnas `Estado final` permanecen pendientes. No se han aplicado cambios de Fase 2. El inventario original y el baseline están preservados arriba para revisión y aprobación.
