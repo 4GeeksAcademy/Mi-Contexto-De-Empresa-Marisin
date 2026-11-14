@@ -9,15 +9,16 @@
   - [x] profiles — validado por importación de la app y generación OpenAPI (18 paths)
   - [x] suppliers — validado por importación de la app y generación OpenAPI (18 paths)
   - [x] inventory — validado por importación de la app y generación OpenAPI (18 paths)
-- [ ] Fase 3 — Verificación (tests automatizados completos; pruebas manuales en `/docs` pendientes)
+- [ ] Fase 3 — Verificación revisada; falta el test automatizado de `/auth/me` autenticado
   - [x] Contratos automatizados: 7 passed
   - [x] Typecheck limpio y compatibilidad del consumidor de órdenes
-  - [ ] Pruebas manuales en `/docs` (las ejecutará el usuario)
-- [ ] Criterios de aceptación revisados
-- [ ] Entrada final añadida en memory-bank/progress.md
+  - [x] Pruebas manuales del usuario: `/docs` y curl para endpoints autenticados
+- [x] Criterios de aceptación revisados; pendiente el esquema de listado propio de productos
+- [x] Entrada existente de memory-bank/progress.md actualizada
 
 ## Bitácora
 <!-- El agente añade aquí una entrada por paso: fecha · qué hizo · ficheros · commit -->
+- 2026-11-14 · Revisé las pruebas manuales del usuario y documenté las seis capturas, ocultando contraseñas de prueba. `pytest -q`: 7 passed, 3 warnings in 5.92s; typecheck sin errores y backoffice HTTP 200. Verifiqué 25 estados finales ✅ y ambos hallazgos como preexistentes en `main`, sin cambios de código. Criterios revisados: pendiente esquema de listado propio para productos; falta además el test de `/auth/me` autenticado. Ficheros: `docs/evidence/`, `docs/serialization-audit.md`, este registro y la entrada existente de `memory-bank/progress.md`. Commit documental: `2e05ae7`; registro: este commit.
 - 2026-11-13 · Localicé la app en `services/api/main.py` y cinco `APIRouter`; registré 25 endpoints examinando los routers incluidos (la versión instalada deja `_IncludedRouter` en `app.routes`, sin instancias `APIRoute` directamente). `pytest -q`: `no tests ran in 0.05s`, exit code 5; 0 passed, 0 failed, 0 errors (baseline previo a cambios). Ficheros tocados: `prompts/serialization-audit/progress.md`. Commit: `f7fe3ed`.
 - 2026-11-13 · Busqué consumidores en `uis/`: encontré usos de login/me, flujos de contraseña, alta de usuario, perfil, listado de proveedores y operaciones de inventario; no encontré consumidores para los endpoints de detalle/administración restantes. No hay skills de FastAPI/backend/API/security/testing en `skills/` ni `skills-lock.json`. Fichero tocado: `prompts/serialization-audit/progress.md`. Commit: `f7fe3ed`.
 - 2026-11-13 · Creé `docs/serialization-audit.md` con inventario de 25 endpoints, baseline, consumidores, estados originales y propuestas Fase 2; no se implementó Fase 2. Ficheros tocados: `docs/serialization-audit.md`, `prompts/serialization-audit/progress.md`. Commit: `f7fe3ed`.
