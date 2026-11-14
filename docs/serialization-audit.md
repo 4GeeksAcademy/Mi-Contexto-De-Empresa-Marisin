@@ -95,7 +95,7 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 
 | Método | Ruta | Propósito | Consumidor | Respuesta original | Estado original | Esquema entrada | Esquema salida | Estado final |
 |---|---|---|---|---|---|---|---|---|
-| GET | `/inventory/products` | Listar productos y stock calculado | `uis/backoffice/src/app/inventory/products/page.tsx`, órdenes inbound/outbound: `id`, `sku`, `name`, `client_name`, `category`, `reference`, `current_stock` | `list[ProductResponse]` | ✅ | Ninguno | `ProductResponse[]` | ✅ |
+| GET | `/inventory/products` | Listar productos y stock calculado | `uis/backoffice/src/app/inventory/products/page.tsx`, órdenes inbound/outbound: `id`, `sku`, `name`, `client_name`, `category`, `reference`, `current_stock` | `list[ProductResponse]` | ✅ | Ninguno | `ProductListItem[]` | ✅ |
 | POST | `/inventory/products` | Crear SKU | No encontrado en `uis/` | `ProductResponse` | ✅ | `ProductCreate` (`extra="forbid"`) | `ProductResponse` | ✅ |
 | GET | `/inventory/products/{product_id}` | Obtener SKU por ID | No encontrado; `getProductById` solo aparece definido en `uis/backoffice/src/lib/inventory.ts` | `ProductResponse` | ✅ | Path `product_id: int` | `ProductResponse` | ✅ |
 | POST | `/inventory/orders/inbound` | Registrar entrada de stock | `uis/backoffice/src/app/inventory/orders/inbound/page.tsx`: espera el éxito, ignora el JSON | `InboundOrderResponse` | ⚠️ | `InboundOrderCreate` (`extra="forbid"`) | `InboundOrderResponse` | ✅ |
@@ -103,6 +103,14 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 | GET | `/inventory/orders` | Listar entradas y salidas | `uis/backoffice/src/app/inventory/orders/page.tsx`: `id`, `order_type`, `product.name/sku`, `warehouse`, `quantity`, `created_at`, `user_uuid` | `list[InventoryOrderResponse]` | ⚠️ | Ninguno | `InventoryOrderListItem[]` | ✅ |
 
 #### Fichas INVENTORY
+
+##### `GET /inventory/products` — `services.api.routes.inventory.list_products`
+
+- **Recibe:** sin body; calcula el stock por SKU a partir de los movimientos.
+- **Respuesta original y objetivo:** `id`, `sku`, `name`, `client_name`, `category`, `reference`, `current_stock`.
+- **Decisión / relación:** `ProductListItem` declara explícitamente los siete campos sin relaciones anidadas. La tabla de productos usa todos; las páginas de órdenes usan `id`, `sku`, `name`, `client_name` y, en outbound, `current_stock`. No se elimina ningún campo: el listado y el detalle tienen hoy la misma proyección, pero contratos independientes. Detalle y creación conservan `ProductResponse`.
+- **Compatibilidad:** `uis/backoffice/src/lib/inventory.ts` conserva `SKUProduct`, cuyos campos coinciden con ambas respuestas.
+- **Archivos:** `services/api/schemas.py`, `services/api/routes/inventory.py`, `tests/test_serialization_contracts.py`.
 
 ##### `POST /inventory/orders/inbound` — `services.api.routes.inventory.create_inbound_order`
 
@@ -320,6 +328,7 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 7. El registro devuelve confirmación sin email; las salidas de usuario excluyen `created_at` y hashes.
 8. Las eliminaciones mantienen HTTP 204 sin cuerpo y declaran `response_model=None`; ambas excepciones están documentadas.
 9. Se actualizó únicamente `uis/backoffice/src/lib/inventory.ts` para tipar el producto anidado con los dos campos que realmente devuelve y consume la UI; no se modificaron vistas ni estilos.
+10. El listado de productos utiliza el esquema independiente `ProductListItem`, sin cambios en los siete campos consumidos ni en el tipo TypeScript.
 
 ## CHECKPOINT
 
@@ -334,10 +343,9 @@ Fases 0, 1 y 2 completadas y documentadas; los estados originales permanecen int
 | Baseline, antes de implementar | `pytest -q`: `no tests ran in 0.05s`, código de salida 5; 0 passed, 0 failed, 0 errors. `tests/` no contenía archivos `test_*.py` (solo `__pycache__`). |
 | Fase 3, después de añadir contratos | `pytest -q`: 7 passed, 3 warnings, código de salida 0. Los warnings son deprecaciones de `TestClient`/httpx y `FastAPI.on_event`. Se configuró `pythonpath = ["."]` en `pyproject.toml` para que pytest encuentre el paquete `services` desde la raíz del repositorio. |
 | Repetición 2026-11-14 | `pytest -q`: **7 passed, 3 warnings in 5.92s**, código de salida 0, con el Python disponible. |
+| Cierre 2026-11-14 | `pytest -q`: **9 passed, 3 warnings in 7.52s**, código de salida 0, con el Python disponible. |
 
-`tests/test_serialization_contracts.py` comprueba los response models (con excepción limitada a los DELETE 204 documentados), las respuestas de registro/login/forgot/reset sin email ni claves de contraseña, respuestas protegidas de auth sin email, rechazo de campos extra, contratos PATCH de proveedores y la proyección `InventoryOrderListItem.product` limitada a `sku` y `name`. Los datos TinyDB son temporales en memoria; inventory se valida inspeccionando los esquemas, sin conexión a Supabase.
-
-**Límite:** el test automatizado consulta `/auth/me` sin autenticar, no comprueba su respuesta autenticada. Esta última se verificó manualmente con curl, pero falta la comprobación automatizada solicitada en la Fase 3.
+`tests/test_serialization_contracts.py` comprueba los response models (con excepción limitada a los DELETE 204 documentados), las respuestas de registro/login/forgot/reset sin email ni claves de contraseña, rechazo de campos extra, contratos PATCH de proveedores y la proyección `InventoryOrderListItem.product` limitada a `sku` y `name`. El test de `/auth/me` registra un usuario, obtiene un JWT real y verifica email, perfil y ausencia de campos sensibles. El test de productos verifica `ProductListItem` y la respuesta HTTP con stock calculado. TinyDB y SQLite se utilizan en memoria, sin conexión a Supabase.
 
 ### Typecheck y arranque del backoffice
 
@@ -346,6 +354,8 @@ Se eliminó la caché generada `uis/backoffice/.next` y se repitió `npm --prefi
 Tras limpiar la caché, `npm --prefix uis/backoffice run dev` quedó listo y `GET /inventory/orders` respondió HTTP 200. No se reprodujo el `SyntaxError` observado durante la Fase 2; la evidencia apunta a un problema transitorio asociado al estado generado anterior, pero no permite atribuirle una causa más específica. La página `uis/backoffice/src/app/inventory/orders/page.tsx` sigue accediendo únicamente a `product.name` y `product.sku`, ambos incluidos en `Pick<SKUProduct, "sku" | "name">`; el typecheck completo pasó.
 
 El 2026-11-14 se repitió `npm --prefix uis/backoffice run typecheck` sin errores y se arrancó el backoffice en un puerto local temporal: `GET /inventory/orders` respondió HTTP 200. El proceso iniciado para la prueba se detuvo.
+
+Tras añadir `ProductListItem`, `npm --prefix uis/backoffice run typecheck` volvió a terminar sin errores y `GET /inventory/products` del backoffice respondió HTTP 200 en un puerto local temporal; se detuvo el proceso y se restauró el `tsconfig.tsbuildinfo` generado.
 
 ### Pruebas manuales
 
@@ -376,12 +386,12 @@ Revisados el 2026-11-14; las excepciones documentadas no alteran la columna de c
 - [x] Sin respuestas ORM/TinyDB crudas ni dicts sin tipar: los response models de las tablas de inventario y los esquemas de `services/api/models.py` y `services/api/schemas.py` filtran o validan las respuestas; las excepciones 204 no tienen cuerpo.
 - [x] Entrada y salida separadas: inspección de OpenAPI sin esquemas JSON de body reutilizados como respuesta; definiciones en `services/api/models.py` y `services/api/schemas.py`.
 - [x] Escrituras restringidas: los 13 esquemas JSON de body en OpenAPI declaran `additionalProperties: false`; rechazo 422 en [registro con campo extra](evidence/02-registro-extra-422.png) y en `tests/test_serialization_contracts.py`.
-- [ ] Listados con esquema ligero **propio**: `SupplierListItem`, `UserListItem` e `InventoryOrderListItem` existen, pero `GET /inventory/products` comparte `ProductResponse` con el detalle. Sus siete campos son consumidos por la UI, pero no tiene esquema de listado propio; no se afirma cumplido literalmente el criterio.
+- [x] Listados con esquema ligero **propio**: `SupplierListItem`, `UserListItem`, `InventoryOrderListItem` y `ProductListItem`; `test_product_list_uses_list_item_and_preserves_consumed_fields` verifica el contrato y los siete campos consumidos.
 - [x] Sin `password`, `hashed_password` ni tokens internos en las respuestas: esquemas de salida en `services/api/models.py` y `services/api/schemas.py`; pruebas de auth en `tests/test_serialization_contracts.py`. El `access_token` de login es el token de acceso requerido por el cliente, no un token interno.
-- [x] Registro, login, forgot y reset sin email; `/auth/me` puede devolverlo: `test_auth_responses_do_not_expose_credentials_or_email` y [consulta autenticada](evidence/05-pruebas-token-terminal.png).
+- [x] Registro, login, forgot y reset sin email; `/auth/me` puede devolverlo: `test_auth_responses_do_not_expose_credentials_or_email`, `test_authenticated_me_returns_only_public_profile` y [consulta autenticada](evidence/05-pruebas-token-terminal.png).
 - [x] Forgot responde igual exista o no el usuario: [existente](evidence/04a-forgot-existe.png) y [no existente](evidence/04b-forgot-no-existe.png), mismo cuerpo y longitud 89.
 - [x] Decisiones sobre relaciones documentadas: fichas AUTH, INVENTORY, PROFILES, SUPPLIERS y USERS de este documento.
 - [x] Inventario, estados y verificación documentados: 25 filas con estado final ✅; se conservaron los estados originales.
 - [x] Rutas de ficheros citadas comprobadas en el repositorio; funciones y componentes identificados en las tablas y fichas de este documento.
-- [x] Pytest supera el baseline: 7 passed frente a 0 tests recolectados; ver tabla de pruebas automatizadas.
+- [x] Pytest supera el baseline: 9 passed frente a 0 tests recolectados; ver tabla de pruebas automatizadas.
 - [x] Campos usados por frontend conservados: consumidores identificados en las tablas, `uis/backoffice/src/lib/inventory.ts` y typecheck del backoffice sin errores.

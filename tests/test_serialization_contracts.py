@@ -1,18 +1,27 @@
 import pytest
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
 
+from services.api.database import get_db
 from services.api.main import app
 from services.api.models import (
+    SKU,
+    StockEntry,
     SupplierPublic,
     SupplierUpdateRate,
     SupplierUpdateStatus,
 )
 from services.api.routes import auth as auth_routes
 from services.api.routes import suppliers as supplier_routes
-from services.api.schemas import InventoryOrderListItem, ProductOrderSummary
+from services.api.schemas import (
+    InventoryOrderListItem,
+    ProductListItem,
+    ProductOrderSummary,
+)
 from services.api.security import get_current_user
 from services.api.services import profiles as profile_service
 from services.api.services import users as user_service
@@ -156,6 +165,85 @@ def test_auth_responses_do_not_expose_credentials_or_email(api_client):
     for response in (unauthenticated_me, unauthenticated_change):
         assert response.status_code == 401
         assert "email" not in set(_response_keys(response.json()))
+
+
+def test_authenticated_me_returns_only_public_profile(api_client, monkeypatch):
+    monkeypatch.delitem(app.dependency_overrides, get_current_user)
+    registration = api_client.post(
+        "/users",
+        json={
+            "email": "person@example.com",
+            "password": "initial-password",
+            "name": "Test Person",
+            "phone": "123456789",
+            "address": "Test Street",
+        },
+    )
+    assert registration.status_code == 201
+
+    login = api_client.post(
+        "/auth/login",
+        json={"email": "person@example.com", "password": "initial-password"},
+    )
+    assert login.status_code == 200
+    response = api_client.get(
+        "/auth/me",
+        headers={"Authorization": f"Bearer {login.json()['access_token']}"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body == {
+        "email": "person@example.com",
+        "profile": {
+            "name": "Test Person",
+            "phone": "123456789",
+            "address": "Test Street",
+        },
+    }
+    assert not set(_response_keys(body)).intersection(
+        {"password", "hashed_password", "id", "user_id", "role"}
+    )
+
+
+def test_product_list_uses_list_item_and_preserves_consumed_fields(monkeypatch):
+    route = next(route for route in _api_routes(app.routes) if route.name == "list_products")
+    assert route.response_model == list[ProductListItem]
+
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        product = SKU(
+            sku="SKU-1",
+            name="Product",
+            client_name="Client",
+            category="Category",
+            reference="REF-1",
+        )
+        session.add(product)
+        session.commit()
+        session.refresh(product)
+        session.add(StockEntry(sku_id=product.id, warehouse="Zaragoza", quantity=4, user_uuid="1"))
+        session.commit()
+        monkeypatch.setitem(app.dependency_overrides, get_db, lambda: session)
+
+        response = TestClient(app).get("/inventory/products")
+
+        assert response.status_code == 200
+        assert response.json() == [{
+            "id": product.id,
+            "sku": "SKU-1",
+            "name": "Product",
+            "client_name": "Client",
+            "category": "Category",
+            "reference": "REF-1",
+            "current_stock": 4,
+        }]
+    engine.dispose()
 
 
 def test_write_endpoint_rejects_fields_not_in_its_input_schema(api_client):
