@@ -33,3 +33,5 @@
 * Verificado: seed idempotente con CSV temporal, contrato HTTP de la API, ESLint/TypeScript focalizado y `npm run build` del backoffice.
 * Ajuste 2026-09-09: los enums de incidencias se comparten directamente entre `packages/shared/incident_validation.py` y `services/api/models.py`; el resumen visualiza total, estados, categorías, orígenes y sedes.
 * La tabla temporal `incidents` se elimina del JSON de proveedores tras las pruebas; el seed histórico real y las pruebas persistentes siguen pendientes por no estar incluido el CSV en el repositorio.
+
+* **Actualización 2026-09-28 (tests de autenticación):** Se configuró pytest para incluir la raíz del repositorio en `pythonpath`, permitiendo importar `services.api.auth` desde `tests/test_auth.py`. Los 7 tests pasan y `auth.py` alcanza 70% de cobertura.
