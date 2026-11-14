@@ -1,7 +1,7 @@
 export function Hero() {
   return (
     <section id="inicio" className="section-shell py-16 md:py-24">
-      <div className="fade-up grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+      <div className="fade-up fade-up-lcp grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-center">
         <div>
           <p className="mb-4 inline-flex rounded-full border border-[var(--brand)]/20 bg-white px-3 py-1 text-xs font-semibold tracking-[0.08em] text-[var(--brand-strong)] uppercase">
             Operador logistico binacional
