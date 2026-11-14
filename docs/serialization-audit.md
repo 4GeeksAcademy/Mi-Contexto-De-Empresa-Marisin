@@ -1,7 +1,7 @@
 # Auditoría inicial de serialización de la API
 
 **Fecha:** 2026-11-13
-**Alcance inicial:** Fases 0 y 1. La implementación de Fase 2 se inicia tras la aprobación del usuario el 2026-11-13.
+**Alcance:** auditoría, implementación y verificación de la serialización; hallazgos de autenticación documentados fuera de alcance.
 
 ## 1. Resumen ejecutivo
 
@@ -16,7 +16,7 @@ Riesgos principales:
 - Los modelos de perfil y proveedor incluyen claves/timestamps que no consume la UI. `Supplier` hereda de `SupplierCreate`, mezclando actualmente campos de entrada y salida en su definición.
 - Los borrados de proveedores y usuarios son respuestas vacías HTTP 204: no serializan un objeto, pero no declaran `response_model`.
 
-El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida **5** (0 passed, 0 failed, 0 errors; no se recolectaron tests). La carpeta `tests/` contiene únicamente `__pycache__`; no contiene ningún `test_*.py`. Por tanto, el baseline real es cero tests, y los tests de contrato previstos para Fase 3 serán la primera suite de pytest del backend. Es un resultado previo a cualquier cambio.
+El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida **5** (0 passed, 0 failed, 0 errors; no se recolectaron tests). En ese momento `tests/` contenía únicamente `__pycache__`, sin ningún `test_*.py`. El baseline real fue cero tests, previo a cualquier cambio.
 
 ## 2. Metodología
 
@@ -25,7 +25,7 @@ El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida *
 - Busqué paths y llamadas de API en `uis/` y comprobé los componentes, clientes y tipos que leen respuestas. “No encontrado” significa que no hallé un consumidor de esa ruta en `uis/`, no que no pueda existir un consumidor externo.
 - Revisé `skills/`, `skills/code-review/`, `.agents/skills/`, `.agents/rules/` y `skills-lock.json`. No existe `skills-lock.json` en esta rama. `skills/code-review/` solo contiene `.gitkeep`; no hay una skill de revisión que aplicar. Revisé `.agents/skills/logistics-validator/SKILL.md`, pero no la apliqué: exige `weight_kg` y `destination` para objetos de logística/envíos, campos que no forman parte de los contratos de SKU y movimientos de inventario auditados; añadirlos sería inventar requisitos ajenos al alcance. Revisé `.agents/rules/coding-standards.md`; se aplica a cambios TypeScript/frontend, que no se requieren para conservar los campos leídos por la UI. Por ello, no se aplicó ninguna skill: la inspección de consumidores y schemas se hizo directamente contra el código fuente.
 - El Python disponible informó Pydantic **2.13.5**. El activador de `.venv` está restringido por la política de contenido de la organización; no intenté acceder a ese archivo por otro medio. Por tanto, la versión constatada es la del Python disponible, no una afirmación sobre un entorno virtual inaccesible. Para las propuestas Pydantic v2, la sintaxis pertinente es `model_validate` y `ConfigDict(from_attributes=True)` cuando se valide desde atributos ORM.
-- Tras la aprobación del usuario, Fase 2 se ejecuta por router y en este orden: auth, users, profiles, suppliers, inventory. La Fase 3 permanece fuera del alcance.
+- Tras la aprobación del usuario, la Fase 2 se ejecutó por router en este orden: auth, users, profiles, suppliers, inventory. La Fase 3 se verificó como se describe a continuación.
 
 ## 3. Criterios de clasificación
 
@@ -33,7 +33,7 @@ El baseline exacto fue `pytest -q`: `no tests ran in 0.05s`, código de salida *
 - **⚠️ Parcialmente serializado:** tiene un modelo incompleto/excesivo o requiere una excepción documentada. Los endpoints 204 sin cuerpo se incluyen aquí: no serializan datos, pero conviene declarar explícitamente la excepción y mantener el 204.
 - **❌ Sin serializar:** devuelve un dict sin `response_model`, aunque el contenido actual sea un mensaje.
 
-Las columnas `Estado final` describen el resultado esperado/aplicado según el avance router por router. Se mantienen los estados originales sin cambios.
+Las columnas `Estado final` describen el resultado aplicado; los 25 endpoints figuran como ✅ y se mantienen los estados originales sin cambios.
 
 ## 4. Inventario por router
 
@@ -323,7 +323,7 @@ El registro se implementa en `services/api/routes/users.py`, función `register_
 
 ## CHECKPOINT
 
-Fases 0, 1 y 2 completadas y documentadas; los estados originales permanecen intactos y todos los estados finales están en ✅. No se ejecutó Fase 3, tal como solicitó el usuario.
+Fases 0, 1 y 2 completadas y documentadas; los estados originales permanecen intactos y todos los estados finales están en ✅. La verificación posterior y sus límites se detallan abajo.
 
 ## Verificación
 
@@ -333,8 +333,11 @@ Fases 0, 1 y 2 completadas y documentadas; los estados originales permanecen int
 |---|---|
 | Baseline, antes de implementar | `pytest -q`: `no tests ran in 0.05s`, código de salida 5; 0 passed, 0 failed, 0 errors. `tests/` no contenía archivos `test_*.py` (solo `__pycache__`). |
 | Fase 3, después de añadir contratos | `pytest -q`: 7 passed, 3 warnings, código de salida 0. Los warnings son deprecaciones de `TestClient`/httpx y `FastAPI.on_event`. Se configuró `pythonpath = ["."]` en `pyproject.toml` para que pytest encuentre el paquete `services` desde la raíz del repositorio. |
+| Repetición 2026-11-14 | `pytest -q`: **7 passed, 3 warnings in 5.92s**, código de salida 0, con el Python disponible. |
 
 `tests/test_serialization_contracts.py` comprueba los response models (con excepción limitada a los DELETE 204 documentados), las respuestas de registro/login/forgot/reset sin email ni claves de contraseña, respuestas protegidas de auth sin email, rechazo de campos extra, contratos PATCH de proveedores y la proyección `InventoryOrderListItem.product` limitada a `sku` y `name`. Los datos TinyDB son temporales en memoria; inventory se valida inspeccionando los esquemas, sin conexión a Supabase.
+
+**Límite:** el test automatizado consulta `/auth/me` sin autenticar, no comprueba su respuesta autenticada. Esta última se verificó manualmente con curl, pero falta la comprobación automatizada solicitada en la Fase 3.
 
 ### Typecheck y arranque del backoffice
 
@@ -342,11 +345,43 @@ Se eliminó la caché generada `uis/backoffice/.next` y se repitió `npm --prefi
 
 Tras limpiar la caché, `npm --prefix uis/backoffice run dev` quedó listo y `GET /inventory/orders` respondió HTTP 200. No se reprodujo el `SyntaxError` observado durante la Fase 2; la evidencia apunta a un problema transitorio asociado al estado generado anterior, pero no permite atribuirle una causa más específica. La página `uis/backoffice/src/app/inventory/orders/page.tsx` sigue accediendo únicamente a `product.name` y `product.sku`, ambos incluidos en `Pick<SKUProduct, "sku" | "name">`; el typecheck completo pasó.
 
-### Pruebas manuales en `/docs`
+El 2026-11-14 se repitió `npm --prefix uis/backoffice run typecheck` sin errores y se arrancó el backoffice en un puerto local temporal: `GET /inventory/orders` respondió HTTP 200. El proceso iniciado para la prueba se detuvo.
 
-Pendientes de ejecución por el usuario:
+### Pruebas manuales
 
-| Endpoint | Petición | Respuesta | ¿Coincide con el esquema? | Captura |
+Pruebas realizadas por el usuario. Las contraseñas de prueba se ocultaron en las capturas antes de incorporarlas al repositorio; el token de login ya estaba oculto.
+
+| Endpoint y medio | Petición | Respuesta observada | Esquema | Captura |
 |---|---|---|---|---|
+| `POST /users`, `/docs` | Registro | 201, solo `{"message": ...}`, sin email ni contraseña | `MessageResponse` | [Registro](evidence/01-registro-201.png) |
+| `POST /users`, `/docs` | Registro con `"role": "admin"` adicional | 422 `extra_forbidden` en `body.role`; la validación impide crear el usuario | `UserCreate` prohíbe extras | [Campo extra](evidence/02-registro-extra-422.png) |
+| `POST /auth/login`, `/docs` | Login JSON | 200 con `access_token` y `token_type: "bearer"`, sin email; token oculto | `LoginResponse` | [Login](evidence/03-login-200.png) |
+| `POST /auth/forgot-password`, `/docs` | Email existente | 200, mensaje genérico, `content-length: 89` | `MessageResponse` | [Email existente](evidence/04a-forgot-existe.png) |
+| `POST /auth/forgot-password`, `/docs` | Email inexistente | 200, mensaje idéntico y `content-length: 89`; no revela si existe la cuenta mediante la respuesta | `MessageResponse` | [Email inexistente](evidence/04b-forgot-no-existe.png) |
+| `GET /auth/me` y `GET /suppliers`, curl con Bearer | Consultas desde terminal | `/auth/me`: `email`, `profile {name, phone, address}`, sin `password`, `id`, `user_id` ni `role`. `/suppliers`: `id`, `name`, `country`, `categories`, `rate_usd`, `status`, sin `updated_at` | `MeResponse` y `SupplierListItem[]` | [Consultas autenticadas](evidence/05-pruebas-token-terminal.png) |
 
-Las pruebas manuales y sus capturas siguen pendientes. Por ello, no se marcan como revisados los criterios de aceptación finales.
+Los endpoints autenticados se probaron por curl debido al hallazgo 1. Por tanto, el listado se verificó por curl, no mediante `/docs`. Según el usuario, el usuario de prueba se eliminó después con `git restore data/suppliers.json`.
+
+## Hallazgos fuera de alcance
+
+1. **Authorize de Swagger y login JSON:** `services/api/security.py` configura `OAuth2PasswordBearer(tokenUrl="/auth/login")`, cuyo flujo password envía formulario; `services/api/routes/auth.py`, función `login`, recibe `LoginRequest` en JSON. Una petición de formulario a `/auth/login` respondió 422. Es preexistente: en `main`, `login(credentials: LoginRequest)` y la configuración OAuth2 ya eran iguales. Recomendación, sin implementar: usar `HTTPBearer` en Swagger o proporcionar un endpoint de token compatible con OAuth2 form.
+2. **Lecturas de inventory sin JWT:** OpenAPI no exige autenticación para `GET /inventory/products`, `GET /inventory/products/{product_id}` ni `GET /inventory/orders`, aunque `memory-bank/progress.md` afirma que se protegieron el 2026-11-02. La comparación `git diff main -- services/api/routes/inventory.py` no elimina ningún `Depends(get_current_user)`; las tres funciones tampoco lo declaran en `main`. Es preexistente, no una regresión de esta rama. Riesgo: exposición no autenticada de productos, stock e historial de órdenes. Recomendación, sin implementar: validar el requisito de acceso y proteger las tres lecturas con `Depends(get_current_user)` y pruebas de autorización.
+
+## Criterios de aceptación
+
+Revisados el 2026-11-14; las excepciones documentadas no alteran la columna de clasificación de los endpoints.
+
+- [x] Rama `feature/serialization-audit`: `git branch --show-current`.
+- [x] Response models explícitos: `tests/test_serialization_contracts.py`, `test_every_api_route_declares_a_response_model_or_documented_204`; excepciones explícitas en los dos DELETE 204.
+- [x] Sin respuestas ORM/TinyDB crudas ni dicts sin tipar: los response models de las tablas de inventario y los esquemas de `services/api/models.py` y `services/api/schemas.py` filtran o validan las respuestas; las excepciones 204 no tienen cuerpo.
+- [x] Entrada y salida separadas: inspección de OpenAPI sin esquemas JSON de body reutilizados como respuesta; definiciones en `services/api/models.py` y `services/api/schemas.py`.
+- [x] Escrituras restringidas: los 13 esquemas JSON de body en OpenAPI declaran `additionalProperties: false`; rechazo 422 en [registro con campo extra](evidence/02-registro-extra-422.png) y en `tests/test_serialization_contracts.py`.
+- [ ] Listados con esquema ligero **propio**: `SupplierListItem`, `UserListItem` e `InventoryOrderListItem` existen, pero `GET /inventory/products` comparte `ProductResponse` con el detalle. Sus siete campos son consumidos por la UI, pero no tiene esquema de listado propio; no se afirma cumplido literalmente el criterio.
+- [x] Sin `password`, `hashed_password` ni tokens internos en las respuestas: esquemas de salida en `services/api/models.py` y `services/api/schemas.py`; pruebas de auth en `tests/test_serialization_contracts.py`. El `access_token` de login es el token de acceso requerido por el cliente, no un token interno.
+- [x] Registro, login, forgot y reset sin email; `/auth/me` puede devolverlo: `test_auth_responses_do_not_expose_credentials_or_email` y [consulta autenticada](evidence/05-pruebas-token-terminal.png).
+- [x] Forgot responde igual exista o no el usuario: [existente](evidence/04a-forgot-existe.png) y [no existente](evidence/04b-forgot-no-existe.png), mismo cuerpo y longitud 89.
+- [x] Decisiones sobre relaciones documentadas: fichas AUTH, INVENTORY, PROFILES, SUPPLIERS y USERS de este documento.
+- [x] Inventario, estados y verificación documentados: 25 filas con estado final ✅; se conservaron los estados originales.
+- [x] Rutas de ficheros citadas comprobadas en el repositorio; funciones y componentes identificados en las tablas y fichas de este documento.
+- [x] Pytest supera el baseline: 7 passed frente a 0 tests recolectados; ver tabla de pruebas automatizadas.
+- [x] Campos usados por frontend conservados: consumidores identificados en las tablas, `uis/backoffice/src/lib/inventory.ts` y typecheck del backoffice sin errores.
