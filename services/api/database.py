@@ -44,6 +44,7 @@ os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 db = TinyDB(DB_PATH)
 suppliers_table = db.table("suppliers")
+incidents_table = db.table("incidents")
 users_table = db.table("users")
 profiles_table = db.table("profiles")
 password_reset_tokens_table = db.table("password_reset_tokens")

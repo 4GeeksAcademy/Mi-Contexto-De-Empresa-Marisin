@@ -101,7 +101,7 @@ def _response_keys(value):
 def test_every_api_route_declares_a_response_model_or_documented_204():
     routes = list(_api_routes(app.routes))
 
-    assert len(routes) == 25
+    assert len(routes) == 30
     for route in routes:
         if route.response_model is None:
             assert route.status_code == 204
