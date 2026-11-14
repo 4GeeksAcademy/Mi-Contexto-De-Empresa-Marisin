@@ -12,6 +12,7 @@ dependencies = [
     "python-dotenv>=1.2.3",
     "sqlmodel>=0.0.24,<0.1",
     "psycopg2-binary>=2.9.10,<3",
+    "pandas",
 ]
 
 [tool.pytest.ini_options]

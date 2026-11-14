@@ -36,13 +36,26 @@ export type IncidentSummary = {
 };
 
 const apiBase = "/backend/api/incidents";
+const genericIncidentError = "No se pudo completar la operación. Inténtalo de nuevo en unos segundos.";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBase}${path}`, { ...init, cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(response.status >= 500 ? "El servicio no está disponible ahora." : "Revisa los datos introducidos.");
+  try {
+    const response = await fetch(`${apiBase}${path}`, { ...init, cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(response.status >= 500 ? "El servicio no está disponible ahora." : "Revisa los datos introducidos.");
+    }
+
+    try {
+      return (await response.json()) as T;
+    } catch {
+      throw new Error("La respuesta del servicio no se pudo interpretar.");
+    }
+  } catch (error) {
+    if (error instanceof Error && error.message && !/^error\s*\d{3}/i.test(error.message)) {
+      throw error;
+    }
+    throw new Error(genericIncidentError);
   }
-  return (await response.json()) as T;
 }
 
 export function listIncidents(filters: { status?: string; origin?: string; branch?: string }) {
