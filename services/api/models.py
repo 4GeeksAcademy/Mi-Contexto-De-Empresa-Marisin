@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Literal, Optional
-from pydantic import BaseModel, Field as PydanticField
+from pydantic import BaseModel, ConfigDict, Field as PydanticField
 from sqlmodel import Field as SQLField, SQLModel
 
 class SKU(SQLModel, table=True):
@@ -50,6 +50,8 @@ class CountryEnum(str, Enum):
 
 
 class SupplierCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: str = PydanticField(..., min_length=1, description="Nombre del proveedor")
     country: CountryEnum = PydanticField(..., description="País en el que opera")
     categories: List[str] = PydanticField(..., min_length=1, description="Categorías de productos")
@@ -58,16 +60,33 @@ class SupplierCreate(BaseModel):
 
 
 class SupplierUpdateRate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     rate_usd: float = PydanticField(..., gt=0, description="Nueva tarifa (debe ser mayor a 0)")
 
 
 class SupplierUpdateStatus(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     status: SupplierStatus = PydanticField(..., description="Nuevo estado del proveedor")
 
 
-class Supplier(SupplierCreate):
+class SupplierPublic(BaseModel):
     id: str = PydanticField(..., description="ID único asignado por TinyDB")
-    updated_at: str = PydanticField(..., description="Timestamp de la última actualización")
+    name: str
+    country: CountryEnum
+    categories: List[str]
+    rate_usd: float
+    status: SupplierStatus
+
+
+class SupplierListItem(BaseModel):
+    id: str
+    name: str
+    country: CountryEnum
+    categories: List[str]
+    rate_usd: float
+    status: SupplierStatus
 
 
 class UserRole(str, Enum):
@@ -77,6 +96,8 @@ class UserRole(str, Enum):
 
 
 class ProfileCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     name: Optional[str] = PydanticField(default=None, min_length=1)
     phone: Optional[str] = None
     address: Optional[str] = None
@@ -88,6 +109,8 @@ class Profile(ProfileCreate):
 
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: str = PydanticField(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: str = PydanticField(..., min_length=8, exclude=True)
     name: Optional[str] = PydanticField(default=None, min_length=1)
@@ -106,6 +129,8 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: Optional[str] = PydanticField(default=None, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: Optional[str] = PydanticField(default=None, min_length=8, exclude=True)
     role: Optional[UserRole] = None
@@ -136,15 +161,23 @@ class User(BaseModel):
     created_at: str
 
 
-class UserResponse(BaseModel):
+class UserPublic(BaseModel):
     id: int
     email: str
     is_active: bool
     role: UserRole
-    created_at: str
+
+
+class UserListItem(BaseModel):
+    id: int
+    email: str
+    is_active: bool
+    role: UserRole
 
 
 class LoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: str = PydanticField(..., pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     password: str
 
@@ -161,15 +194,21 @@ class MeResponse(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: str = PydanticField(..., min_length=3)
 
 
 class ResetPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     token: str = PydanticField(..., min_length=1)
     new_password: str = PydanticField(..., min_length=8)
 
 
 class ChangePasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     current_password: str = PydanticField(..., min_length=1)
     new_password: str = PydanticField(..., min_length=8)
 
@@ -190,6 +229,8 @@ class SKUProduct(BaseModel):
 
 
 class InboundOrderCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     sku_id: int = PydanticField(..., gt=0, strict=True)
     warehouse: str = PydanticField(..., min_length=1, pattern=r"\S")
     quantity: int = PydanticField(..., gt=0, strict=True)
