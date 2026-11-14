@@ -79,6 +79,16 @@ class ProductResponse(ProductSummary):
     current_stock: int = Field(..., description="Stock actual calculado")
 
 
+class ProductListItem(BaseModel):
+    id: int
+    sku: str
+    name: str
+    client_name: str
+    category: str
+    reference: str
+    current_stock: int = Field(..., description="Stock actual calculado")
+
+
 # --- Order Schemas ---
 class InboundOrderCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")

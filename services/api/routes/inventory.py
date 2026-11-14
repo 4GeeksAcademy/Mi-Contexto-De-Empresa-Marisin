@@ -14,6 +14,7 @@ from ..schemas import (
     OutboundOrderCreate,
     OutboundOrderResponse,
     ProductCreate,
+    ProductListItem,
     ProductOrderSummary,
     ProductResponse,
 )
@@ -58,7 +59,7 @@ def _user_uuid(current_user: dict) -> str:
     return str(identifier)
 
 
-@router.get("/products", response_model=list[ProductResponse])
+@router.get("/products", response_model=list[ProductListItem])
 def list_products(session: Annotated[Session, Depends(get_db)]):
     skus = session.exec(select(SKU).order_by(SKU.id)).all()
     balances = _warehouse_balances(session)
