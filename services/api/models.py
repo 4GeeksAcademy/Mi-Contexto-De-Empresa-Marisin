@@ -1,8 +1,14 @@
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 from pydantic import BaseModel, ConfigDict, Field as PydanticField
 from sqlmodel import Field as SQLField, SQLModel
+from packages.shared.incident_validation import (
+    IncidentBranch,
+    IncidentCategory,
+    IncidentOrigin,
+    IncidentStatus,
+)
 
 class SKU(SQLModel, table=True):
     __tablename__ = "skus"
@@ -252,3 +258,33 @@ class InventoryOrder(BaseModel):
     exit_type: Optional[str] = None
     tracking_number: Optional[str] = None
     
+
+
+# --- Gestor de incidencias ---
+
+
+class IncidentCreate(BaseModel):
+    title: str = PydanticField(..., min_length=1)
+    description: str = PydanticField(..., min_length=1)
+    category: IncidentCategory
+    status: IncidentStatus = IncidentStatus.open
+    origin: IncidentOrigin
+    branch: IncidentBranch
+
+
+class IncidentStatusUpdate(BaseModel):
+    status: IncidentStatus
+
+
+class Incident(IncidentCreate):
+    id: str
+    created_at: str
+    updated_at: str
+
+
+class IncidentSummary(BaseModel):
+    total: int
+    by_status: Dict[str, int]
+    by_category: Dict[str, int]
+    by_origin: Dict[str, int]
+    by_branch: Dict[str, int]
