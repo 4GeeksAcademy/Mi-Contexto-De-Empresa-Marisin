@@ -26,7 +26,7 @@ export default function OutboundOrderPage() {
   const selectedProduct = products.find((p) => p.id.toString() === selectedSkuId);
   const currentStock = selectedProduct
     ? orders.reduce((stock, order) => {
-        if (order.product.id !== selectedProduct.id || order.warehouse !== warehouse) return stock;
+        if (order.product.sku !== selectedProduct.sku || order.warehouse !== warehouse) return stock;
         return stock + (order.order_type === "inbound" ? order.quantity : -order.quantity);
       }, 0)
     : 0;
