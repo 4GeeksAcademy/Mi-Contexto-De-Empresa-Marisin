@@ -10,17 +10,15 @@ from ..models import SKU, StockEntry, StockExit
 from ..schemas import (
     InboundOrderCreate,
     InboundOrderResponse,
-    InventoryOrderResponse,
-    InventoryUserSummary,
+    InventoryOrderListItem,
     OutboundOrderCreate,
     OutboundOrderResponse,
     ProductCreate,
+    ProductListItem,
+    ProductOrderSummary,
     ProductResponse,
-    ProductSummary,
 )
 from ..security import get_current_user
-from ..services.profiles import get_profile_by_user_id
-from ..services.users import get_user_by_id
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -61,23 +59,7 @@ def _user_uuid(current_user: dict) -> str:
     return str(identifier)
 
 
-def _user_summary(user_uuid: str) -> InventoryUserSummary | None:
-    try:
-        user_id = int(user_uuid)
-    except ValueError:
-        return None
-    user = get_user_by_id(user_id)
-    if user is None:
-        return None
-    profile = get_profile_by_user_id(user_id)
-    return InventoryUserSummary(
-        user_uuid=user_uuid,
-        email=user.get("email"),
-        name=profile.get("name") if profile else None,
-    )
-
-
-@router.get("/products", response_model=list[ProductResponse])
+@router.get("/products", response_model=list[ProductListItem])
 def list_products(session: Annotated[Session, Depends(get_db)]):
     skus = session.exec(select(SKU).order_by(SKU.id)).all()
     balances = _warehouse_balances(session)
@@ -172,7 +154,7 @@ def create_outbound_order(
     return OutboundOrderResponse.model_validate(order, from_attributes=True)
 
 
-@router.get("/orders", response_model=list[InventoryOrderResponse])
+@router.get("/orders", response_model=list[InventoryOrderListItem])
 def list_orders(session: Annotated[Session, Depends(get_db)]):
     inbound_orders = session.exec(select(StockEntry)).all()
     outbound_orders = session.exec(select(StockExit)).all()
@@ -180,7 +162,6 @@ def list_orders(session: Annotated[Session, Depends(get_db)]):
         sku_obj.id: sku_obj for sku_obj in session.exec(select(SKU)).all()
     }
     orders = []
-    user_cache: dict[str, InventoryUserSummary | None] = {}
 
     for order_type, rows in (
         ("inbound", inbound_orders),
@@ -190,18 +171,15 @@ def list_orders(session: Annotated[Session, Depends(get_db)]):
             sku_obj = skus.get(order.sku_id)
             if sku_obj is None:
                 continue
-            if order.user_uuid not in user_cache:
-                user_cache[order.user_uuid] = _user_summary(order.user_uuid)
             orders.append(
-                InventoryOrderResponse(
+                InventoryOrderListItem(
                     id=order.id,
                     order_type=order_type,
-                    product=ProductSummary.model_validate(sku_obj.model_dump()),
+                    product=ProductOrderSummary(sku=sku_obj.sku, name=sku_obj.name),
                     warehouse=order.warehouse,
                     quantity=order.quantity,
                     created_at=order.created_at,
                     user_uuid=order.user_uuid,
-                    user=user_cache[order.user_uuid],
                 )
             )
     return sorted(orders, key=lambda order: order.created_at, reverse=True)
