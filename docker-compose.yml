@@ -7,15 +7,18 @@ services:
     ports:
       - "3000:3000"
       - "3001:3001"
+      - "3002:3002"
     volumes:
       - ./uis:/app
       - ui_website_node_modules:/app/website/node_modules
       - ui_backoffice_node_modules:/app/backoffice/node_modules
+      - ui_application_node_modules:/app/application/node_modules
     env_file:
       - path: ./.env
         required: false
     environment:
       NEXT_PUBLIC_INVENTORY_API_URL: ${NEXT_PUBLIC_INVENTORY_API_URL:-http://api:8000}
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://api:8000}
     networks:
       - trackflow-network
 
@@ -39,3 +42,4 @@ networks:
 volumes:
   ui_website_node_modules:
   ui_backoffice_node_modules:
+  ui_application_node_modules:
