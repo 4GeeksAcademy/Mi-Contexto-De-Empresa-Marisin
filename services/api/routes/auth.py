@@ -13,7 +13,9 @@ from ..schemas import (
     ForgotPasswordRequest,
     LoginRequest,
     LoginResponse,
+    MessageResponse,
     MeResponse,
+    ProfilePublic,
     ResetPasswordRequest,
 )
 from ..security import (
@@ -52,10 +54,17 @@ def login(credentials: LoginRequest):
 @router.get("/me", response_model=MeResponse)
 def read_me(current_user: Annotated[dict, Depends(get_current_user)]):
     profile = get_profile_by_user_id(current_user["id"])
-    return MeResponse(email=current_user["email"], role=current_user["role"], profile=profile)
+    return MeResponse(
+        email=current_user["email"],
+        profile=ProfilePublic.model_validate(profile) if profile else None,
+    )
 
 
-@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+)
 def forgot_password(payload: ForgotPasswordRequest):
     email = payload.email.strip().lower()
     user = get_user_by_email(email)
@@ -74,10 +83,16 @@ def forgot_password(payload: ForgotPasswordRequest):
             send_password_reset_email(email, raw_token)
         except Exception:
             logger.exception("No se pudo enviar el correo de recuperación")
-    return {"message": "Si esa dirección está registrada, recibirás un correo con instrucciones."}
+    return MessageResponse(
+        message="Si esa dirección está registrada, recibirás un correo con instrucciones."
+    )
 
 
-@router.post("/reset-password", status_code=status.HTTP_200_OK)
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+)
 def reset_password(payload: ResetPasswordRequest):
     token_hash = hashlib.sha256(payload.token.encode()).hexdigest()
     with auth_db_lock:
@@ -98,10 +113,14 @@ def reset_password(payload: ResetPasswordRequest):
         new_hashed = get_password_hash(payload.new_password)
         users_table.update({"hashed_password": new_hashed}, doc_ids=[user.doc_id])
         password_reset_tokens_table.update({"used_at": _now().isoformat()}, doc_ids=[token_record.doc_id])
-    return {"message": "Password reset successfully"}
+    return MessageResponse(message="Password reset successfully")
 
 
-@router.post("/change-password", status_code=status.HTTP_200_OK)
+@router.post(
+    "/change-password",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+)
 def change_password(payload: ChangePasswordRequest, current_user: Annotated[dict, Depends(get_current_user)]):
     if not verify_user_password(payload.current_password, current_user):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
@@ -113,4 +132,4 @@ def change_password(payload: ChangePasswordRequest, current_user: Annotated[dict
         {"hashed_password": new_hashed},
         doc_ids=[current_user["id"]],
     )
-    return {"message": "Password changed successfully"}
+    return MessageResponse(message="Password changed successfully")

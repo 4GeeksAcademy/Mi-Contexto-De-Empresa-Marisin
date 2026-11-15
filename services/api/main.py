@@ -1,8 +1,11 @@
+import logging
+import traceback
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlmodel import SQLModel
 
 # Antes de importar los routers: leen configuración desde el entorno.
@@ -11,6 +14,7 @@ load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 from . import models
 from .database import engine, seed_database
 from .routes.auth import router as auth_router
+from .routes.incidents import router as incidents_router  # NUEVO
 from .routes.inventory import router as inventory_router
 from .routes.profiles import router as profiles_router
 from .routes.suppliers import router as suppliers_router
@@ -37,6 +41,28 @@ app.add_middleware(
 )
 
 
+logger = logging.getLogger(__name__)
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    error_id = abs(hash(str(exc))) % 1000000
+
+    # Registrar el error completo en el servidor de forma segura
+    logger.error(f"Unhandled internal error [ID: {error_id}] on {request.url.path}: {str(exc)}")
+    logger.debug(traceback.format_exc())
+
+    # Respuesta limpia y estructurada para el cliente (sin trazas internas)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={
+            "error": "Internal Server Error",
+            "message": "Ha ocurrido un error inesperado en el servidor. Por favor, inténtelo de nuevo más tarde.",
+            "error_id": error_id,
+        },
+    )
+
+
 @app.on_event("startup")
 async def startup_event():
     if engine is not None:
@@ -50,3 +76,4 @@ app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(profiles_router)
 app.include_router(inventory_router)
+app.include_router(incidents_router)  # NUEVO

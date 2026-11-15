@@ -17,7 +17,7 @@ Ningún agente puede realizar un commit ni proponer cambios finales sin cumplir 
 1. **Validación de Tipos y Sintaxis:** Comprobar que no existan errores de TypeScript ni fallos de compilación en los módulos modificados.
 2. **Respeto a las Rutas del Monorepo:** Verificar que los nuevos componentes o vistas se alojen en sus carpetas correspondientes (`./uis/website`, `./uis/backoffice`, `/services`) y que no se duplique código de lógica de negocio (debe importarse desde su ubicación original).
 3. **Pruebas Locales:** Asegurar que la aplicación compila y arranca correctamente ejecutando las herramientas de prueba o compilación disponibles (`npm run dev`)[cite: 1].
-4. **Actualización de Memoria:** Registrar los cambios importantes o avances logrados en el archivo `memory-bank/progress.md` antes de sellar el commit[cite: 1].
+4. **Actualización de Memoria:** Registrar de manera DESCENDENTE los cambios importantes o avances logrados en el archivo `memory-bank/progress.md` antes de sellar el commit[cite: 1].
 
 ---
 
