@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
+import BackofficeNav from "../components/BackofficeNav";
 
 export const metadata: Metadata = {
   title: "TrackFlow Backoffice | Operaciones e Inventario",
@@ -11,7 +12,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <BackofficeNav />
+        {children}
+      </body>
     </html>
   );
 }
