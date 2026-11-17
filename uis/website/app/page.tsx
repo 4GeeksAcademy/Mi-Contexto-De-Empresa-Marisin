@@ -3,7 +3,7 @@ import { ContactFooter } from "@/components/ContactFooter";
 import { CoverageSection } from "@/components/CoverageSection";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
-import { LeadForm } from "@/components/LeadForm";
+import { LazyLeadForm } from "@/components/LazyLeadForm";
 import { ServicesSection } from "@/components/ServicesSection";
 
 const organizationSchema = {
@@ -58,7 +58,7 @@ export default function Home() {
       <ServicesSection />
       <CoverageSection />
       <BenefitsSection />
-      <LeadForm />
+      <LazyLeadForm />
       <ContactFooter />
       <script
         type="application/ld+json"
