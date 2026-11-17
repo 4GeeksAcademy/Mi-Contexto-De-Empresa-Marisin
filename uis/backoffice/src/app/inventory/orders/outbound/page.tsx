@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApiError } from "@/lib/api";
 import { createOutboundOrder, getOrders, getProducts, InventoryOrder, SKUProduct } from "@/lib/inventory";
@@ -22,13 +22,22 @@ export default function OutboundOrderPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Obtener producto seleccionado y su stock disponible actual
-  const selectedProduct = products.find((p) => p.id.toString() === selectedSkuId);
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.id.toString() === selectedSkuId),
+    [products, selectedSkuId],
+  );
+  // Evita recorrer miles de movimientos en cada tecla: O(n) solo al cambiar orders.
+  const stockIndex = useMemo(() => {
+    const index = new Map<string, number>();
+    for (const order of orders) {
+      const key = `${order.product.sku}|${order.warehouse}`;
+      const quantity = order.order_type === "inbound" ? order.quantity : -order.quantity;
+      index.set(key, (index.get(key) ?? 0) + quantity);
+    }
+    return index;
+  }, [orders]);
   const currentStock = selectedProduct
-    ? orders.reduce((stock, order) => {
-        if (order.product.sku !== selectedProduct.sku || order.warehouse !== warehouse) return stock;
-        return stock + (order.order_type === "inbound" ? order.quantity : -order.quantity);
-      }, 0)
+    ? stockIndex.get(`${selectedProduct.sku}|${warehouse}`) ?? 0
     : 0;
   const isStockExceeded = quantity > currentStock;
 
