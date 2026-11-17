@@ -447,9 +447,9 @@ Reglas del informe:
 | 2 Carga realista | ✅ | `96c641d`, `7a4644d`, `2c454f1` | Carga y medición 2.B ejecutadas por Marisin; invariante agregado verificado por el seeder. Matriz completa en `docs/caching/candidates.md`; B1 y B2 se mantienen como candidatos, B2 con beneficio potencial moderado. No se implementó caché. |
 | 3 Módulo de caché | ✅ | `aafa9a8` | Módulo TTL aislado, bloqueo compartido, invalidación y métricas. Pylance sin diagnósticos; sin ejecución Python ni integración con endpoints. Tests funcionales previstos en Fase 4. |
 | 4 Endpoints + invalidación + tests | ✅ | `a8da000`, `9b4a432`, `bbabcdc` | 34 tests pasan según la salida de Marisin. HIT/MISS, BYPASS, invalidación y control no cacheado medidos; comparativa guardada en benchmarks 03. 3001 incidencias en BYPASS por incidencia de prueba; purgar con `--purge`. |
-| 5 Lazy loading | ✅ | `606fd19`, `0627537`, `7c7d511`, `242fdb9` | Implementaciones, evidencia inicial y ajuste de altura completados; cierre documental en este commit (`docs(caching): completar evidencia de la carga diferida`). Builds OK, chunks y cuatro capturas aportados por Marisin. Alturas medidas: móvil 1312 px (ancho 390 px), escritorio 808 px. CLS no medido; no se afirma ausencia de desplazamientos. |
-| 6 useMemo | ✅ | `f8bba28` | Producto seleccionado memoizado e índice por SKU/almacén con `[orders]`; lookup directo. Build OK en segundo intento; primer intento interrumpido por aviso de seguridad de Next.js 16.4.4. Beneficio estimado; Profiler y comprobación visual pendientes. Cierre documental en este commit (`docs(caching): documentar justificación y verificación del useMemo`). |
-| 7 CACHING_REPORT.md | ⏳ | | |
+| 5 Lazy loading | ✅ | `606fd19`, `0627537`, `7c7d511`, `242fdb9`, `761d837` | Implementaciones, evidencia inicial y ajuste de altura completados. Builds OK, chunks y cuatro capturas aportados por Marisin. Alturas medidas: móvil 1312 px (ancho 390 px), escritorio 808 px. CLS no medido; no se afirma ausencia de desplazamientos. |
+| 6 useMemo | ✅ | `f8bba28`, `c52279e` | Producto seleccionado memoizado e índice por SKU/almacén con `[orders]`; lookup directo. Build OK en segundo intento; primer intento interrumpido por aviso de seguridad de Next.js 16.4.4. Beneficio estimado; Profiler y comprobación visual pendientes. |
+| 7 CACHING_REPORT.md | ✅ | Este commit: `docs(caching): añadir informe técnico CACHING_REPORT.md` | Informe con las nueve secciones, inventario completo, evolución 01→02→03/BYPASS, decisiones y reproducción. Evidencia previa reutilizada; sin ejecutar tests, builds o benchmarks. Límites de volumen, CLS, Profiler, concurrencia y seguridad explícitos. |
 | 8 Cierre | ⏳ | | |
 
 ### Baseline
@@ -468,6 +468,15 @@ Reglas del informe:
 - Rendimiento: latencias, volúmenes, JS por ruta y Core Web Vitals **no medidos** en esta fase. No se deduce ninguna mejora del resultado de tests o builds.
 
 ### Registro (más reciente arriba)
+
+#### 2026-11-17 — Fase 7 completada
+- Creado [CACHING_REPORT.md](../../CACHING_REPORT.md) con las nueve secciones de §10: resumen, metodología, inventario de todas las operaciones, decisiones backend/frontend, frescura, exclusiones, riesgos y reproducción.
+- Tablas copiadas de benchmarks 01, 02, 03 y BYPASS; volúmenes del seed y benchmarks. HIT frente a BYPASS: productos p50/p95 5.6/12.9 frente a 155.6/189.9 ms; resumen 0.7/2.1 frente a 18.0/33.0 ms. Se explicita la incidencia adicional de BYPASS y no se atribuyen al cacheado los cambios del control no cacheado.
+- Frecuencias estimadas desde consumidores citados, TTL como compromisos de diseño y no como resultados medidos. Se documentan invalidaciones locales tras éxito, validación de stock no cacheada, límites entre workers y posible relleno concurrente después de invalidar; no se afirma consistencia fuerte ni ausencia de carreras de inventario.
+- Frontend respaldado por capturas y builds existentes; CLS no medido y beneficio de `useMemo` estimado, sin Profiler. Se mantiene la recomendación de actualizar Next.js por el aviso de seguridad, fuera de alcance.
+- Solo documentación: no se ejecutaron Python, tests, builds, API, seeder o benchmarks ni se limpiaron datos. Comandos de reproducción y `--purge` documentados para uso autorizado; sin servidores iniciados ni operaciones remotas de Git.
+- Validación documental: `git diff --check` OK; comprobación automatizada de las nueve secciones, las 30 operaciones frente al inventario, los 12 pares p50/p95 frente a sus benchmarks y 137 enlaces locales del informe/plan, todos con destino existente.
+- Fases 5 y 6 incorporan los hashes de sus cierres documentales (`761d837`, `c52279e`) en la tabla. Fase 8 sigue pendiente de autorización, incluida la decisión de Marisin sobre conservar datos.
 
 #### 2026-11-17 — Fase 6 completada
 - Implementación (`f8bba28`) en `uis/backoffice/src/app/inventory/orders/outbound/page.tsx`: `selectedProduct` usa `[products, selectedSkuId]`; `stockIndex` acumula entradas y salidas por `sku|warehouse` con `[orders]`. `currentStock` hace lookup directo; `isStockExceeded` sigue sin memoizar.
