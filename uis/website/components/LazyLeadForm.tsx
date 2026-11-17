@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 const CONTACT_SECTION_ID = "contacto";
 
 function LeadFormPlaceholder() {
-  return <div aria-hidden="true" className="min-h-[75rem] md:min-h-[49rem]" />;
+  return <div aria-hidden="true" className="min-h-[82rem] md:min-h-[50.5rem]" />;
 }
 
 const LazyLeadFormContent = dynamic(
