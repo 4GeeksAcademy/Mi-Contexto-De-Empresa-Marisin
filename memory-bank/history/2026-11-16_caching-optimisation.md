@@ -448,7 +448,7 @@ Reglas del informe:
 | 3 Módulo de caché | ✅ | `aafa9a8` | Módulo TTL aislado, bloqueo compartido, invalidación y métricas. Pylance sin diagnósticos; sin ejecución Python ni integración con endpoints. Tests funcionales previstos en Fase 4. |
 | 4 Endpoints + invalidación + tests | ✅ | `a8da000`, `9b4a432`, `bbabcdc` | 34 tests pasan según la salida de Marisin. HIT/MISS, BYPASS, invalidación y control no cacheado medidos; comparativa guardada en benchmarks 03. 3001 incidencias en BYPASS por incidencia de prueba; purgar con `--purge`. |
 | 5 Lazy loading | ✅ | `606fd19`, `0627537`, `7c7d511`, `242fdb9` | Implementaciones, evidencia inicial y ajuste de altura completados; cierre documental en este commit (`docs(caching): completar evidencia de la carga diferida`). Builds OK, chunks y cuatro capturas aportados por Marisin. Alturas medidas: móvil 1312 px (ancho 390 px), escritorio 808 px. CLS no medido; no se afirma ausencia de desplazamientos. |
-| 6 useMemo | ⏳ | | |
+| 6 useMemo | ✅ | `f8bba28` | Producto seleccionado memoizado e índice por SKU/almacén con `[orders]`; lookup directo. Build OK en segundo intento; primer intento interrumpido por aviso de seguridad de Next.js 16.4.4. Beneficio estimado; Profiler y comprobación visual pendientes. Cierre documental en este commit (`docs(caching): documentar justificación y verificación del useMemo`). |
 | 7 CACHING_REPORT.md | ⏳ | | |
 | 8 Cierre | ⏳ | | |
 
@@ -468,6 +468,14 @@ Reglas del informe:
 - Rendimiento: latencias, volúmenes, JS por ruta y Core Web Vitals **no medidos** en esta fase. No se deduce ninguna mejora del resultado de tests o builds.
 
 ### Registro (más reciente arriba)
+
+#### 2026-11-17 — Fase 6 completada
+- Implementación (`f8bba28`) en `uis/backoffice/src/app/inventory/orders/outbound/page.tsx`: `selectedProduct` usa `[products, selectedSkuId]`; `stockIndex` acumula entradas y salidas por `sku|warehouse` con `[orders]`. `currentStock` hace lookup directo; `isStockExceeded` sigue sin memoizar.
+- Mismos signos, agrupación, avisos, bloqueo y recarga del historial tras guardar; sin cambios en API, tipos compartidos o dependencias. Equivalencia de lógica revisada en el diff; navegador pendiente.
+- [Benchmark 02](../../docs/caching/benchmarks/02-baseline-load.md): 12008 órdenes. Antes, 12008 visitas por render con producto seleccionado; después, índice O(n) al cambiar `orders` y lookup O(1) esperado en las ediciones. Es un modelo de trabajo, no una medición de tiempos ni de renders.
+- Validación con `NODE_ENV=production NEXT_PUBLIC_INVENTORY_API_URL=http://127.0.0.1:8000 npm run build`. [Primer intento](../../docs/caching/frontend/build-after-backoffice-intento1.txt): compilación y TypeScript OK, salida final 1 por `SecurityFatalError`. [Reintento único](../../docs/caching/frontend/build-after-backoffice.txt): código 0; compilación, TypeScript y páginas OK. Persiste el aviso de vulnerabilidad conocida de Next.js 16.4.4 y múltiples lockfiles; se recomienda actualizar Next.js fuera de esta fase.
+- [Justificación y verificación manual](../../docs/caching/frontend/usememo.md): comparar con la revisión anterior al cambio y grabar 10 caracteres con React Profiler bajo las mismas condiciones. Beneficio estimado, no medido; tiempos y capturas pendientes. Se usa el cierre de Fase 5 como referencia para aislar este cambio, sin cambiar de rama ni usar stash.
+- No se añadieron tests ni se ejecutaron pytest, benchmarks, API o servidores. Código y documentación limitados a Fase 6; parada antes de Fase 7.
 
 #### 2026-11-17 — Fase 5 completada
 - Website (`606fd19`): `LazyLeadForm` conserva el encabezado y el ancla `#contacto`, y difiere el formulario hasta acercarse al viewport o navegar al ancla. Application (`0627537`): `AnalysisResults` solo se monta tras un análisis correcto; no se precarga al seleccionar el fichero. Evidencia inicial en `7c7d511`.
