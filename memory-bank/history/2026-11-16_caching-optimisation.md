@@ -445,7 +445,7 @@ Reglas del informe:
 | 0 Preparación y baseline | ✅ | `49a2423`, `54f0806` | Inventario real, pytest y builds registrados; prompt original restaurado y aclaraciones añadidas. Backoffice OK por Marisin. Sin cambios de código. |
 | 1 Instrumentación | ✅ | `24fe9f3`, `bee0d97`, `a251960` | Medición 1.C y pytest ejecutados por Marisin en su terminal; el agente no puede usar el entorno Python por política. pytest: `16 passed, 3 warnings in 5.51s`. Log: 188 líneas válidas; 31 por cada GET medido, login y GET `/` adicional (404). |
 | 2 Carga realista | ✅ | `96c641d`, `7a4644d` | Carga y medición 2.B ejecutadas por Marisin; invariante agregado verificado por el seeder. Matriz completa en `docs/caching/candidates.md`; B1 y B2 se mantienen como candidatos, B2 con beneficio potencial moderado. No se implementó caché. |
-| 3 Módulo de caché | ⏳ | | |
+| 3 Módulo de caché | ✅ | Commit de implementación de Fase 3 (hash en reporte §12.2) | Módulo TTL aislado, bloqueo compartido, invalidación y métricas. Pylance sin diagnósticos; sin ejecución Python ni integración con endpoints. Tests funcionales previstos en Fase 4. |
 | 4 Endpoints + invalidación + tests | ⏳ | | |
 | 5 Lazy loading | ⏳ | | |
 | 6 useMemo | ⏳ | | |
@@ -467,6 +467,14 @@ Reglas del informe:
 - Rendimiento: latencias, volúmenes, JS por ruta y Core Web Vitals **no medidos** en esta fase. No se deduce ninguna mejora del resultado de tests o builds.
 
 ### Registro (más reciente arriba)
+
+#### 2026-11-17 — Fase 3
+- Creado `services/api/cache.py`: `TTLCache` con reloj inyectable, TTL finito y positivo, `get`, `set`, `invalidate`, `invalidate_prefix`, `clear` y `stats`. Todas las operaciones de estado usan el mismo `threading.Lock`; al insertar se eliminan expiradas y después la entrada más antigua si falta espacio. Reemplazar una clave renueva su orden de inserción.
+- Cada valor tiene expiración; no hay imports de rutas, base de datos ni dependencias externas. Constantes de claves/TTL según §6 e instancia `api_cache`; TTL por defecto de la instancia igual al del resumen, con TTL explícito de productos previsto para Fase 4.
+- `CACHE_ENABLED` lee `TRACKFLOW_CACHE_ENABLED` al importar, sin escribir configuración. La respuesta `X-Cache: BYPASS` pertenece a la integración de Fase 4; aún no cambian los endpoints.
+- Semántica de métricas documentada: `invalidations` cuenta entradas eliminadas explícitamente (no expiraciones ni expulsiones), `stats` elimina expiradas antes de contar `size`; `clear` reinicia entradas y contadores.
+- Validación estática: Pylance `textDocument/diagnostic` sin diagnósticos en el módulo; formato revisado con `git diff --check`. No se ejecutó Python, pytest ni la API. Las pruebas funcionales con reloj falso e integración siguen previstas en Fase 4 y serán ejecutadas por Marisin.
+- Redis no figura en `services/requirements.txt` ni `docker-compose.yml`. El módulo es local al proceso: invalidación no compartida entre workers; Redis queda como siguiente paso si se escala, para recogerlo en el informe. No se midió rendimiento en esta fase.
 
 #### 2026-11-17 — Fase 2
 - Seed y benchmark ejecutados por Marisin, sin ejecución Python del agente; API ya parada por Marisin. [Seed](../../docs/caching/benchmarks/02-seed-output.txt): SKUs 2 → 302; entradas 4 → 8004; salidas 4 → 4004; incidencias 0 → 3000. [Benchmark 02](../../docs/caching/benchmarks/02-baseline-load.md): órdenes 8 → 12008.
