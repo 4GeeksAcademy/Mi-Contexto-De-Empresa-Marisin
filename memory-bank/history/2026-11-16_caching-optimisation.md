@@ -442,7 +442,7 @@ Reglas del informe:
 
 | Fase | Estado | Commits | Notas / discrepancias |
 |------|--------|---------|-----------------------|
-| 0 Preparación y baseline | ⏳ | | |
+| 0 Preparación y baseline | ✅ | Commit de cierre de Fase 0 (hash en reporte §12.2) | Inventario real, pytest y builds registrados; backoffice OK por Marisin. Sin cambios de código. |
 | 1 Instrumentación | ⏳ | | |
 | 2 Carga realista | ⏳ | | |
 | 3 Módulo de caché | ⏳ | | |
@@ -453,7 +453,23 @@ Reglas del informe:
 | 8 Cierre | ⏳ | | |
 
 ### Baseline
-- pytest: 
-- builds: website / backoffice / application
+- pytest: **16 passed, 3 warnings** (resultado literal; ejecución de esta sesión, código 0). El plan decía 9 passed porque se escribió con un recuento antiguo. [Evidencia](../../docs/caching/benchmarks/00-phase0-baseline.md).
+- builds: website **OK** / backoffice **OK, ejecutado por Marisin en su terminal** / application **OK**, con los comandos de §1.2. Salidas: [website](../../docs/caching/frontend/build-before-website.txt), [backoffice](../../docs/caching/frontend/build-before-backoffice.txt), [application](../../docs/caching/frontend/build-before-application.txt).
+- Entorno: `.venv` no existía y el agente lo recreó; Python **3.14.2**, FastAPI **0.163.1**, pytest **9.2.0**. Dependencias restauradas sin modificar manifiestos. Al cierre, una nueva denegación de política organizacional bloqueó la activación: no se eludió; se conservan el inventario y los resultados ya obtenidos en la sesión.
+- TinyDB local (`suppliers.json`): precondiciones **verificadas manualmente por Marisin**. El commit `632c782` lo sacó de git; no está versionado y su exclusión figura en la línea 12 de `.gitignore`. Instrucción permanente: no escribir su ruta completa en comandos, lecturas ni búsquedas. Ejecutar `git status` a solas; si se bloquea, parar y avisar.
+- Fase 2: la copia de seguridad fuera del repositorio **ya la hizo Marisin**. Omitir el comando `cp` del plan; no repetir la copia.
+- backoffice: Next.js 16.4.4 muestra un aviso `SecurityFatalError` al detectar que el build lo ejecuta un agente de IA. Los intentos 1 y 2 del agente se detuvieron tras compilar; el build ejecutado por Marisin en su terminal dio OK. Next.js 16.4.4 sigue afectado por una vulnerabilidad conocida: no se actualiza en este proyecto y queda como riesgo para §8 del informe. Para builds del backoffice en fases posteriores: si aparece el aviso, repetir el comando en menos de 5 minutos o pedírselo a Marisin.
+- La explicación anterior del aviso y la ventana de repetición proceden de Marisin; no se verificó independientemente su mecanismo. Evidencia conservada: [intento 1](../../docs/caching/frontend/build-before-backoffice-intento1.txt), [intento 2](../../docs/caching/frontend/build-before-backoffice-intento2.txt) y log final OK. No se repitió el build tras la última instrucción de Marisin.
+- Los primeros builds fallaron por falta del plugin CSS y la restauración local por permisos de `node_modules`. Marisin corrigió los permisos de los volúmenes de Docker e instaló las dependencias. No se volvió a ejecutar `npm ci` después de su instrucción.
+- Turbopack no muestra tamaños JS por ruta: las salidas se guardan igualmente. Website y application usan Next.js **16.2.11**; backoffice **16.4.4**. Los tamaños se medirán en **Fase 5** con los chunks de `.next/static/chunks` y la verificación manual en Network.
+- Rendimiento: latencias, volúmenes, JS por ruta y Core Web Vitals **no medidos** en esta fase. No se deduce ninguna mejora del resultado de tests o builds.
 
 ### Registro (más reciente arriba)
+
+#### 2026-11-17 — Fase 0
+- Rama `feature/caching-optimisation` verificada; estado inicial limpio. Sin servidores iniciados por el agente en esta fase.
+- [Inventario](../../docs/caching/routes-inventory.md): 30 operaciones efectivas; auth comprobada contra `services.api.security.get_current_user`. El duplicado de `services/api/auth.py` no es dependencia de ninguna ruta. FastAPI expone `_IncludedRouter` y `effective_candidates()`; snippet documentado.
+- Revisión de §1: se mantienen los seis routers, la ausencia de timing/caché, el cálculo de stock fresco, la agregación de incidencias, `NullPool`/TLS y los consumidores frontend descritos. Las hipótesis B1/B2/F1/F2/F3 quedan sin implementar y pendientes de medición. La semilla relacional y el script CSV existen; no se ejecutaron semillas ni se consultó el JSON restringido. No se afirma que TinyDB haga una lectura física de disco por cada `.all()` sin medir su almacenamiento.
+- Discrepancias confirmadas: recuento de tests antiguo, versiones instaladas indicadas arriba, representación diferida de routers y duplicado de `get_current_user`. Verificación de datos restringidos exclusivamente por Marisin.
+- Skill `performance` utilizada como criterio de trabajo basado en evidencia: no presentar hipótesis como mejoras medidas. `core-web-vitals` revisada; no aplica una optimización de LCP/INP/CLS en esta fase documental, y esas métricas quedan no medidas.
+- Índice y prompt guardados según la convención del proyecto; registro global actualizado con una única entrada de caching. Se conserva el baseline sin volver a ejecutar tests ni builds ya validados. Parada al final de Fase 0; Fase 1 requiere autorización.
