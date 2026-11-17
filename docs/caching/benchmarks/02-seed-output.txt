@@ -1,0 +1,8 @@
+Seed completado: 300 SKUs, 8000 entradas, 4000 salidas y 3000 incidencias.
+Invariante de stock no negativo: verificado por SKU y almacén.
+| Tabla | Antes | Después |
+|---|---:|---:|
+| SKUs | 2 | 302 |
+| StockEntry | 4 | 8004 |
+| StockExit | 4 | 4004 |
+| incidents | 0 | 3000 |

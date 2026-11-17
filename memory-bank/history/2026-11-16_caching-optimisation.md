@@ -444,7 +444,7 @@ Reglas del informe:
 |------|--------|---------|-----------------------|
 | 0 Preparación y baseline | ✅ | `49a2423`, `54f0806` | Inventario real, pytest y builds registrados; prompt original restaurado y aclaraciones añadidas. Backoffice OK por Marisin. Sin cambios de código. |
 | 1 Instrumentación | ✅ | `24fe9f3`, `bee0d97`, `a251960` | Medición 1.C y pytest ejecutados por Marisin en su terminal; el agente no puede usar el entorno Python por política. pytest: `16 passed, 3 warnings in 5.51s`. Log: 188 líneas válidas; 31 por cada GET medido, login y GET `/` adicional (404). |
-| 2 Carga realista | ⏳ | | |
+| 2 Carga realista | ✅ | `96c641d`, `7a4644d` | Carga y medición 2.B ejecutadas por Marisin; invariante agregado verificado por el seeder. Matriz completa en `docs/caching/candidates.md`; B1 y B2 se mantienen como candidatos, B2 con beneficio potencial moderado. No se implementó caché. |
 | 3 Módulo de caché | ⏳ | | |
 | 4 Endpoints + invalidación + tests | ⏳ | | |
 | 5 Lazy loading | ⏳ | | |
@@ -467,6 +467,16 @@ Reglas del informe:
 - Rendimiento: latencias, volúmenes, JS por ruta y Core Web Vitals **no medidos** en esta fase. No se deduce ninguna mejora del resultado de tests o builds.
 
 ### Registro (más reciente arriba)
+
+#### 2026-11-17 — Fase 2
+- Seed y benchmark ejecutados por Marisin, sin ejecución Python del agente; API ya parada por Marisin. [Seed](../../docs/caching/benchmarks/02-seed-output.txt): SKUs 2 → 302; entradas 4 → 8004; salidas 4 → 4004; incidencias 0 → 3000. [Benchmark 02](../../docs/caching/benchmarks/02-baseline-load.md): órdenes 8 → 12008.
+- El seeder confirmó el invariante agregado de stock por SKU/almacén. Limitaciones: fechas de salida independientes de las entradas (no garantiza saldo histórico no negativo); inserción por lotes y dos almacenes sin transacción conjunta. Si falla a medias hay que usar `--purge` antes de repetir: no reanuda cargas parciales. La copia de seguridad fuera del repositorio ya la hizo Marisin.
+- B1, p50/p95 01 → 02: 133.8/165.0 → 156.1/186.3 ms; B2: 0.9/2.7 → 22.0/41.5 ms. Cifras de [01](../../docs/caching/benchmarks/01-baseline-small.md) y [02](../../docs/caching/benchmarks/02-baseline-load.md). Se sostienen como candidatos sin implementar: B2 supone ahorro absoluto moderado y falta medir beneficio con/sin caché.
+- [Productos](../../docs/caching/benchmarks/02-stability-products.txt) y [resumen](../../docs/caching/benchmarks/02-stability-summary.txt): una única línea MD5 con 20 respuestas idénticas por endpoint. Estas capturas no guardan status ni latencias de la ráfaga adicional; coste sustentado en benchmark 02, no en MD5.
+- El [log 02](../../docs/caching/benchmarks/02-baseline-load-log.txt) contiene 188 líneas de timing válidas, sin las peticiones adicionales de estabilidad. Incluye la primera y las repeticiones de cada endpoint, login y GET `/` adicional.
+- Aclaración de Marisin sobre el log 01: el GET `/` 404 vino del navegador al abrirse el puerto reenviado por Codespaces; no es un fallo del script.
+- [Candidatos](../../docs/caching/candidates.md): todas las operaciones del inventario, tres ejes y privacidad; frecuencias expresamente estimadas desde consumidores citados. `getProductById` solo está definido en el helper de inventario: no se localizaron consumidores en páginas de `uis/`.
+- Precondiciones del JSON local: se mantiene la verificación manual de Marisin; no se ejecutó comprobación directa ni se escribió su ruta en comandos. `git status` se ejecuta a solas y debe revisarse antes del commit. Parada de Fase 2; no se inicia Fase 3.
 
 #### 2026-11-17 — Fase 0
 - Rama `feature/caching-optimisation` verificada; estado inicial limpio. Sin servidores iniciados por el agente en esta fase.
