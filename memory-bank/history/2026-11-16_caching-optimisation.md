@@ -443,7 +443,7 @@ Reglas del informe:
 | Fase | Estado | Commits | Notas / discrepancias |
 |------|--------|---------|-----------------------|
 | 0 Preparación y baseline | ✅ | `49a2423`, `54f0806` | Inventario real, pytest y builds registrados; prompt original restaurado y aclaraciones añadidas. Backoffice OK por Marisin. Sin cambios de código. |
-| 1 Instrumentación | ⚠️ bloqueada | `24fe9f3`, `bee0d97` | 1.A middleware y 1.B script implementados; 1.C no medido. No se pudo activar el entorno Python por política ni ejecutar pytest con el Python del sistema; iniciar la API requiere leer los datos locales restringidos. Sin benchmark real ni cifras inventadas. |
+| 1 Instrumentación | ✅ | `24fe9f3`, `bee0d97`, `a251960` | Medición 1.C y pytest ejecutados por Marisin en su terminal; el agente no puede usar el entorno Python por política. pytest: `16 passed, 3 warnings in 5.51s`. Log: 188 líneas válidas; 31 por cada GET medido, login y GET `/` adicional (404). |
 | 2 Carga realista | ⏳ | | |
 | 3 Módulo de caché | ⏳ | | |
 | 4 Endpoints + invalidación + tests | ⏳ | | |
@@ -454,6 +454,8 @@ Reglas del informe:
 
 ### Baseline
 - pytest: **16 passed, 3 warnings** (resultado literal; ejecución de esta sesión, código 0). El plan decía 9 passed porque se escribió con un recuento antiguo. [Evidencia](../../docs/caching/benchmarks/00-phase0-baseline.md).
+- pytest Fase 1: `16 passed, 3 warnings in 5.51s`, ejecutado por Marisin. [Salida literal](../../docs/caching/benchmarks/01-pytest.txt).
+- Benchmark inicial: datos actuales, 2 productos, 8 órdenes y 0 incidencias. Resultados y tabla exacta en [01-baseline-small.md](../../docs/caching/benchmarks/01-baseline-small.md); log completo en [01-baseline-small-log.txt](../../docs/caching/benchmarks/01-baseline-small-log.txt). El log tiene 188/188 líneas con método, ruta, status y ms; incluye 31 peticiones por cada GET medido, el login y un GET `/` adicional que recibió 404.
 - builds: website **OK** / backoffice **OK, ejecutado por Marisin en su terminal** / application **OK**, con los comandos de §1.2. Salidas: [website](../../docs/caching/frontend/build-before-website.txt), [backoffice](../../docs/caching/frontend/build-before-backoffice.txt), [application](../../docs/caching/frontend/build-before-application.txt).
 - Entorno: `.venv` no existía y el agente lo recreó; Python **3.14.2**, FastAPI **0.163.1**, pytest **9.2.0**. Dependencias restauradas sin modificar manifiestos. Al cierre, una nueva denegación de política organizacional bloqueó la activación: no se eludió; se conservan el inventario y los resultados ya obtenidos en la sesión.
 - TinyDB local (`suppliers.json`): precondiciones **verificadas manualmente por Marisin**. El commit `632c782` lo sacó de git; no está versionado y su exclusión figura en la línea 12 de `.gitignore`. Instrucción permanente: no escribir su ruta completa en comandos, lecturas ni búsquedas. Ejecutar `git status` a solas; si se bloquea, parar y avisar.
