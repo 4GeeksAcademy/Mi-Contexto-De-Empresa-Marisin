@@ -7,3 +7,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Base TinyDB local (datos de runtime, no se versiona)
+data/suppliers.json
