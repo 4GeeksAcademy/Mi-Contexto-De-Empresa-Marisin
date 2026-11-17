@@ -443,7 +443,7 @@ Reglas del informe:
 | Fase | Estado | Commits | Notas / discrepancias |
 |------|--------|---------|-----------------------|
 | 0 Preparación y baseline | ✅ | `49a2423`, `54f0806` | Inventario real, pytest y builds registrados; prompt original restaurado y aclaraciones añadidas. Backoffice OK por Marisin. Sin cambios de código. |
-| 1 Instrumentación | ⏳ | | |
+| 1 Instrumentación | ⚠️ bloqueada | `24fe9f3`, `bee0d97` | 1.A middleware y 1.B script implementados; 1.C no medido. No se pudo activar el entorno Python por política ni ejecutar pytest con el Python del sistema; iniciar la API requiere leer los datos locales restringidos. Sin benchmark real ni cifras inventadas. |
 | 2 Carga realista | ⏳ | | |
 | 3 Módulo de caché | ⏳ | | |
 | 4 Endpoints + invalidación + tests | ⏳ | | |
