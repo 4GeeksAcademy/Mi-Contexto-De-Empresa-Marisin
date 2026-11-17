@@ -1,0 +1,4 @@
+== website: chunks que contienen el formulario
+8272 bytes  uis/website/.next/static/chunks/0ga_n3dnecyt3.js
+== application: chunks que contienen los resultados
+3643 bytes  uis/application/.next/static/chunks/0j7qwszrv_mca.js

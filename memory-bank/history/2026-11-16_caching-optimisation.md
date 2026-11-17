@@ -447,7 +447,7 @@ Reglas del informe:
 | 2 Carga realista | ✅ | `96c641d`, `7a4644d`, `2c454f1` | Carga y medición 2.B ejecutadas por Marisin; invariante agregado verificado por el seeder. Matriz completa en `docs/caching/candidates.md`; B1 y B2 se mantienen como candidatos, B2 con beneficio potencial moderado. No se implementó caché. |
 | 3 Módulo de caché | ✅ | `aafa9a8` | Módulo TTL aislado, bloqueo compartido, invalidación y métricas. Pylance sin diagnósticos; sin ejecución Python ni integración con endpoints. Tests funcionales previstos en Fase 4. |
 | 4 Endpoints + invalidación + tests | ✅ | `a8da000`, `9b4a432`, `bbabcdc` | 34 tests pasan según la salida de Marisin. HIT/MISS, BYPASS, invalidación y control no cacheado medidos; comparativa guardada en benchmarks 03. 3001 incidencias en BYPASS por incidencia de prueba; purgar con `--purge`. |
-| 5 Lazy loading | ⏳ | `606fd19`, `0627537` | Dos implementaciones y builds OK. Pendiente completar nombres/tamaños de chunks y verificación visual: el acceso a `.next/static/chunks` fue denegado por política de exclusión. Evidencia y pasos manuales en `docs/caching/frontend/lazy-loading.md`. |
+| 5 Lazy loading | ✅ | `606fd19`, `0627537`, `7c7d511`, `242fdb9` | Implementaciones, evidencia inicial y ajuste de altura completados; cierre documental en este commit (`docs(caching): completar evidencia de la carga diferida`). Builds OK, chunks y cuatro capturas aportados por Marisin. Alturas medidas: móvil 1312 px (ancho 390 px), escritorio 808 px. CLS no medido; no se afirma ausencia de desplazamientos. |
 | 6 useMemo | ⏳ | | |
 | 7 CACHING_REPORT.md | ⏳ | | |
 | 8 Cierre | ⏳ | | |
@@ -469,6 +469,15 @@ Reglas del informe:
 
 ### Registro (más reciente arriba)
 
+#### 2026-11-17 — Fase 5 completada
+- Website (`606fd19`): `LazyLeadForm` conserva el encabezado y el ancla `#contacto`, y difiere el formulario hasta acercarse al viewport o navegar al ancla. Application (`0627537`): `AnalysisResults` solo se monta tras un análisis correcto; no se precarga al seleccionar el fichero. Evidencia inicial en `7c7d511`.
+- Ajuste de altura (`242fdb9`): único cambio de código, `min-h-[82rem] md:min-h-[50.5rem]`. Sustituye las estimaciones por las alturas medidas por Marisin: 1312 px en móvil de ancho 390 px y 808 px en escritorio. [Captura de consola](../../docs/caching/frontend/form-height-console.png).
+- Build de website repetido tras el ajuste: `NODE_ENV=production npm run build`, código 0, compilación y TypeScript OK; persiste el aviso no bloqueante de múltiples lockfiles. [Salida](../../docs/caching/frontend/build-after-website.txt). Se conserva el [build de application](../../docs/caching/frontend/build-after-application.txt) ya validado; no se repitió al no haber cambios en esa aplicación.
+- [Chunks aportados por Marisin](../../docs/caching/frontend/chunks-after.txt): `LeadForm`, `0ga_n3dnecyt3.js`, 8272 bytes; `AnalysisResults`, `0j7qwszrv_mca.js`, 3643 bytes. Tamaños de archivo, no transferencia comprimida; nombres del build capturado. El agente no accedió a `.next/static/chunks` ni eludió su exclusión.
+- [Landing inicial](../../docs/caching/frontend/network-website-1.png): 6 JS sin el formulario; [tras scroll](../../docs/caching/frontend/network-website-2.png): aparece el chunk de `LeadForm`. [Application](../../docs/caching/frontend/network-application.png): Marisin observó 9 JS iniciales y la solicitud del chunk de resultados al ejecutar el análisis.
+- [Evidencia completa y reproducción](../../docs/caching/frontend/lazy-loading.md). CLS **no medido**: el placeholder usa alturas medidas, pero no se certifica el criterio de ausencia de CLS añadido. Las capturas son anteriores al ajuste; no se repitió la verificación de navegador después. No se ejecutaron pytest ni benchmarks en este cierre exclusivamente frontend/documental.
+- Activación del entorno Python denegada por política organizacional; no se intentó otra vía y no fue necesaria para el build Node.js. Sin servidores iniciados. Fase 5 cerrada documentalmente con esta limitación explícita; parada antes de Fase 6.
+
 #### 2026-11-17 — Fase 4
 - B1 (`a8da000`): listado global con copia de la lista en HIT, TTL explícito y cabeceras HIT/MISS/BYPASS. Invalidación después de `session.commit()` exitoso en alta de producto, entrada y salida. Sin cambios en `_warehouse_balances`, `get_product` ni validación de stock.
 - B2 (`9b4a432`): resumen global con copia del diccionario en HIT, TTL explícito y cabeceras HIT/MISS/BYPASS. Altas y cambios de estado invalidan después del retorno exitoso del servicio; los errores no alcanzan la invalidación.
@@ -489,12 +498,12 @@ Reglas del informe:
 - Logs y pruebas completos en `docs/caching/benchmarks/03-*`. El control no cacheado mantiene p50 cercano entre ejecuciones; la diferencia p95 observada no se atribuye a la caché porque el endpoint no la utiliza. Estas mediciones locales no prueban una mejora de red ni de navegador.
 - §14 incluye el commit de documentación de Fase 2 `2c454f1`. Cierre de Fase 4; Fase 5 requiere autorización expresa.
 
-#### Fase 5 — Frontend: Lazy Loading (en curso)
+#### Fase 5 — Frontend: Lazy Loading (registro inicial, sustituido por el cierre superior)
 - Website (`606fd19`): `LazyLeadForm` mantiene estáticos el encabezado y el ancla `#contacto`, y monta `LeadForm` al acercarse al viewport o al navegar al ancla. El placeholder reserva una altura aproximada de 75rem en móvil y 49rem desde `md`; no se midió en navegador.
 - Application (`0627537`): `AnalysisResult` se comparte desde `lib/incidents.ts`; `AnalysisResults` se separa y se carga solo con `uiState === 'success' && result`. No se precarga al seleccionar el fichero.
 - Builds de website y application OK con Next.js 16.2.11. Salidas en `docs/caching/frontend/build-after-website.txt` y `build-after-application.txt`; el build de website incluye un aviso no bloqueante de detección de raíz de workspace.
 - Turbopack no da tamaños por ruta. La inspección de `.next/static/chunks` fue denegada por la política de exclusión organizacional; no se intentó otra vía y los nombres/tamaños quedan pendientes de la verificación de Marisin. CLS y carga en Network también quedan pendientes de verificación manual.
-- Detalle, limitaciones y pasos reproducibles en `docs/caching/frontend/lazy-loading.md`. La Fase 5 permanece abierta hasta completar la evidencia pendiente.
+- Detalle, limitaciones y pasos reproducibles en `docs/caching/frontend/lazy-loading.md`. En este registro inicial la Fase 5 permanecía abierta; la evidencia y el cierre constan en la entrada superior.
 
 #### 2026-11-17 — Fase 3
 - Creado `services/api/cache.py`: `TTLCache` con reloj inyectable, TTL finito y positivo, `get`, `set`, `invalidate`, `invalidate_prefix`, `clear` y `stats`. Todas las operaciones de estado usan el mismo `threading.Lock`; al insertar se eliminan expiradas y después la entrada más antigua si falta espacio. Reemplazar una clave renueva su orden de inserción.
