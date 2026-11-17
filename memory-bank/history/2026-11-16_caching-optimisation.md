@@ -447,7 +447,7 @@ Reglas del informe:
 | 2 Carga realista | ✅ | `96c641d`, `7a4644d`, `2c454f1` | Carga y medición 2.B ejecutadas por Marisin; invariante agregado verificado por el seeder. Matriz completa en `docs/caching/candidates.md`; B1 y B2 se mantienen como candidatos, B2 con beneficio potencial moderado. No se implementó caché. |
 | 3 Módulo de caché | ✅ | `aafa9a8` | Módulo TTL aislado, bloqueo compartido, invalidación y métricas. Pylance sin diagnósticos; sin ejecución Python ni integración con endpoints. Tests funcionales previstos en Fase 4. |
 | 4 Endpoints + invalidación + tests | ✅ | `a8da000`, `9b4a432`, `bbabcdc` | 34 tests pasan según la salida de Marisin. HIT/MISS, BYPASS, invalidación y control no cacheado medidos; comparativa guardada en benchmarks 03. 3001 incidencias en BYPASS por incidencia de prueba; purgar con `--purge`. |
-| 5 Lazy loading | ⏳ | | |
+| 5 Lazy loading | ⏳ | `606fd19`, `0627537` | Dos implementaciones y builds OK. Pendiente completar nombres/tamaños de chunks y verificación visual: el acceso a `.next/static/chunks` fue denegado por política de exclusión. Evidencia y pasos manuales en `docs/caching/frontend/lazy-loading.md`. |
 | 6 useMemo | ⏳ | | |
 | 7 CACHING_REPORT.md | ⏳ | | |
 | 8 Cierre | ⏳ | | |
@@ -488,6 +488,13 @@ Reglas del informe:
 - Evidencia explícita de invalidación: secuencia GET, GET, POST, GET, GET con `X-Cache` HIT, HIT, 201, MISS, HIT en [03-invalidation-evidence.txt](../../docs/caching/benchmarks/03-invalidation-evidence.txt). El [log de timing](../../docs/caching/benchmarks/03-after-cache-log.txt) no registra `X-Cache`; por eso esa evidencia está separada. El log de timing contiene duración/status, no es la fuente de las cabeceras.
 - Logs y pruebas completos en `docs/caching/benchmarks/03-*`. El control no cacheado mantiene p50 cercano entre ejecuciones; la diferencia p95 observada no se atribuye a la caché porque el endpoint no la utiliza. Estas mediciones locales no prueban una mejora de red ni de navegador.
 - §14 incluye el commit de documentación de Fase 2 `2c454f1`. Cierre de Fase 4; Fase 5 requiere autorización expresa.
+
+#### Fase 5 — Frontend: Lazy Loading (en curso)
+- Website (`606fd19`): `LazyLeadForm` mantiene estáticos el encabezado y el ancla `#contacto`, y monta `LeadForm` al acercarse al viewport o al navegar al ancla. El placeholder reserva una altura aproximada de 75rem en móvil y 49rem desde `md`; no se midió en navegador.
+- Application (`0627537`): `AnalysisResult` se comparte desde `lib/incidents.ts`; `AnalysisResults` se separa y se carga solo con `uiState === 'success' && result`. No se precarga al seleccionar el fichero.
+- Builds de website y application OK con Next.js 16.2.11. Salidas en `docs/caching/frontend/build-after-website.txt` y `build-after-application.txt`; el build de website incluye un aviso no bloqueante de detección de raíz de workspace.
+- Turbopack no da tamaños por ruta. La inspección de `.next/static/chunks` fue denegada por la política de exclusión organizacional; no se intentó otra vía y los nombres/tamaños quedan pendientes de la verificación de Marisin. CLS y carga en Network también quedan pendientes de verificación manual.
+- Detalle, limitaciones y pasos reproducibles en `docs/caching/frontend/lazy-loading.md`. La Fase 5 permanece abierta hasta completar la evidencia pendiente.
 
 #### 2026-11-17 — Fase 3
 - Creado `services/api/cache.py`: `TTLCache` con reloj inyectable, TTL finito y positivo, `get`, `set`, `invalidate`, `invalidate_prefix`, `clear` y `stats`. Todas las operaciones de estado usan el mismo `threading.Lock`; al insertar se eliminan expiradas y después la entrada más antigua si falta espacio. Reemplazar una clave renueva su orden de inserción.
