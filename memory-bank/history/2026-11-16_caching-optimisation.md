@@ -442,7 +442,7 @@ Reglas del informe:
 
 | Fase | Estado | Commits | Notas / discrepancias |
 |------|--------|---------|-----------------------|
-| 0 Preparación y baseline | ✅ | `49a2423`; corrección del prompt (hash pendiente de registrar) | Inventario real, pytest y builds registrados; prompt original restaurado y aclaraciones añadidas. Backoffice OK por Marisin. Sin cambios de código. |
+| 0 Preparación y baseline | ✅ | `49a2423`, `54f0806` | Inventario real, pytest y builds registrados; prompt original restaurado y aclaraciones añadidas. Backoffice OK por Marisin. Sin cambios de código. |
 | 1 Instrumentación | ⏳ | | |
 | 2 Carga realista | ⏳ | | |
 | 3 Módulo de caché | ⏳ | | |
