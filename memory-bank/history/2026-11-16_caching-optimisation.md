@@ -444,9 +444,9 @@ Reglas del informe:
 |------|--------|---------|-----------------------|
 | 0 Preparación y baseline | ✅ | `49a2423`, `54f0806` | Inventario real, pytest y builds registrados; prompt original restaurado y aclaraciones añadidas. Backoffice OK por Marisin. Sin cambios de código. |
 | 1 Instrumentación | ✅ | `24fe9f3`, `bee0d97`, `a251960` | Medición 1.C y pytest ejecutados por Marisin en su terminal; el agente no puede usar el entorno Python por política. pytest: `16 passed, 3 warnings in 5.51s`. Log: 188 líneas válidas; 31 por cada GET medido, login y GET `/` adicional (404). |
-| 2 Carga realista | ✅ | `96c641d`, `7a4644d` | Carga y medición 2.B ejecutadas por Marisin; invariante agregado verificado por el seeder. Matriz completa en `docs/caching/candidates.md`; B1 y B2 se mantienen como candidatos, B2 con beneficio potencial moderado. No se implementó caché. |
+| 2 Carga realista | ✅ | `96c641d`, `7a4644d`, `2c454f1` | Carga y medición 2.B ejecutadas por Marisin; invariante agregado verificado por el seeder. Matriz completa en `docs/caching/candidates.md`; B1 y B2 se mantienen como candidatos, B2 con beneficio potencial moderado. No se implementó caché. |
 | 3 Módulo de caché | ✅ | `aafa9a8` | Módulo TTL aislado, bloqueo compartido, invalidación y métricas. Pylance sin diagnósticos; sin ejecución Python ni integración con endpoints. Tests funcionales previstos en Fase 4. |
-| 4 Endpoints + invalidación + tests | ⏳ en curso | `a8da000`, `9b4a432` | Integraciones y pruebas preparadas. Validación estática sin errores; pytest y mediciones 4.D pendientes de ejecución por Marisin. No se afirma todavía que los tests pasen ni que haya mejora medida. |
+| 4 Endpoints + invalidación + tests | ✅ | `a8da000`, `9b4a432`, `bbabcdc` | 34 tests pasan según la salida de Marisin. HIT/MISS, BYPASS, invalidación y control no cacheado medidos; comparativa guardada en benchmarks 03. 3001 incidencias en BYPASS por incidencia de prueba; purgar con `--purge`. |
 | 5 Lazy loading | ⏳ | | |
 | 6 useMemo | ⏳ | | |
 | 7 CACHING_REPORT.md | ⏳ | | |
@@ -455,6 +455,7 @@ Reglas del informe:
 ### Baseline
 - pytest: **16 passed, 3 warnings** (resultado literal; ejecución de esta sesión, código 0). El plan decía 9 passed porque se escribió con un recuento antiguo. [Evidencia](../../docs/caching/benchmarks/00-phase0-baseline.md).
 - pytest Fase 1: `16 passed, 3 warnings in 5.51s`, ejecutado por Marisin. [Salida literal](../../docs/caching/benchmarks/01-pytest.txt).
+- pytest Fase 4: **34 passed, 6 warnings**. La salida completa está en [03-pytest.txt](../../docs/caching/benchmarks/03-pytest.txt). Tres warnings nuevos son `PydanticDeprecatedSince20` por `payload.dict()` preexistente en `services/api/services/incidents.py:66`, ahora ejecutado por las nuevas pruebas; deuda técnica fuera de alcance.
 - Benchmark inicial: datos actuales, 2 productos, 8 órdenes y 0 incidencias. Resultados y tabla exacta en [01-baseline-small.md](../../docs/caching/benchmarks/01-baseline-small.md); log completo en [01-baseline-small-log.txt](../../docs/caching/benchmarks/01-baseline-small-log.txt). El log tiene 188/188 líneas con método, ruta, status y ms; incluye 31 peticiones por cada GET medido, el login y un GET `/` adicional que recibió 404.
 - builds: website **OK** / backoffice **OK, ejecutado por Marisin en su terminal** / application **OK**, con los comandos de §1.2. Salidas: [website](../../docs/caching/frontend/build-before-website.txt), [backoffice](../../docs/caching/frontend/build-before-backoffice.txt), [application](../../docs/caching/frontend/build-before-application.txt).
 - Entorno: `.venv` no existía y el agente lo recreó; Python **3.14.2**, FastAPI **0.163.1**, pytest **9.2.0**. Dependencias restauradas sin modificar manifiestos. Al cierre, una nueva denegación de política organizacional bloqueó la activación: no se eludió; se conservan el inventario y los resultados ya obtenidos en la sesión.
@@ -468,14 +469,25 @@ Reglas del informe:
 
 ### Registro (más reciente arriba)
 
-#### 2026-11-17 — Fase 4 (en curso; pendiente de resultados)
+#### 2026-11-17 — Fase 4
 - B1 (`a8da000`): listado global con copia de la lista en HIT, TTL explícito y cabeceras HIT/MISS/BYPASS. Invalidación después de `session.commit()` exitoso en alta de producto, entrada y salida. Sin cambios en `_warehouse_balances`, `get_product` ni validación de stock.
 - B2 (`9b4a432`): resumen global con copia del diccionario en HIT, TTL explícito y cabeceras HIT/MISS/BYPASS. Altas y cambios de estado invalidan después del retorno exitoso del servicio; los errores no alcanzan la invalidación.
 - Preparado `tests/test_caching.py`: TTL y expiración con reloj falso, expulsión, invalidación por clave/prefijo, métricas, TTL inválido, reemplazo de claves; incidencias en TinyDB MemoryStorage; inventario con SQLite/StaticPool, sesiones por petición y JWT simulado mediante override. No usa TestClient como context manager ni ejecuta startup. Los fixtures limpian la caché antes/después.
 - Integración de pruebas: HIT/MISS, invalidación en todas las escrituras de inventario y altas/PATCH de incidencias, transición inválida sin invalidación, BYPASS sin almacenamiento. Una escritura externa reduce stock en SQLite tras cachear el listado; una salida superior al saldo fresco debe devolver 400 aunque el listado siga en HIT. Prueba de privacidad: solo los dos lectores globales usan `api_cache.get` y ninguno depende de `get_current_user`; las rutas autenticadas solo invalidan.
-- Pylance: sin errores en ambos routers ni en el test nuevo; información preexistente de `_warehouse` sin uso en inventory. Comprobación estática de firmas sin llamadas Python directas localizadas: la inyección de Response queda pendiente de verificación HTTP con pytest.
-- El agente no ejecutó Python, pytest, API, benchmark ni escrituras de datos. Para Marisin, desde la raíz con su entorno activo: `set -o pipefail; pytest -q 2>&1 | tee docs/caching/benchmarks/03-pytest.txt`. Detenerse ante fallo y compartir esa salida antes de continuar con las mediciones 4.D.
-- Sin benchmark 03 ni comparación con BYPASS aún; no crear cifras o logs sintéticos como evidencia. La Fase 4 sigue abierta y Fase 5 no está autorizada.
+- Pylance: sin errores en ambos routers ni en el test nuevo; información preexistente de `_warehouse` sin uso en inventory. `03-pytest.txt`, ejecutado por Marisin, informa literalmente **34 passed, 6 warnings**. Los tres warnings nuevos son `PydanticDeprecatedSince20` originados por el `payload.dict()` preexistente de `services/api/services/incidents.py:66`, que ejecutan los tests nuevos; deuda técnica fuera de alcance.
+- Mediciones 4.D ejecutadas por Marisin; el agente no ejecutó Python, pytest, API ni benchmark. [03-after-cache](../../docs/caching/benchmarks/03-after-cache.md): primera petición de productos y resumen MISS; 30 repeticiones HIT para cada uno. [03-after-cache-bypass](../../docs/caching/benchmarks/03-after-cache-bypass.md): 30 BYPASS para cada uno con el interruptor desactivado.
+- p50/p95 en ms, caché frente a bypass, y control no cacheado (`GET /inventory/orders`), copiados literalmente de los benchmarks:
+
+  | Endpoint | Caché p50/p95 ms | BYPASS p50/p95 ms |
+  |---|---:|---:|
+  | `/inventory/products` | 5.6 / 12.9 | 155.6 / 189.9 |
+  | `/api/incidents/summary` | 0.7 / 2.1 | 18.0 / 33.0 |
+  | `/inventory/orders` (control, no cacheado) | 416.9 / 589.9 | 418.2 / 465.4 |
+
+- Los volúmenes de productos y órdenes son iguales en ambas mediciones; incidencias: 3000 con caché y 3001 en BYPASS. El POST de `03-invalidation-evidence.txt` creó `[LOAD] prueba de invalidación`; la limpiará `--purge`. Esto limita la comparabilidad exacta del resumen entre procesos; el POST fue necesario para probar invalidación.
+- Evidencia explícita de invalidación: secuencia GET, GET, POST, GET, GET con `X-Cache` HIT, HIT, 201, MISS, HIT en [03-invalidation-evidence.txt](../../docs/caching/benchmarks/03-invalidation-evidence.txt). El [log de timing](../../docs/caching/benchmarks/03-after-cache-log.txt) no registra `X-Cache`; por eso esa evidencia está separada. El log de timing contiene duración/status, no es la fuente de las cabeceras.
+- Logs y pruebas completos en `docs/caching/benchmarks/03-*`. El control no cacheado mantiene p50 cercano entre ejecuciones; la diferencia p95 observada no se atribuye a la caché porque el endpoint no la utiliza. Estas mediciones locales no prueban una mejora de red ni de navegador.
+- §14 incluye el commit de documentación de Fase 2 `2c454f1`. Cierre de Fase 4; Fase 5 requiere autorización expresa.
 
 #### 2026-11-17 — Fase 3
 - Creado `services/api/cache.py`: `TTLCache` con reloj inyectable, TTL finito y positivo, `get`, `set`, `invalidate`, `invalidate_prefix`, `clear` y `stats`. Todas las operaciones de estado usan el mismo `threading.Lock`; al insertar se eliminan expiradas y después la entrada más antigua si falta espacio. Reemplazar una clave renueva su orden de inserción.
