@@ -449,8 +449,8 @@ Reglas del informe:
 | 4 Endpoints + invalidación + tests | ✅ | `a8da000`, `9b4a432`, `bbabcdc` | 34 tests pasan según la salida de Marisin. HIT/MISS, BYPASS, invalidación y control no cacheado medidos; comparativa guardada en benchmarks 03. 3001 incidencias en BYPASS por incidencia de prueba; purgar con `--purge`. |
 | 5 Lazy loading | ✅ | `606fd19`, `0627537`, `7c7d511`, `242fdb9`, `761d837` | Implementaciones, evidencia inicial y ajuste de altura completados. Builds OK, chunks y cuatro capturas aportados por Marisin. Alturas medidas: móvil 1312 px (ancho 390 px), escritorio 808 px. CLS no medido; no se afirma ausencia de desplazamientos. |
 | 6 useMemo | ✅ | `f8bba28`, `c52279e` | Producto seleccionado memoizado e índice por SKU/almacén con `[orders]`; lookup directo. Build OK en segundo intento; primer intento interrumpido por aviso de seguridad de Next.js 16.4.4. Beneficio estimado; Profiler y comprobación visual pendientes. |
-| 7 CACHING_REPORT.md | ✅ | Este commit: `docs(caching): añadir informe técnico CACHING_REPORT.md` | Informe con las nueve secciones, inventario completo, evolución 01→02→03/BYPASS, decisiones y reproducción. Evidencia previa reutilizada; sin ejecutar tests, builds o benchmarks. Límites de volumen, CLS, Profiler, concurrencia y seguridad explícitos. |
-| 8 Cierre | ⏳ | | |
+| 7 CACHING_REPORT.md | ✅ | `1ca1cee`, `f59ebeb` | Informe con las nueve secciones, inventario completo, evolución 01→02→03/BYPASS, decisiones y reproducción; corrección de evidencia e hipótesis. Límites de volumen, CLS, Profiler, concurrencia y seguridad explícitos. |
+| 8 Cierre | ✅ | Este commit: `docs(memory-bank): registrar cierre del proyecto de caching` | Pytest final de Marisin: 34 passed, 6 warnings in 10.17s. Tres builds finales OK; backoffice pasó en reintento inmediato tras SecurityFatalError. Datos conservados por decisión de Marisin; Listo para PR. Sin push ni limpieza. |
 
 ### Baseline
 - pytest: **16 passed, 3 warnings** (resultado literal; ejecución de esta sesión, código 0). El plan decía 9 passed porque se escribió con un recuento antiguo. [Evidencia](../../docs/caching/benchmarks/00-phase0-baseline.md).
@@ -468,6 +468,15 @@ Reglas del informe:
 - Rendimiento: latencias, volúmenes, JS por ruta y Core Web Vitals **no medidos** en esta fase. No se deduce ninguna mejora del resultado de tests o builds.
 
 ### Registro (más reciente arriba)
+
+#### 2026-11-17 — Fase 8 completada · Listo para PR
+- Validación final ejecutada por Marisin: [04-pytest-final.txt](../../docs/caching/benchmarks/04-pytest-final.txt), resultado literal **34 passed, 6 warnings in 10.17s**. El agente no ejecutó pytest ni activó el entorno Python restringido. Persisten los warnings de TestClient/httpx, `on_event` y `payload.dict()` ya documentados.
+- Builds finales ejecutados por el agente con los comandos de §1.2: [website](../../docs/caching/frontend/build-final-website.txt), [application](../../docs/caching/frontend/build-final-application.txt) y [backoffice](../../docs/caching/frontend/build-final-backoffice.txt), todos con código 0, compilación, TypeScript y generación de páginas OK. Backoffice: [primer intento](../../docs/caching/frontend/build-final-backoffice-intento1.txt) detenido por `SecurityFatalError`; reintento inmediato dentro de cinco minutos, sin cambiar dependencias. Sigue recomendada la actualización de Next.js 16.4.4 por el aviso de vulnerabilidad conocida.
+- Marisin decide conservar deliberadamente los datos sintéticos durante la revisión del PR: **300 SKUs `LOAD-`, 12.000 movimientos y 3.001 incidencias `[LOAD]`**, incluida la prueba de invalidación. Fuentes: [seed](../../docs/caching/benchmarks/02-seed-output.txt), [BYPASS](../../docs/caching/benchmarks/03-after-cache-bypass.md) e [invalidación](../../docs/caching/benchmarks/03-invalidation-evidence.txt). No se consultaron ni alteraron datos para repetir el recuento en el cierre.
+- Una vez aprobado el PR por la instructora, **Marisin** ejecutará `python -m scripts.perf.seed_load --purge`: elimina solo los datos de carga y conserva productos, órdenes e incidencias originales. El agente no ejecutó `--purge`, seed, restauraciones ni benchmarks.
+- [Informe](../../CACHING_REPORT.md): estado final, validaciones y sección «Datos de carga y limpieza»; cifras históricas conservadas. `memory-bank/progress.md` actualizado y [índice de prompts](../../prompts/README.md) marcado «Listo para PR». Incorporados los hashes de informe y corrección de Fase 7 (`1ca1cee`, `f59ebeb`).
+- Limitaciones finales: CLS no medido, beneficio de `useMemo` estimado y verificación visual pendiente; comparación del resumen con una incidencia adicional en BYPASS, hipótesis SQL/TinyDB no aisladas y límites de concurrencia documentados. No se presentan como resueltos por los builds o tests.
+- Sin servidores iniciados ni operaciones remotas de Git. Cierre solo local; Marisin revisará, publicará la rama y abrirá el PR.
 
 #### 2026-11-17 — Fase 7 completada
 - Creado [CACHING_REPORT.md](../../CACHING_REPORT.md) con las nueve secciones de §10: resumen, metodología, inventario de todas las operaciones, decisiones backend/frontend, frescura, exclusiones, riesgos y reproducción.

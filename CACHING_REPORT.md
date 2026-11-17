@@ -1,6 +1,6 @@
 # TrackFlow — Informe técnico de caching
 
-Estado: informe de Fase 7; la verificación final de Fase 8 sigue pendiente. Fuente de alcance y avance: [plan del proyecto](memory-bank/history/2026-11-16_caching-optimisation.md).
+Estado final: proyecto cerrado y **Listo para PR**, con pytest y los tres builds finales en verde. Se mantienen explícitas las limitaciones de medición y los riesgos conocidos. Fuente de alcance y avance: [plan del proyecto](memory-bank/history/2026-11-16_caching-optimisation.md).
 
 ## 1. Resumen ejecutivo
 
@@ -62,7 +62,7 @@ La comparación de incidencias tiene **3000 registros con caché y 3001 en BYPAS
 - Las capturas de [productos](docs/caching/benchmarks/02-stability-products.txt) y [resumen](docs/caching/benchmarks/02-stability-summary.txt), contextualizadas en [candidates.md](docs/caching/candidates.md), registran respuestas idénticas en la ráfaga sin escrituras. No contienen status ni latencias de esa ráfaga; no sustituyen el benchmark.
 - La [evidencia HTTP de invalidación](docs/caching/benchmarks/03-invalidation-evidence.txt) muestra HIT antes del alta, POST exitoso, MISS después y HIT posterior. El [log de timing](docs/caching/benchmarks/03-after-cache-log.txt) no registra `X-Cache`; no es la fuente de esas cabeceras.
 - [Tests de caching](tests/test_caching.py): TTL con reloj falso, expulsión, invalidación, métricas, aislamiento con TinyDB en memoria y SQLite, BYPASS, escrituras y lectores globales sin JWT. La validación de salida consulta saldo fresco incluso con listado cacheado.
-- Baseline: **16 passed, 3 warnings**, según [Fase 0](docs/caching/benchmarks/00-phase0-baseline.md). Tras integrar caché: **34 passed, 6 warnings in 5.35s**, según [salida de Marisin](docs/caching/benchmarks/03-pytest.txt). No se repitieron tests para redactar este informe; el cierre final sigue pendiente.
+- Baseline: **16 passed, 3 warnings**, según [Fase 0](docs/caching/benchmarks/00-phase0-baseline.md). Tras integrar caché: **34 passed, 6 warnings in 5.35s**, según [salida de Marisin](docs/caching/benchmarks/03-pytest.txt). Validación final ejecutada por Marisin: **34 passed, 6 warnings in 10.17s**, según [04-pytest-final.txt](docs/caching/benchmarks/04-pytest-final.txt). El agente no repitió pytest.
 
 ## 3. Inventario de endpoints
 
@@ -171,7 +171,9 @@ Se conservan cálculo de signos, agrupación, mensaje, bloqueo y recarga del his
 
 ### Builds conservados
 
-[Website](docs/caching/frontend/build-after-website.txt) y [application](docs/caching/frontend/build-after-application.txt): compilación y TypeScript OK. [Backoffice](docs/caching/frontend/build-after-backoffice.txt): OK en el reintento; el [primer intento](docs/caching/frontend/build-after-backoffice-intento1.txt) terminó por el aviso de seguridad después de compilar. Estos resultados no sustituyen métricas de navegador. No se repitieron builds en esta fase documental.
+[Website](docs/caching/frontend/build-after-website.txt) y [application](docs/caching/frontend/build-after-application.txt): compilación y TypeScript OK. [Backoffice](docs/caching/frontend/build-after-backoffice.txt): OK en el reintento; el [primer intento](docs/caching/frontend/build-after-backoffice-intento1.txt) terminó por el aviso de seguridad después de compilar. Estos resultados no sustituyen métricas de navegador.
+
+En el cierre, el agente ejecutó los mismos comandos de validación: [website final](docs/caching/frontend/build-final-website.txt), [application final](docs/caching/frontend/build-final-application.txt) y [backoffice final](docs/caching/frontend/build-final-backoffice.txt), todos con código de salida 0, compilación y TypeScript OK. El [primer intento final de backoffice](docs/caching/frontend/build-final-backoffice-intento1.txt) terminó con `SecurityFatalError`; el reintento inmediato, dentro de cinco minutos, pasó sin cambiar dependencias. Se conservan ambas salidas y la recomendación de actualizar Next.js.
 
 ## 6. Intercambios reconocidos: frescura frente a rendimiento
 
@@ -217,11 +219,11 @@ El bloqueo protege las operaciones del contenedor, no toda la secuencia «MISS �
 - **Telemetría:** medir tasa de HIT/MISS/BYPASS, expiración e invalidación, cadencia de escrituras, intervalos entre lecturas y latencias por endpoint. `stats()` es local al proceso y no se expone como servicio de métricas; las ráfagas del benchmark no describen tráfico real.
 - **Frontend:** completar React Profiler, comprobar visualmente stock/avisos y medir CLS antes de certificar el criterio pendiente de Fase 5. No hay LCP/INP de campo ni comparaciones temporales de interacción.
 - **Evidencia local:** semilla sintética, peticiones secuenciales y resumen con distinto volumen entre 03/BYPASS. Repetir a volumen idéntico si se necesita una comparación estricta de B2; no se modificaron evidencias anteriores.
-- **Cierre pendiente:** en Fase 8 corresponde ejecutar las validaciones finales, preguntar a Marisin por los datos de carga y completar registros. No se limpiaron datos, no se inició esa fase ni se hizo push.
+- **Cierre completado:** pytest y los tres builds finales en verde; registros actualizados a «Listo para PR». Marisin decidió conservar los datos de carga durante la revisión y limpiarlos tras la aprobación de la instructora, como se detalla en [Datos de carga y limpieza](#datos-de-carga-y-limpieza). No se ejecutó limpieza ni se hizo push; siguen explícitos los riesgos y las mediciones pendientes.
 
 ## 9. Cómo reproducir
 
-Comandos de referencia para Marisin, desde la raíz salvo indicación. **No se ejecutaron en Fase 7.** Requieren el entorno Python y las dependencias ya preparados, la configuración local existente y acceso autorizado a los datos. No imprimir tokens, modificar credenciales ni repetir la copia de seguridad ya realizada.
+Comandos de referencia para Marisin, desde la raíz salvo indicación. **Proyecto cerrado: pytest y builds finales verificados.** Los comandos de carga, API, benchmark y limpieza se mantienen para reproducción autorizada; no se ejecutaron de nuevo durante el cierre. Requieren el entorno Python y las dependencias ya preparados, la configuración local existente y acceso autorizado a los datos. No imprimir tokens, modificar credenciales ni repetir la copia de seguridad ya realizada.
 
 ### Preparar datos, solo si corresponde
 
@@ -294,4 +296,10 @@ El siguiente comando elimina los SKUs con prefijo `LOAD-`, sus movimientos y las
 python -m scripts.perf.seed_load --purge
 ```
 
-La decisión de conservar o limpiar sigue reservada a Marisin en Fase 8. No se ejecutó este comando ni se restauraron datos durante la redacción del informe.
+Marisin ha decidido conservar los datos durante la revisión del PR y ejecutar la limpieza después de su aprobación por la instructora. No se ejecutó este comando ni se restauraron datos durante el cierre.
+
+## Datos de carga y limpieza
+
+Los datos sintéticos (**300 SKUs `LOAD-`**, **12.000 movimientos** y **3.001 incidencias `[LOAD]`**, incluida la de la prueba de invalidación) se conservan deliberadamente mientras el PR esté en revisión, para que las cifras del informe sean verificables. Fuentes: [carga sintética](docs/caching/benchmarks/02-seed-output.txt), [volumen posterior a la invalidación](docs/caching/benchmarks/03-after-cache-bypass.md) y [prueba de invalidación](docs/caching/benchmarks/03-invalidation-evidence.txt). Se conserva ese estado de datos; no se altera la diferencia de volumen entre mediciones históricas.
+
+Una vez aprobado el PR por la instructora, Marisin ejecutará `python -m scripts.perf.seed_load --purge`, que elimina solo esos datos de carga y no toca los productos, órdenes ni incidencias originales. No se ha ejecutado la limpieza.
