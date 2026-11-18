@@ -1,0 +1,40 @@
+
+> trackflow-application@0.1.0 build
+> next build
+
+▲ Next.js 16.2.11 (Turbopack)
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 30.2s
+  Running TypeScript ...
+  Finished TypeScript in 6.9s ...
+  Collecting page data using 1 worker ...
+  Generating static pages using 1 worker (0/17) ...
+  Generating static pages using 1 worker (4/17) 
+  Generating static pages using 1 worker (8/17) 
+  Generating static pages using 1 worker (12/17) 
+✓ Generating static pages using 1 worker (17/17) in 319ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /account/change-password
+├ ○ /account/profile
+├ ƒ /api/incidents/analyze
+├ ƒ /api/incidents/results/export
+├ ƒ /api/operations
+├ ○ /forgot-password
+├ ○ /incidents
+├ ○ /incidents/analyze
+├ ○ /incidents/new
+├ ○ /login
+├ ○ /profile
+├ ○ /register
+├ ○ /reset-password
+└ ○ /suppliers
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

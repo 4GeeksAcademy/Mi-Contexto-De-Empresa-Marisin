@@ -1,9 +1,10 @@
 import logging
+import time
 import traceback
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlmodel import SQLModel
@@ -39,6 +40,34 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+timing_logger = logging.getLogger("api.timing")
+timing_logger.setLevel(logging.INFO)
+if not timing_logger.handlers:
+    timing_handler = logging.StreamHandler()
+    timing_handler.setFormatter(logging.Formatter("%(message)s"))
+    timing_logger.addHandler(timing_handler)
+timing_logger.propagate = False
+
+
+@app.middleware("http")
+async def timing_middleware(request: Request, call_next):
+    started_at = time.perf_counter()
+    response: Response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - started_at) * 1000
+    response.headers["X-Response-Time-ms"] = f"{elapsed_ms:.1f}"
+
+    request_path = request.url.path
+    if request.url.query:
+        request_path = f"{request_path}?{request.url.query}"
+    timing_logger.info(
+        "%s %s → %s | %.1fms",
+        request.method,
+        request_path,
+        response.status_code,
+        elapsed_ms,
+    )
+    return response
 
 
 logger = logging.getLogger(__name__)

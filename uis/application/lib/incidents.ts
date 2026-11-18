@@ -35,6 +35,20 @@ export type IncidentSummary = {
   by_branch: Record<IncidentBranch, number>;
 };
 
+export interface AnalysisResult {
+  total_elements: number;
+  valid_records: number;
+  invalid_records: number;
+  invalid_reasons: {
+    missing_fields: number;
+    invalid_category: number;
+    invalid_status: number;
+  };
+  category_breakdown: Record<string, number>;
+  status_breakdown: Record<string, number>;
+  avg_satisfaction: number;
+}
+
 const apiBase = "/backend/api/incidents";
 const genericIncidentError = "No se pudo completar la operación. Inténtalo de nuevo en unos segundos.";
 

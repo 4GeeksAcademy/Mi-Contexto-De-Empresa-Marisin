@@ -1,0 +1,14 @@
+== GET resumen
+x-cache: HIT
+x-response-time-ms: 0.8
+== GET resumen
+x-cache: HIT
+x-response-time-ms: 1.2
+== POST incidencia de prueba
+status 201
+== GET resumen tras POST
+x-cache: MISS
+x-response-time-ms: 16.8
+== GET resumen otra vez
+x-cache: HIT
+x-response-time-ms: 1.0

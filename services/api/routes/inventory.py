@@ -1,10 +1,16 @@
 from collections import defaultdict
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import func
 from sqlmodel import Session, select
 
+from ..cache import (
+    CACHE_ENABLED,
+    PRODUCTS_LIST_KEY,
+    PRODUCTS_LIST_TTL,
+    api_cache,
+)
 from ..database import get_db
 from ..models import SKU, StockEntry, StockExit
 from ..schemas import (
@@ -59,17 +65,30 @@ def _user_uuid(current_user: dict) -> str:
     return str(identifier)
 
 
+# No JWT or per-user data: this list uses a shared global cache key.
 @router.get("/products", response_model=list[ProductListItem])
-def list_products(session: Annotated[Session, Depends(get_db)]):
+def list_products(response: Response, session: Annotated[Session, Depends(get_db)]):
+    if CACHE_ENABLED:
+        hit, cached = api_cache.get(PRODUCTS_LIST_KEY)
+        if hit:
+            response.headers["X-Cache"] = "HIT"
+            return list(cached)
+
     skus = session.exec(select(SKU).order_by(SKU.id)).all()
     balances = _warehouse_balances(session)
     stock_by_sku: defaultdict[int, int] = defaultdict(int)
     for (sku_id, _warehouse), balance in balances.items():
         stock_by_sku[sku_id] += balance
-    return [
+    products = [
         _product_response(sku_obj, stock_by_sku[sku_obj.id])
         for sku_obj in skus
     ]
+    if CACHE_ENABLED:
+        api_cache.set(PRODUCTS_LIST_KEY, products, ttl=PRODUCTS_LIST_TTL)
+        response.headers["X-Cache"] = "MISS"
+    else:
+        response.headers["X-Cache"] = "BYPASS"
+    return products
 
 
 @router.post(
@@ -88,6 +107,7 @@ def create_product(
     sku_obj = SKU(**payload.model_dump())
     session.add(sku_obj)
     session.commit()
+    api_cache.invalidate(PRODUCTS_LIST_KEY)
     session.refresh(sku_obj)
     return _product_response(sku_obj, 0)
 
@@ -119,6 +139,7 @@ def create_inbound_order(
     order = StockEntry(**payload.model_dump(), user_uuid=_user_uuid(current_user))
     session.add(order)
     session.commit()
+    api_cache.invalidate(PRODUCTS_LIST_KEY)
     session.refresh(order)
     return InboundOrderResponse.model_validate(order, from_attributes=True)
 
@@ -150,6 +171,7 @@ def create_outbound_order(
     order = StockExit(**payload.model_dump(), user_uuid=_user_uuid(current_user))
     session.add(order)
     session.commit()
+    api_cache.invalidate(PRODUCTS_LIST_KEY)
     session.refresh(order)
     return OutboundOrderResponse.model_validate(order, from_attributes=True)
 

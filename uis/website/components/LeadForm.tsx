@@ -139,16 +139,6 @@ export function LeadForm() {
   };
 
   return (
-    <section id="contacto" className="section-shell py-16 md:py-20">
-      <div className="mb-8 max-w-2xl">
-        <h2 className="text-3xl font-semibold md:text-4xl" style={{ fontFamily: "var(--font-space-grotesk), sans-serif" }}>
-          Conversemos sobre tu operacion
-        </h2>
-        <p className="mt-3 text-[var(--muted)]">
-          Completa el formulario para que el equipo comercial de TrackFlow te contacte con un plan de escalado operativo.
-        </p>
-      </div>
-
       <form onSubmit={onSubmit} noValidate className="grid gap-5 rounded-3xl border border-black/5 bg-white p-6 md:grid-cols-2 md:p-8">
         <Field label="Nombre de empresa" error={errors.companyName}>
           <input
@@ -327,7 +317,6 @@ export function LeadForm() {
           ) : null}
         </div>
       </form>
-    </section>
   );
 }
 
