@@ -6,7 +6,8 @@ Cada carpeta contiene `prompt.md` (instrucciones para el agente) y `progress.md`
 | Proyecto | Carpeta | Rama | Estado | PR |
 |----------|---------|------|--------|----|
 | Auditoría de Serialización del Backend | `serialization-audit/` | `feature/serialization-audit` | En curso | — |
-| Optimización de rendimiento: Caching | `caching-optimisation/` | `feature/caching-optimisation` | Listo para PR | — |
+| Optimización de rendimiento: Caching | `caching-optimisation/` | `feature/caching-optimisation` | Mergeado | #15 |
+| Diseño del Plan de Telemetría | `telemetry-design/` | `feature/telemetry-design-plan` | En curso | — |
 
 Convención desde el proyecto de caching: el plan y su registro de avance se
 guardan juntos en `memory-bank/history/AAAA-MM-DD_<proyecto>.md`;
