@@ -8,6 +8,7 @@ from tinydb.storages import MemoryStorage
 
 from services.api.database import get_db
 from services.api.main import app
+from services.api.telemetry_schemas import TelemetryReceived
 from services.api.models import (
     SKU,
     StockEntry,
@@ -101,7 +102,7 @@ def _response_keys(value):
 def test_every_api_route_declares_a_response_model_or_documented_204():
     routes = list(_api_routes(app.routes))
 
-    assert len(routes) == 30
+    assert len(routes) == 31
     for route in routes:
         if route.response_model is None:
             assert route.status_code == 204
@@ -112,6 +113,10 @@ def test_every_api_route_declares_a_response_model_or_documented_204():
     assert {
         route.name for route in routes if route.response_model is None
     } == DOCUMENTED_NO_BODY_ENDPOINTS
+    telemetry_route = next(
+        route for route in routes if route.path == "/telemetry/events"
+    )
+    assert telemetry_route.response_model is TelemetryReceived
 
 
 def test_auth_responses_do_not_expose_credentials_or_email(api_client):

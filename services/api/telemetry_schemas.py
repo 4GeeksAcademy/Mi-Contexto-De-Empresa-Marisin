@@ -23,3 +23,7 @@ class TelemetryBatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     events: list[TelemetryEvent] = Field(max_length=50)
+
+
+class TelemetryReceived(BaseModel):
+    received: int
