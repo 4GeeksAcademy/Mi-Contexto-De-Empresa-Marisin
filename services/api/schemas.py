@@ -37,6 +37,15 @@ class MessageResponse(BaseModel):
     message: str
 
 
+class DirectStockEditRequest(BaseModel):
+    """Intento de fijar stock fuera de una orden: la API siempre lo rechaza (405)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    warehouse: str = Field(..., min_length=1, pattern=r"\S")
+    quantity: int = Field(..., ge=0, strict=True)
+
+
 class ForgotPasswordRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
