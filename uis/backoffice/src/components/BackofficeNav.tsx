@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/inventory/orders", label: "Historial" },
   { href: "/inventory/orders/inbound", label: "Registrar entrada" },
   { href: "/inventory/orders/outbound", label: "Registrar salida" },
+  { href: "/inventory/counts", label: "Conteo físico" },
 ];
 
 export default function BackofficeNav() {
