@@ -19,6 +19,7 @@ from .routes.incidents import router as incidents_router  # NUEVO
 from .routes.inventory import router as inventory_router
 from .routes.profiles import router as profiles_router
 from .routes.suppliers import router as suppliers_router
+from .routes.telemetry import router as telemetry_router
 from .routes.users import router as users_router
 
 app = FastAPI(
@@ -106,3 +107,4 @@ app.include_router(auth_router)
 app.include_router(profiles_router)
 app.include_router(inventory_router)
 app.include_router(incidents_router)  # NUEVO
+app.include_router(telemetry_router)
