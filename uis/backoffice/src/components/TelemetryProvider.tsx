@@ -98,9 +98,9 @@ const reportedWebVitalIds = new Set<string>();
 // Callback estable (fuera del componente): una observación final por métrica y carga de página.
 function reportWebVital(metric: { id: string; name: string; value: number }) {
   try {
-    if (!REPORTED_WEB_VITALS.has(metric.name) || reportedWebVitalIds.has(metric.id)) return;
+    if (!REPORTED_WEB_VITALS.has(metric.name) || reportedWebVitalIds.has(metric.name)) return;
     if (!Number.isFinite(metric.value) || metric.value < 0) return;
-    reportedWebVitalIds.add(metric.id);
+    reportedWebVitalIds.add(metric.name);
     track("web_vital_recorded", {
       route: toRouteTemplate(window.location.pathname),
       metric_name: metric.name,
