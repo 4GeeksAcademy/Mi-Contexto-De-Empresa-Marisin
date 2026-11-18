@@ -238,3 +238,105 @@ Los enums propios de autenticación, permisos, errores, conteos y tipo de salida
 Cada `properties` tiene un allowlist explícito y `additionalProperties: false`. Una instrumentación solo envía las claves definidas para su `event_type`; no copia objetos de API, datos de formulario ni errores sin clasificar.
 
 `schemaVersion` es semver compartido, inicialmente `1.0.0`. Añadir una propiedad permitida es un cambio minor; cambiar el tipo o eliminar una propiedad es un cambio major. El valor se mantiene constante entre eventos para una misma versión de contrato.
+
+## 6. Esquemas de eventos
+
+Las tablas siguientes especifican los allowlists de `properties`. Los campos mínimos de inventario se repiten en cada evento aplicable: `warehouse`, `client_id`, `product_id`, `product_category`, `quantity` y `country` son obligatorios (BRIEFING y D1). `client_id` es el slug provisional (D11), `product_id` es el código SKU (D12), y las categorías se normalizan según D13/D15.
+
+### 6.1 Métricas obligatorias
+
+#### `inbound_order_created`
+
+- **Descripción:** recepción de inventario completada para un único SKU.
+- **Disparo:** después de la respuesta HTTP 201 de `createInboundOrder`; `order_id` procede del `id` de esa respuesta.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `warehouse` | enum `los_angeles` \| `zaragoza` | Sí | Almacén receptor, normalizado. | `los_angeles` |
+| `client_id` | string slug | Sí | Marca propietaria del SKU, sin nombre libre. | `nova_beauty` |
+| `product_id` | string | Sí | Código SKU, no ID interno. | `TF-COS-001` |
+| `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
+| `quantity` | integer ≥ 1 | Sí | Unidades recibidas en la orden. | `12` |
+| `country` | enum `US` \| `ES` | Sí | País derivado de `warehouse`. | `US` |
+| `order_id` | integer ≥ 1 | Sí | `id` devuelto por la respuesta de creación. | `381` |
+
+**Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `order_id`. **PII:** no en las propiedades; el `userId` opaco del envelope es seudónimo. No enviar nombre/email, consumidor final, transportista ni destinatario.
+**Nivel:** `info`. **Propiedad `value`:** `quantity`.
+
+#### `outbound_order_created`
+
+- **Descripción:** despacho completado para un único SKU.
+- **Disparo:** después de la respuesta HTTP 201 de `createOutboundOrder`; `order_id` procede del `id` de esa respuesta.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `warehouse` | enum `los_angeles` \| `zaragoza` | Sí | Almacén de salida, normalizado. | `zaragoza` |
+| `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
+| `product_id` | string | Sí | Código SKU, no ID interno. | `TF-COS-001` |
+| `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
+| `quantity` | integer ≥ 1 | Sí | Unidades despachadas. | `3` |
+| `country` | enum `US` \| `ES` | Sí | País derivado de `warehouse`. | `ES` |
+| `order_id` | integer ≥ 1 | Sí | `id` devuelto por la respuesta de creación. | `382` |
+| `exit_type` | enum `B2C Order` \| `B2B Transfer` \| `Return / Damaged` | Sí | Tipo de salida; no incluir tracking ni datos del destinatario (D14). | `B2C Order` |
+
+**Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `order_id`, `exit_type`. **PII:** no en las propiedades; `userId` es seudónimo en el envelope. Excluir `tracking_number`, transportista y destinatario.
+**Nivel:** `info`. **Propiedad `value`:** `quantity`.
+
+#### `stock_threshold_triggered`
+
+- **Descripción:** el stock cae por debajo del umbral vigente.
+- **Disparo:** después de la respuesta HTTP 201 outbound, solo si el stock previo era `>= min_threshold` y el posterior es `< min_threshold`. En esta versión el umbral es global 50.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `warehouse` | enum `los_angeles` \| `zaragoza` | Sí | Almacén del SKU, normalizado. | `los_angeles` |
+| `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
+| `product_id` | string | Sí | Código SKU. | `TF-COS-001` |
+| `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
+| `quantity` | integer ≥ 0 | Sí | Stock resultante después de la orden. | `49` |
+| `country` | enum `US` \| `ES` | Sí | País derivado de `warehouse`. | `US` |
+| `min_threshold` | integer ≥ 0 | Sí | Mínimo usado para evaluar el cruce. | `50` |
+| `threshold_source` | enum `global_default` \| `client_config` | Sí | Origen del mínimo; hoy siempre `global_default`. | `global_default` |
+| `trigger_order_id` | integer ≥ 1 | Sí | Orden outbound cuya aplicación produjo el cruce. | `383` |
+
+**Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `min_threshold`, `threshold_source`, `trigger_order_id`. **PII:** no en las propiedades; `userId` es seudónimo. No agregar datos libres del cliente.
+**Nivel:** `warn`. **Propiedad `value`:** `quantity`.
+
+#### `direct_stock_edit_rejected`
+
+- **Descripción:** intento de fijar stock fuera de una orden que el sistema rechaza.
+- **Disparo:** pendiente de implementar; no existe UI ni endpoint. Cuando existan, capturar desde frontend al recibir el rechazo.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `warehouse` | enum `los_angeles` \| `zaragoza` | Sí | Almacén afectado, normalizado. | `zaragoza` |
+| `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
+| `product_id` | string | Sí | Código SKU. | `TF-COS-001` |
+| `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
+| `quantity` | integer ≥ 0 | Sí | Cantidad absoluta que se intentó fijar. | `18` |
+| `country` | enum `US` \| `ES` | Sí | País derivado de `warehouse`. | `ES` |
+| `rejection_reason` | enum `http_404` \| `http_405` \| `http_422` | Sí | Clase de rechazo; no copiar el cuerpo de la petición. | `http_405` |
+| `attempted_delta` | integer | No | Cambio neto intentado, si puede calcularse sin guardar el payload. | `-4` |
+
+**Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `rejection_reason`, `attempted_delta`. **PII:** no en las propiedades; `userId` es seudónimo. Nunca registrar payload, nombre/email ni credenciales.
+**Nivel:** `warn`. **Propiedad `value`:** `quantity`.
+
+#### `inventory_discrepancy_detected`
+
+- **Descripción:** un conteo físico/auditoría detecta diferencia entre stock registrado y contado.
+- **Disparo:** pendiente de implementar; cuando exista conteo, capturar desde frontend al recibir el resultado.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `warehouse` | enum `los_angeles` \| `zaragoza` | Sí | Almacén auditado, normalizado. | `los_angeles` |
+| `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
+| `product_id` | string | Sí | Código SKU. | `TF-COS-001` |
+| `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
+| `quantity` | integer | Sí | Diferencia con signo: `counted_quantity - system_quantity`. | `-2` |
+| `country` | enum `US` \| `ES` | Sí | País derivado de `warehouse`. | `US` |
+| `system_quantity` | integer ≥ 0 | Sí | Stock que constaba en el sistema al contar. | `20` |
+| `counted_quantity` | integer ≥ 0 | Sí | Unidades verificadas físicamente. | `18` |
+| `detection_source` | enum `physical_count` \| `audit` | Sí | Procedencia del hallazgo. | `physical_count` |
+
+**Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `system_quantity`, `counted_quantity`, `detection_source`. **PII:** no en las propiedades; `userId` es seudónimo. No incluir observaciones libres del operario.
+**Nivel:** `warn`. **Propiedad `value`:** `quantity`.
