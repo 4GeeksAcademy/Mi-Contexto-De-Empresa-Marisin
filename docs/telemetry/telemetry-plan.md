@@ -595,3 +595,19 @@ Estas reglas se aplican antes de encolar, no al reintentar el envío. Los límit
 | `user_login_failed` | Sin muestreo aleatorio; incluir cada fallo hasta un máximo de 20 por sesión en cualquier ventana móvil de 60 s. | Preservar la señal de seguridad y acotar el volumen. El tope de telemetría no es un control de autenticación ni un recuento exacto de todos los intentos. |
 
 Para estimar conteos y percentiles de latencia por endpoint y método, ponderar cada observación por `1 / sample_rate` (1 o 5). El p95 se obtiene del percentil ponderado de las duraciones, no multiplicando las duraciones ni calculando un p95 sin ponderar. Los fallos de red sin respuesta quedan en `api_request_failed`, no en esta distribución.
+
+## 9. Privacidad y tratamiento de PII
+
+El perfil (nombre, rol y preferencias) permanece en la BD principal; la telemetría registra el uso, no una copia del perfil. Identificadores opacos y huellas de errores no equivalen a anonimización. Sanitizar en el backoffice antes de validar y encolar: el allowlist comprueba la estructura, pero no detecta PII dentro de un string permitido.
+
+| Campo o dato de origen | Riesgo | Tratamiento |
+|---|---|---|
+| `userId`, `sessionId`, `requestId`, `eventId` | Vinculación de actividad con una persona, sesión o solicitud | Usar identificadores opacos según §4 y las excepciones de `userId: null` de §6. Rotar `sessionId` al autenticarse y no incorporar datos de perfil a los eventos. |
+| Email, nombre, contraseña, hash y tokens, incluso en login fallido | Identificación directa o exposición de credenciales | Excluir siempre. `user_login_failed` solo admite `failure_reason` como propiedad, con enum cerrado. |
+| `route`, `api_endpoint` | Identificadores en el path, parámetros privados o secretos en la URL | Usar plantillas conocidas como `/inventory/products/[id]`; eliminar query, fragmento y valores dinámicos. No usar la URL cruda como fallback. |
+| `message`, `stack_frames`, `error_fingerprint` | Texto, URLs o valores sensibles incluidos en un error | Eliminar emails, tokens y secuencias numéricas largas; truncar `message` a 200 caracteres. Reducir el stack a `archivo:línea`, sin host, esquema ni query. Calcular la huella solo con nombre y primer frame sanitizados, nunca a partir del mensaje. |
+| `failure_reason`, `reason`, `rejection_reason`, `error_source` | Texto del backend o del navegador con datos personales o internos | Emitir solo los enums de §6; excluir `detail`, cuerpos de peticiones y respuestas y mensajes libres no sanitizados. |
+| `last_field_touched`, campos de formularios y búsquedas | Valores operativos o texto introducido por el usuario | Capturar solo el nombre lógico cerrado del campo, nunca su valor; la búsqueda futura solo admitiría longitud y conteo de resultados. |
+| `client_id`, `product_id`, `warehouse`, `product_category` | Exposición de datos comerciales o incorporación de texto ajeno al contrato | Conservar únicamente slug de marca, código SKU y enums normalizados; no copiar nombres libres del cliente ni objetos de producto. |
+| Consumidor final, transportista y destinatario (incluido `tracking_number`) | Datos fuera del alcance del BRIEFING | No capturar en ningún evento. El label `tracking_number` del enum de `last_field_touched` no contiene el dato de seguimiento. |
+| IP, user agent completo, precios y costes | Huella del dispositivo, localización o información comercial sensible | Excluir de los eventos y de sus tags; no enriquecerlos con estos datos en el receptor. |
