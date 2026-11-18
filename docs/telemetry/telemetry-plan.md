@@ -611,3 +611,25 @@ El perfil (nombre, rol y preferencias) permanece en la BD principal; la telemetr
 | `client_id`, `product_id`, `warehouse`, `product_category` | Exposición de datos comerciales o incorporación de texto ajeno al contrato | Conservar únicamente slug de marca, código SKU y enums normalizados; no copiar nombres libres del cliente ni objetos de producto. |
 | Consumidor final, transportista y destinatario (incluido `tracking_number`) | Datos fuera del alcance del BRIEFING | No capturar en ningún evento. El label `tracking_number` del enum de `last_field_touched` no contiene el dato de seguimiento. |
 | IP, user agent completo, precios y costes | Huella del dispositivo, localización o información comercial sensible | Excluir de los eventos y de sus tags; no enriquecerlos con estos datos en el receptor. |
+
+## 10. Riesgos, eventos descartados y exclusiones
+
+| Evento o captura descartada | Razón |
+|---|---|
+| `stock_level_viewed` | El stock es estado consultable en la BD; las órdenes y los cruces de umbral ya informan las decisiones de inventario. |
+| `form_field_changed` | Cada cambio añade ruido y puede exponer datos; inicio y abandono bastan para identificar fricción. |
+| `mouse_moved` y session replay | Alto volumen y riesgo de grabar información sensible sin una decisión que lo justifique. |
+| `product_price_viewed` | Los precios son sensibles y el catálogo no identifica ninguna decisión que requiera observarlos. |
+| `carrier_assigned` y eventos de destinatario | Corresponden a última milla y están fuera del alcance de inventario del BRIEFING. |
+
+No se capturan IP, user agent completo, texto libre de búsquedas, query strings, emails de login (tampoco en intentos fallidos), precios, costes ni datos de consumidor final, transportista o destinatario. Los eventos futuros de §3.3 no son descartes: conservan su hipótesis, pero no se emiten en esta versión.
+
+| Riesgo | Mitigación y límite |
+|---|---|
+| Doble conteo al reintentar un envío | Reenviar el mismo `eventId` y deduplicar por ese identificador antes de agregar. No generar un UUID nuevo para un reintento de transporte. |
+| Desfase del reloj del cliente | Conservar `timestamp` como hora de captura UTC. Compararlo con la hora de recepción como diagnóstico de desfase; no sobrescribirlo ni presentar ventanas recientes como completas si llegan eventos tardíos. |
+| Pérdida al cerrar la pestaña | Una orden puede quedar confirmada antes de que el backoffice capture o envíe el evento. Ausencia de telemetría no implica ausencia de la operación. Mantener el backend como fuente autoritativa recomendada a futuro (D21), sin emitir desde ambas fuentes durante una migración sin estrategia de deduplicación. |
+| Deriva de esquemas | Validar por `event_type` y `schemaVersion`, aplicar D5 y no mezclar versiones incompatibles en la misma agregación. |
+| Cardinalidad y exposición en `route` y `api_endpoint` | Usar plantillas conocidas; excluir IDs, query y fragmentos. El middleware actual registra la ruta con query: no trasladar esa URL cruda a telemetría ni correlacionar por ella (D20). |
+| Categorías reales fuera del enum de producto | Aplicar D15, excluir SKUs sintéticos `LOAD-` y normalizar el catálogo a `fashion`, `electronics` y `cosmetics`; no inventar categorías ni emitir valores fuera del contrato. |
+| Sesgo por muestreo y límites de volumen | Ponderar latencia como en §8. Los conteos de errores y accesos fallidos sujetos a topes son señales operativas, no cifras exhaustivas. |
