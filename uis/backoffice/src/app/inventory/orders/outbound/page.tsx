@@ -3,7 +3,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApiError } from "@/lib/api";
-import { createOutboundOrder, getOrders, getProducts, InventoryOrder, SKUProduct } from "@/lib/inventory";
+import { computeStockIndex, createOutboundOrder, getOrders, getProducts, InventoryOrder, SKUProduct } from "@/lib/inventory";
+import { track, withRequestId } from "@/lib/telemetry";
+import { inventoryProperties, toExitType } from "@/lib/telemetry-mappers";
+import { useOrderFormTelemetry } from "@/components/TelemetryProvider";
 
 export default function OutboundOrderPage() {
   const router = useRouter();
@@ -21,21 +24,14 @@ export default function OutboundOrderPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const { touchField, resetForm } = useOrderFormTelemetry("outbound");
 
   const selectedProduct = useMemo(
     () => products.find((p) => p.id.toString() === selectedSkuId),
     [products, selectedSkuId],
   );
   // Evita recorrer miles de movimientos en cada tecla: O(n) solo al cambiar orders.
-  const stockIndex = useMemo(() => {
-    const index = new Map<string, number>();
-    for (const order of orders) {
-      const key = `${order.product.sku}|${order.warehouse}`;
-      const quantity = order.order_type === "inbound" ? order.quantity : -order.quantity;
-      index.set(key, (index.get(key) ?? 0) + quantity);
-    }
-    return index;
-  }, [orders]);
+  const stockIndex = useMemo(() => computeStockIndex(orders), [orders]);
   const currentStock = selectedProduct
     ? stockIndex.get(`${selectedProduct.sku}|${warehouse}`) ?? 0
     : 0;
@@ -55,8 +51,18 @@ export default function OutboundOrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validationProperties = selectedProduct
+      ? inventoryProperties(selectedProduct, warehouse, quantity, { quantityOptional: true })
+      : null;
     if (isStockExceeded) {
       setErrorMsg(`No hay suficiente stock. Disponible: ${currentStock} un.`);
+      if (validationProperties) {
+        track("outbound_order_validation_failed", {
+          ...validationProperties,
+          failure_reason: "insufficient_stock",
+          validation_source: "client",
+        });
+      }
       return;
     }
 
@@ -65,21 +71,50 @@ export default function OutboundOrderPage() {
     setSuccessMsg(null);
 
     try {
-      await createOutboundOrder({
+      const { id } = await createOutboundOrder({
         sku_id: parseInt(selectedSkuId, 10),
         warehouse,
         quantity: Number(quantity),
         exit_type: exitType,
         tracking_number: trackingNumber || undefined,
       });
-      
+      resetForm();
+      const properties = selectedProduct ? inventoryProperties(selectedProduct, warehouse, quantity) : null;
+      const exit_type = toExitType(exitType);
+      const hasOrderId = Number.isSafeInteger(id) && id > 0;
+      if (properties && exit_type && hasOrderId) {
+        track("outbound_order_created", { ...properties, order_id: id, exit_type });
+      }
+
       setSuccessMsg("¡Orden de salida registrada con éxito!");
       setQuantity(1);
       setTrackingNumber("");
 
       // Actualizar el stock por almacén tras registrar el movimiento.
-      getOrders().then(setOrders);
+      await getOrders().then((movements) => {
+        setOrders(movements);
+        if (selectedProduct && properties && hasOrderId && currentStock >= 50) {
+          const refreshedStock = computeStockIndex(movements).get(`${selectedProduct.sku}|${warehouse}`) ?? 0;
+          if (refreshedStock < 50) {
+            track("stock_threshold_triggered", {
+              ...properties, min_threshold: 50, threshold_source: "global_default", trigger_order_id: id,
+            });
+          }
+        }
+      }, () => setErrorMsg("La salida se registró, pero no se pudo actualizar el stock."));
     } catch (error: unknown) {
+      if (error instanceof ApiError && validationProperties) {
+        const failure_reason = error.status === 400 ? "insufficient_stock"
+          : error.status === 404 ? "sku_not_found"
+          : error.status === 422 ? "schema_invalid" : null;
+        if (failure_reason) {
+          const report = () => track("outbound_order_validation_failed", {
+            ...validationProperties, failure_reason, validation_source: "api",
+          });
+          if (error.requestId) withRequestId(error.requestId, report);
+          else report();
+        }
+      }
       if (error instanceof ApiError && error.status === 400) {
         setErrorMsg(`La API rechazó la salida (HTTP 400): ${error.message}`);
       } else {
@@ -114,10 +149,11 @@ export default function OutboundOrderPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 shadow rounded-lg border border-gray-200 space-y-4">
+      <form onSubmit={handleSubmit} onFocus={touchField} onChange={touchField} className="bg-white p-6 shadow rounded-lg border border-gray-200 space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Producto / SKU</label>
           <select
+            name="sku"
             value={selectedSkuId}
             onChange={(e) => setSelectedSkuId(e.target.value)}
             className="w-full border border-gray-300 p-2 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -144,6 +180,7 @@ export default function OutboundOrderPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Almacén de Origen</label>
           <select
+            name="warehouse"
             value={warehouse}
             onChange={(e) => setWarehouse(e.target.value)}
             className="w-full border border-gray-300 p-2 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -156,6 +193,7 @@ export default function OutboundOrderPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Salida (Exit Type)</label>
           <select
+            name="exit_type"
             value={exitType}
             onChange={(e) => setExitType(e.target.value)}
             className="w-full border border-gray-300 p-2 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -169,6 +207,7 @@ export default function OutboundOrderPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Número de Seguimiento / Tracking (Opcional)</label>
           <input
+            name="tracking_number"
             type="text"
             placeholder="Ej. UPS-1Z9999999999"
             value={trackingNumber}
@@ -180,6 +219,7 @@ export default function OutboundOrderPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad a Retirar</label>
           <input
+            name="quantity"
             type="number"
             min="1"
             value={quantity}
@@ -198,7 +238,7 @@ export default function OutboundOrderPage() {
 
         <button
           type="submit"
-          disabled={loading || isStockExceeded}
+          disabled={loading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition disabled:opacity-50"
         >
           {loading ? "Procesando..." : "Guardar Salida de Stock"}
