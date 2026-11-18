@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type FormEvent, type ReactNode } from "react";
 import { track } from "@/lib/telemetry";
 import {
   errorFingerprint,
@@ -14,6 +14,59 @@ const errorSources = {
   unhandled_rejection: "Promesa rechazada sin manejar",
   error_boundary: "Error de renderizado",
 };
+
+function isOrderField(name: string) {
+  return name === "sku" || name === "warehouse" || name === "quantity"
+    || name === "exit_type" || name === "tracking_number";
+}
+
+export function useOrderFormTelemetry(orderKind: "inbound" | "outbound") {
+  const form = useRef<HTMLFormElement | null>(null);
+  const interaction = useRef<{ startedAt: number; lastField: string; abandoned: boolean } | null>(null);
+
+  function touchField(event: FormEvent<HTMLFormElement>) {
+    const field = event.target;
+    if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)
+        || !isOrderField(field.name)) return;
+    if (interaction.current) {
+      interaction.current.lastField = field.name;
+      return;
+    }
+    form.current = event.currentTarget;
+    interaction.current = { startedAt: performance.now(), lastField: field.name, abandoned: false };
+    track("order_form_started", { order_kind: orderKind });
+  }
+
+  useEffect(() => {
+    function abandon() {
+      const current = interaction.current;
+      if (!current || current.abandoned || !form.current) return;
+      current.abandoned = true;
+      const completed = Array.from(form.current.elements).filter((field) =>
+        (field instanceof HTMLInputElement || field instanceof HTMLSelectElement)
+        && isOrderField(field.name) && field.validity.valid && field.value.trim() !== "",
+      ).length;
+      track("order_form_abandoned", {
+        order_kind: orderKind,
+        last_field_touched: current.lastField,
+        fields_completed: completed,
+        time_in_form_ms: Math.round(performance.now() - current.startedAt),
+      });
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === "hidden") abandon();
+    }
+    // Capture before the telemetry service's visibility listener flushes the queue.
+    document.addEventListener("visibilitychange", onVisibilityChange, true);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange, true);
+      abandon();
+    };
+  }, [orderKind]);
+
+  return { touchField, resetForm: () => { interaction.current = null; form.current = null; } };
+}
 
 export async function captureFrontendError(
   reason: unknown,
