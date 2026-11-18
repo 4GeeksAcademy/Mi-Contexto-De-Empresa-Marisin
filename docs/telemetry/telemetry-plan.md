@@ -632,6 +632,9 @@ No se capturan IP, user agent completo, texto libre de búsquedas, query strings
 | Cardinalidad y exposición en `route` y `api_endpoint` | Usar plantillas conocidas; excluir IDs, query y fragmentos. El middleware actual registra la ruta con query: no trasladar esa URL cruda a telemetría ni correlacionar por ella (D20). |
 | Categorías reales fuera del enum de producto | Aplicar D15, excluir SKUs sintéticos `LOAD-` y normalizar el catálogo a `fashion`, `electronics` y `cosmetics`; no inventar categorías ni emitir valores fuera del contrato. |
 | Sesgo por muestreo y límites de volumen | Ponderar latencia como en §8. Los conteos de errores y accesos fallidos sujetos a topes son señales operativas, no cifras exhaustivas. |
+| `userId` heterogéneo (D2): hoy puede ser un UUID o un ID de TinyDB convertido a texto. Unificarlo sin correspondencia rompería el conteo de usuarios únicos y las series por usuario. | Mantener una tabla de correspondencia de ID antiguo a UUID y no mezclar ambos formatos en una misma agregación. |
+| Umbral calculado en el cliente (D16 y D21): el stock por SKU y almacén proviene de datos cargados en el navegador; si otro operador registra una orden simultáneamente, el cruce del umbral de 50 puede duplicarse o perderse. | Calcular el cruce con los datos refrescados tras la respuesta HTTP 201, deduplicar por `product_id` + `warehouse` + `trigger_order_id` y migrar el cálculo al backend como fuente autoritativa futura. |
+| La telemetría de cliente no es una fuente contable (D21): los eventos pueden perderse o manipularse desde el navegador. | Usar los conteos de `inbound_order_created` y `outbound_order_created` para analizar tendencias y conciliarlos con `stock_entries` y `stock_exits`, respectivamente. Nunca sustituir la base de datos por estos conteos. |
 
 ## 11. Mapeo previsto al almacenamiento
 
