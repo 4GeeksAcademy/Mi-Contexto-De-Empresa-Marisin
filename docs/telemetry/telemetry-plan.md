@@ -32,7 +32,7 @@ Los consumidores principales son:
 
 Los eventos de inventario se podrán agregar por **almacén**, **cliente**, **país**, **SKU** y **categoría de producto**. `country` se deriva del almacén (`los_angeles` → `US`, `zaragoza` → `ES`); `client_id` y `product_id` seguirán los mapeos provisionales documentados en §2 y sus discrepancias se conservarán visibles.
 
-El alcance de este proyecto es el diseño de contratos y puntos de captura para el backoffice y la API de inventario. No implementa instrumentación, almacenamiento ni dashboards. Los eventos no incluirán datos de consumidores finales, transportistas o destinatarios; esos ámbitos quedan fuera de este plan.
+El alcance de este proyecto es el diseño de contratos y puntos de captura en el backoffice. La API de inventario aporta los resultados de negocio y queda como fuente autoritativa recomendada a futuro (D21), no como emisor en esta versión. No se implementan instrumentación, almacenamiento ni dashboards. Los eventos no incluirán datos de consumidores finales, transportistas o destinatarios.
 
 ## 2. Flujo de inventario
 
@@ -341,6 +341,7 @@ Las tablas siguientes especifican los allowlists de `properties`. En las cinco m
 | `detection_source` | enum `physical_count` \| `audit` | Sí | Procedencia del hallazgo. | `physical_count` |
 
 **Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `system_quantity`, `counted_quantity`, `detection_source`. **PII:** no en las propiedades; `userId` es seudónimo. No incluir observaciones libres del operario.
+**Nivel:** `warn`. **Propiedad `value`:** `quantity`.
 
 ### 6.2 Oportunidades identificadas
 
@@ -659,8 +660,8 @@ Las rutas de archivo se indican desde `uis/backoffice/src/`. En todos los casos,
 | `stock_threshold_triggered` | `app/inventory/orders/outbound/page.tsx`, rama de éxito del submit | Tomar el balance previo del `stockIndex` para el SKU y almacén enviados. Tras HTTP 201, refrescar movimientos y comparar con el balance resultante; emitir solo de `>= 50` a `< 50`, con el ID de la orden como `trigger_order_id`. Aplicar la deduplicación de §10. |
 | `direct_stock_edit_rejected` | Pendiente: futura UI de edición directa y su endpoint | Cuando existan, emitir en frontend al recibir el rechazo de un intento de fijar stock fuera de una orden; no inferirlo de un error HTTP ajeno a ese flujo. |
 | `inventory_discrepancy_detected` | Pendiente: futura UI de conteo físico o auditoría y su endpoint | Al recibir el resultado, emitir por cada SKU y almacén donde `counted_quantity - system_quantity` sea distinto de cero. |
-| `inbound_order_validation_failed` | `app/inventory/orders/inbound/page.tsx`, catch del submit | Ante `ApiError` 422, 404 o 400 de validación, emitir con `validation_source: api`. Clasificar por código, sin copiar el detalle; omitir `quantity` si no es un entero. |
-| `outbound_order_validation_failed` | `app/inventory/orders/outbound/page.tsx`, validación local y catch del submit | En la transición de válido a `quantity > currentStock` tras una interacción con el formulario, emitir con `validation_source: client` y bloquear el envío. No esperar al submit: el botón ya se deshabilita en ese estado. En el catch, emitir con `validation_source: api` ante `ApiError` 422, 404 o 400 de validación. |
+| `inbound_order_validation_failed` | `app/inventory/orders/inbound/page.tsx`, catch del submit | Emitir con `validation_source: api`: `422` → `schema_invalid`, `404` → `sku_not_found`; si se introduce un `400` por stock insuficiente, usar `insufficient_stock`. Omitir `quantity` si no es un entero. |
+| `outbound_order_validation_failed` | `app/inventory/orders/outbound/page.tsx`, validación local y catch del submit | Al pasar de válido a `quantity > currentStock` tras una interacción, emitir `insufficient_stock` con `validation_source: client` y bloquear el envío, sin esperar al submit. En el catch, emitir con `validation_source: api`: `422` → `schema_invalid`, `404` → `sku_not_found`, `400` por stock insuficiente → `insufficient_stock`. Omitir `quantity` si no es un entero. |
 | `order_form_started` | Ambos formularios en `app/inventory/orders/` | Emitir una vez en la primera interacción con un campo, no por render ni por la carga de valores iniciales. |
 | `order_form_abandoned` | Ambos formularios en `app/inventory/orders/`, desmontaje y cambio de visibilidad | Emitir una sola vez por inicio cuando se desmonta por navegación o se oculta la pestaña, si hubo `order_form_started` y todavía no hubo submit correcto. |
 | `stock_threshold_cleared` | `app/inventory/orders/inbound/page.tsx`, rama de éxito del submit; cálculo de balance pendiente | Tras HTTP 201, comparar el balance previo del SKU y almacén con el stock refrescado; emitir solo de `< 50` a `>= 50`, con el ID de la orden como `trigger_order_id`. No estimar el balance si no hay datos para comparar. |
@@ -676,3 +677,5 @@ Las rutas de archivo se indican desde `uis/backoffice/src/`. En todos los casos,
 | `api_request_failed` | `lib/api.ts`, `fetchWithAuth` | Ante HTTP 500–599 o fallo de red sin respuesta, emitir con `http_5xx` o `network_error`; incluir `status_code` solo para 5xx. No incluir 401, 403 ni errores de validación de órdenes. |
 
 Si un dato obligatorio del contrato no se puede recuperar o normalizar en el punto de captura, no inventar un valor para forzar la emisión. Los eventos futuros de §3.3, incluida la búsqueda, quedan fuera de esta guía.
+
+**Requisito de identidad para instrumentar (D2):** `login()` guarda el token pero no devuelve el identificador de telemetría, y `/auth/me` devuelve email y perfil, no el identificador que usa inventario. El siguiente proyecto debe poner a disposición del contexto autenticado del backoffice el identificador opaco equivalente al de inventario, tanto en el login como al restaurar la sesión. No usar email ni nombre como sustitutos.
