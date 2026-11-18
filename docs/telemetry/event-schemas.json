@@ -942,9 +942,12 @@
               "type": "object",
               "properties": {
                 "api_endpoint": { "$ref": "#/definitions/route_template" },
-                "duration_ms": { "type": "integer", "minimum": 0 }
+                "duration_ms": { "type": "integer", "minimum": 0 },
+                "http_method": { "type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+                "status_code": { "type": "integer" },
+                "sample_rate": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
               },
-              "required": ["api_endpoint", "duration_ms"],
+              "required": ["api_endpoint", "duration_ms", "http_method", "status_code", "sample_rate"],
               "additionalProperties": false
             }
           },
@@ -962,7 +965,10 @@
         "requestId": "550e8400-e29b-41d4-a716-446655440217",
         "properties": {
           "api_endpoint": "/inventory/products/[id]",
-          "duration_ms": 185
+          "duration_ms": 185,
+          "http_method": "GET",
+          "status_code": 200,
+          "sample_rate": 0.25
         }
       }],
       "x-category": "Rendimiento",

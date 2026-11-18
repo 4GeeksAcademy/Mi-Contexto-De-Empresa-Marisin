@@ -132,7 +132,7 @@ En ambos eventos `quantity` es un entero opcional sin mínimo: se conserva si el
 | `event_type` | Categoría | Origen | Hipótesis y decisión | Punto de captura (frontend, esta versión) | Fuente autoritativa futura (backend) | Entrega | Regla de oro |
 |---|---|---|---|---|---|---|---|
 | `page_viewed` | Navegación | Oportunidad identificada | Identificar las secciones del backoffice más y menos utilizadas para priorizar mejoras. | Cambio de ruta en el backoffice; capturar la ruta como plantilla, sin query params. No existe aún instrumentación de vistas. | No aplica: evento exclusivo de navegación en interfaz. | Batch (diario) | Capturamos `page_viewed` porque necesitamos saber qué secciones usan los operadores, lo que nos permite priorizar mejoras del backoffice. |
-| `api_latency_recorded` | Rendimiento | Oportunidad identificada | Identificar endpoints lentos por p95 y priorizar optimización o caché. | `uis/backoffice/src/lib/api.ts` (`fetchWithAuth`), medir duración de cada llamada y conservar solo la plantilla del endpoint. | El middleware de `services/api/main.py` aporta la fuente futura de timing del servidor. | Batch (ventanas de 5 min) | Capturamos `api_latency_recorded` porque necesitamos comparar la latencia de los endpoints por operación, lo que nos permite priorizar optimizaciones que mejoren el servicio. |
+| `api_latency_recorded` | Rendimiento | Oportunidad identificada | Identificar endpoints lentos por p95 y priorizar optimización o caché. | `uis/backoffice/src/lib/api.ts` (`fetchWithAuth`), medir la duración de las llamadas con respuesta HTTP y registrar la plantilla del endpoint, `http_method`, `status_code` y `sample_rate`. | El middleware de `services/api/main.py` aporta la fuente futura de timing del servidor. | Batch (ventanas de 5 min) | Capturamos `api_latency_recorded` porque necesitamos comparar la latencia de los endpoints por operación, lo que nos permite priorizar optimizaciones que mejoren el servicio. |
 | `web_vital_recorded` | Rendimiento | Oportunidad identificada | Comparar LCP, INP y CLS por ruta para priorizar mejoras de experiencia web. | Punto futuro: integración de medición de Web Vitals en el backoffice; no existe `reportWebVitals` actualmente. La ruta se registra como plantilla. | No aplica: métrica de rendimiento percibido en interfaz. | Batch (diario) | Capturamos `web_vital_recorded` porque necesitamos conocer el rendimiento percibido por ruta, lo que nos permite priorizar mejoras frontend. |
 | `frontend_error_captured` | Errores | Oportunidad identificada | Detectar errores JavaScript no capturados tras un despliegue y decidir rollback o hotfix. | Punto futuro: Error Boundary global y captura de errores no controlados; no existe un Error Boundary global localizado. Mensaje sanitizado y truncado, y stack reducido a `archivo:línea`, según §6. | No aplica: error originado en la interfaz. | Stream | Capturamos `frontend_error_captured` porque necesitamos detectar errores de interfaz después de un despliegue, lo que nos permite decidir si aplicar un hotfix o revertirlo. |
 | `api_request_failed` | Errores | Oportunidad identificada | Detectar errores 5xx o fallos de red antes de que lleguen como tickets de usuario. | `uis/backoffice/src/lib/api.ts` (`fetchWithAuth`), para respuestas 5xx y fallos de red; separar los 401/403 y los errores de validación que tienen eventos específicos. No incluir mensajes literales ni payloads. | Estado y logs del servidor como fuente futura para respuestas HTTP; no aplica a fallos de red sin respuesta. | Stream | Capturamos `api_request_failed` porque necesitamos detectar fallos de API o de red que afectan al backoffice, lo que nos permite investigar la incidencia antes de que llegue un ticket. |
@@ -497,14 +497,17 @@ Se detallan las **15 oportunidades identificadas con esquema** de §3.2. `invent
 #### `api_latency_recorded`
 
 - **Descripción:** latencia de una llamada API del backoffice.
-- **Disparo:** desde `fetchWithAuth`, al completar la llamada; conservar ruta/endpoint como plantilla.
+- **Disparo:** desde `fetchWithAuth`, al completar una llamada con respuesta HTTP; conservar el endpoint como plantilla. Los fallos de red sin respuesta se registran en `api_request_failed`.
 
 | Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
 |---|---|---:|---|---|
 | `api_endpoint` | string | Sí | Endpoint normalizado, sin query params ni valores de path. | `/inventory/products/[id]` |
 | `duration_ms` | integer ≥ 0 | Sí | Duración observada por el cliente en milisegundos. | `185` |
+| `http_method` | enum `GET` \| `POST` \| `PUT` \| `PATCH` \| `DELETE` | Sí | Método HTTP de la solicitud. | `GET` |
+| `status_code` | integer | Sí | Código de la respuesta HTTP. | `200` |
+| `sample_rate` | number, 0 < valor ≤ 1 | Sí | Probabilidad de inclusión aplicada al evento; `1` indica captura sin muestreo. | `0.25` |
 
-**Allowlist:** `api_endpoint`, `duration_ms`. **PII:** no; solo plantilla de endpoint, sin query params. **Nivel:** `info`. **Propiedad `value`:** `duration_ms`.
+**Allowlist:** `api_endpoint`, `duration_ms`, `http_method`, `status_code`, `sample_rate`. **PII:** no; solo plantilla de endpoint, sin query params. **Nivel:** `info`. **Propiedad `value`:** `duration_ms`.
 
 #### `web_vital_recorded`
 
