@@ -580,3 +580,18 @@ Según D9, **stream** y **batch** describen cómo se procesan y consumen los eve
 | `api_request_failed` | Stream | Móvil de 1 min | Tecnología | Detectar 5xx o fallos de red repetidos permite investigar antes de recibir un ticket. |
 
 `direct_stock_edit_rejected` queda en batch, aun siendo un evento de seguridad: las decisiones de formación y revisión de permisos se toman por semanas. Los patrones sospechosos de acceso en ráfaga se observan en stream con `route_access_denied` y `user_login_failed`; ninguno sustituye el registro del intento de edición.
+
+## 8. Throttle, debounce y muestreo
+
+Estas reglas se aplican antes de encolar, no al reintentar el envío. Los límites temporales se miden con ventanas móviles por `sessionId`, salvo cuando la unidad indicada es la carga de página.
+
+| `event_type` | Regla | Motivo |
+|---|---|---|
+| `api_latency_recorded` | Incluir el 100 % (`sample_rate: 1`) si `status_code >= 400` o `duration_ms > 1000`. En el resto, incluir cada evento con probabilidad del 20 % (`sample_rate: 0.2`). | Conservar todos los errores HTTP y las respuestas lentas sin enviar todas las mediciones de tráfico normal. |
+| `page_viewed` | Deduplicar por plantilla de `route` y sesión: omitir si han pasado menos de 1 s desde la última captura de esa ruta. Las rutas distintas se contabilizan por separado. | Evitar duplicados de navegación sin ocultar el uso de otras secciones. |
+| `frontend_error_captured` | Máximo 1 captura por `error_fingerprint` y sesión cada 60 s, y 10 capturas totales por sesión en cualquier ventana móvil de 60 s. Deben cumplirse ambos límites. | Conservar una señal de cada fallo distinto sin inundar el flujo con errores repetidos. |
+| `inventory_search_performed` | Solo en una versión futura (D17): debounce de 800 ms desde la última pulsación; reiniciar el temporizador si se vuelve a teclear. No emitir en esta versión. | No contar cada pulsación como una búsqueda; nunca capturar el texto. |
+| `web_vital_recorded` | Máximo 1 observación final por `metric_name` y carga de página; no emitir actualizaciones intermedias ni inventar valores ausentes. | Comparar cargas sin duplicar métricas notificadas varias veces. |
+| `user_login_failed` | Sin muestreo aleatorio; incluir cada fallo hasta un máximo de 20 por sesión en cualquier ventana móvil de 60 s. | Preservar la señal de seguridad y acotar el volumen. El tope de telemetría no es un control de autenticación ni un recuento exacto de todos los intentos. |
+
+Para estimar conteos y percentiles de latencia por endpoint y método, ponderar cada observación por `1 / sample_rate` (1 o 5). El p95 se obtiene del percentil ponderado de las duraciones, no multiplicando las duraciones ni calculando un p95 sin ponderar. Los fallos de red sin respuesta quedan en `api_request_failed`, no en esta distribución.
