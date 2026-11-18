@@ -73,7 +73,7 @@ export default function InboundOrderPage() {
           const refreshedStock = computeStockIndex(movements).get(stockKey) ?? 0;
           if (refreshedStock >= 50) {
             track("stock_threshold_cleared", {
-              ...properties, min_threshold: 50, threshold_source: "global_default", trigger_order_id: id,
+              ...properties, quantity: refreshedStock, min_threshold: 50, threshold_source: "global_default", trigger_order_id: id,
             });
           }
         }
