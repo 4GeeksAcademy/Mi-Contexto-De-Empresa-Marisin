@@ -139,20 +139,33 @@ export function inventoryProperties(
   product: Pick<SKUProduct, "sku" | "client_name" | "category">,
   warehouse: string,
   quantity: number,
-): InventoryProperties | null {
+): InventoryProperties | null;
+export function inventoryProperties(
+  product: Pick<SKUProduct, "sku" | "client_name" | "category">,
+  warehouse: string,
+  quantity: number,
+  options: { quantityOptional: true },
+): (Omit<InventoryProperties, "quantity"> & { quantity?: number }) | null;
+export function inventoryProperties(
+  product: Pick<SKUProduct, "sku" | "client_name" | "category">,
+  warehouse: string,
+  quantity: number,
+  options?: { quantityOptional: true },
+) {
   const normalizedWarehouse = toWarehouse(warehouse);
   const country = toCountry(warehouse);
   const clientId = toClientId(product.client_name);
   const productId = product.sku.trim();
   const productCategory = toProductCategory(product.category, product.sku);
 
+  const hasQuantity = Number.isSafeInteger(quantity);
   if (
     !normalizedWarehouse ||
     !country ||
     !clientId ||
     !productId ||
     !productCategory ||
-    !Number.isSafeInteger(quantity)
+    (!hasQuantity && !options?.quantityOptional)
   ) {
     return null;
   }
@@ -162,7 +175,7 @@ export function inventoryProperties(
     client_id: clientId,
     product_id: productId,
     product_category: productCategory,
-    quantity,
+    ...(hasQuantity ? { quantity } : {}),
     country,
   };
 }
