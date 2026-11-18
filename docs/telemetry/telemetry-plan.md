@@ -169,3 +169,44 @@ El catálogo de esta versión contiene **20 eventos con esquema**: **5 obligator
 | Rendimiento | 2 |
 | Errores | 2 |
 | **Total** | **20** |
+
+## 4. Event Envelope
+
+Cada evento usa el mismo envelope. El futuro `TelemetryService` genera y valida los campos comunes; el punto de captura solo le proporciona el contexto de la acción y las propiedades permitidas. El componente no genera identificadores del envelope ni la marca temporal.
+
+| Campo | Tipo y formato | Obligatorio | Generación y reglas |
+|---|---|---:|---|
+| `eventId` | `string`, UUID | Sí | UUID único generado por `TelemetryService` para cada evento. |
+| `timestamp` | `string`, ISO 8601 UTC con milisegundos (`YYYY-MM-DDTHH:mm:ss.sssZ`) | Sí | Momento de captura generado por `TelemetryService`, no momento de envío. |
+| `sessionId` | `string`, UUID | Sí | Lo genera el servicio al cargar la aplicación; se rota tras un login correcto. |
+| `userId` | `string` opaco o `null` antes de autenticarse | Sí | Lo obtiene el servicio del contexto autenticado; nunca email ni nombre. No se fuerza formato UUID porque el identificador real puede proceder del ID de TinyDB convertido a texto (D2). |
+| `event_type` | `string`, taxonomía `entidad_acción` | Sí | Constante del contrato del evento, fijada por `TelemetryService`. |
+| `schemaVersion` | `string`, semver | Sí | Valor compartido constante: `1.0.0`. |
+| `requestId` | `string`, UUID | Sí | En eventos de API, el mismo UUID que `X-Request-ID`; para eventos solo de interfaz, UUID nuevo generado por el servicio. |
+| `properties` | `object`, allowlist específica del evento | Sí | El servicio valida las propiedades contra el esquema del evento y descarta claves no permitidas; nunca se envían propiedades arbitrarias. |
+
+`properties` contiene los datos de negocio del evento, no otro envelope. Todas sus claves y tipos están definidos por evento en §6 y en `event-schemas.json`.
+
+Ejemplo completo:
+
+```json
+{
+  "eventId": "550e8400-e29b-41d4-a716-446655440000",
+  "timestamp": "2026-11-18T12:34:56.789Z",
+  "sessionId": "550e8400-e29b-41d4-a716-446655440001",
+  "userId": "usr_7b2c9f",
+  "event_type": "outbound_order_created",
+  "schemaVersion": "1.0.0",
+  "requestId": "550e8400-e29b-41d4-a716-446655440002",
+  "properties": {
+    "warehouse": "los_angeles",
+    "client_id": "nova_beauty",
+    "product_id": "TF-COS-001",
+    "product_category": "cosmetics",
+    "quantity": 12,
+    "country": "US",
+    "order_id": 381,
+    "exit_type": "B2C Order"
+  }
+}
+```
