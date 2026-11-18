@@ -175,6 +175,24 @@
         }
       ],
       "description": "Inbound order created after the API returns HTTP 201.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440001",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "inbound_order_created",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440201",
+        "properties": {
+          "warehouse": "los_angeles",
+          "client_id": "nova_beauty",
+          "product_id": "TF-COS-001",
+          "product_category": "cosmetics",
+          "quantity": 12,
+          "country": "US",
+          "order_id": 381
+        }
+      }],
       "x-category": "Negocio/inventario",
       "x-origin": "mandatory",
       "x-delivery": "batch",
@@ -210,6 +228,25 @@
         }
       ],
       "description": "Outbound order created after the API returns HTTP 201; never includes tracking or recipient data.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440002",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "outbound_order_created",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440202",
+        "properties": {
+          "warehouse": "zaragoza",
+          "client_id": "nova_beauty",
+          "product_id": "TF-COS-001",
+          "product_category": "cosmetics",
+          "quantity": 3,
+          "country": "ES",
+          "order_id": 382,
+          "exit_type": "B2C Order"
+        }
+      }],
       "x-category": "Negocio/inventario",
       "x-origin": "mandatory",
       "x-delivery": "stream",
@@ -246,6 +283,26 @@
         }
       ],
       "description": "Stock crosses from at or above the threshold to below it after an outbound order.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440003",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "stock_threshold_triggered",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440203",
+        "properties": {
+          "warehouse": "los_angeles",
+          "client_id": "nova_beauty",
+          "product_id": "TF-COS-001",
+          "product_category": "cosmetics",
+          "quantity": 49,
+          "country": "US",
+          "min_threshold": 50,
+          "threshold_source": "global_default",
+          "trigger_order_id": 383
+        }
+      }],
       "x-category": "Negocio/inventario",
       "x-origin": "mandatory",
       "x-delivery": "stream",
@@ -281,6 +338,25 @@
         }
       ],
       "description": "Direct stock edit rejection; capture remains pending until UI and endpoint exist.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440004",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "direct_stock_edit_rejected",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440204",
+        "properties": {
+          "warehouse": "zaragoza",
+          "client_id": "nova_beauty",
+          "product_id": "TF-COS-001",
+          "product_category": "cosmetics",
+          "quantity": 18,
+          "country": "ES",
+          "rejection_reason": "http_405",
+          "attempted_delta": -4
+        }
+      }],
       "x-category": "Negocio/seguridad",
       "x-origin": "mandatory",
       "x-delivery": "batch",
@@ -317,6 +393,26 @@
         }
       ],
       "description": "Physical count or audit reports a stock discrepancy; capture remains pending until the workflow exists.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440005",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "inventory_discrepancy_detected",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440205",
+        "properties": {
+          "warehouse": "los_angeles",
+          "client_id": "nova_beauty",
+          "product_id": "TF-COS-001",
+          "product_category": "cosmetics",
+          "quantity": -2,
+          "country": "US",
+          "system_quantity": 20,
+          "counted_quantity": 18,
+          "detection_source": "physical_count"
+        }
+      }],
       "x-category": "Negocio/inventario",
       "x-origin": "mandatory",
       "x-delivery": "batch",
@@ -352,6 +448,25 @@
         }
       ],
       "description": "Inbound order validation failure; current capture is from the frontend API error handler.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440006",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "inbound_order_validation_failed",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440206",
+        "properties": {
+          "warehouse": "los_angeles",
+          "client_id": "nova_beauty",
+          "product_id": "TF-COS-001",
+          "product_category": "cosmetics",
+          "quantity": 2,
+          "country": "US",
+          "failure_reason": "sku_not_found",
+          "validation_source": "api"
+        }
+      }],
       "x-category": "Negocio/calidad de datos",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -387,6 +502,25 @@
         }
       ],
       "description": "Outbound order validation failure from the client stock check or API response.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440007",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "outbound_order_validation_failed",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440207",
+        "properties": {
+          "warehouse": "los_angeles",
+          "client_id": "nova_beauty",
+          "product_id": "TF-COS-001",
+          "product_category": "cosmetics",
+          "quantity": 10,
+          "country": "US",
+          "failure_reason": "insufficient_stock",
+          "validation_source": "client"
+        }
+      }],
       "x-category": "Negocio/calidad de datos",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -415,6 +549,16 @@
         }
       ],
       "description": "First interaction with an inbound or outbound order form.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440008",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "order_form_started",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440208",
+        "properties": { "order_kind": "inbound" }
+      }],
       "x-category": "UX/flujos",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -446,6 +590,21 @@
         }
       ],
       "description": "An order form with a prior start is abandoned without successful submission.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440009",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "order_form_abandoned",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440209",
+        "properties": {
+          "order_kind": "outbound",
+          "last_field_touched": "quantity",
+          "fields_completed": 3,
+          "time_in_form_ms": 42000
+        }
+      }],
       "x-category": "UX/flujos",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -482,6 +641,26 @@
         }
       ],
       "description": "Stock crosses from below the threshold to at or above it after an inbound order.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440010",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "stock_threshold_cleared",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440210",
+        "properties": {
+          "warehouse": "zaragoza",
+          "client_id": "nova_beauty",
+          "product_id": "TF-COS-001",
+          "product_category": "cosmetics",
+          "quantity": 55,
+          "country": "ES",
+          "min_threshold": 50,
+          "threshold_source": "global_default",
+          "trigger_order_id": 384
+        }
+      }],
       "x-category": "Negocio/inventario",
       "x-origin": "opportunity",
       "x-delivery": "stream",
@@ -508,6 +687,16 @@
         }
       ],
       "description": "Successful backoffice authentication after the token is stored.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440011",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "user_login_succeeded",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440211",
+        "properties": {}
+      }],
       "x-category": "Autenticación",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -536,6 +725,16 @@
         }
       ],
       "description": "Failed authentication; userId is null and no credential is captured.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440012",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": null,
+        "event_type": "user_login_failed",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440212",
+        "properties": { "failure_reason": "invalid_credentials" }
+      }],
       "x-category": "Autenticación/seguridad",
       "x-origin": "opportunity",
       "x-delivery": "stream",
@@ -565,6 +764,19 @@
         }
       ],
       "description": "A protected API request receives HTTP 401 before the client clears the session.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440013",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "session_expired",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440213",
+        "properties": {
+          "route": "/inventory/orders/outbound",
+          "api_endpoint": "/inventory/orders/outbound"
+        }
+      }],
       "x-category": "Autenticación",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -593,6 +805,16 @@
         }
       ],
       "description": "Explicit logout before the client removes the token.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440014",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "user_logged_out",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440214",
+        "properties": { "session_duration_ms": 28800000 }
+      }],
       "x-category": "Autenticación",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -637,6 +859,19 @@
         }
       ],
       "description": "HTTP 403 or inventory guard redirect. userId is null only for reason no_session.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440015",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": null,
+        "event_type": "route_access_denied",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440215",
+        "properties": {
+          "route": "/inventory/products",
+          "reason": "no_session"
+        }
+      }],
       "x-category": "Seguridad/permisos",
       "x-origin": "opportunity",
       "x-delivery": "stream",
@@ -679,6 +914,16 @@
         }
       ],
       "description": "Backoffice route view, using a route template without query parameters.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440016",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": null,
+        "event_type": "page_viewed",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440216",
+        "properties": { "route": "/login" }
+      }],
       "x-category": "Navegación",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -708,6 +953,19 @@
         }
       ],
       "description": "Client-observed duration of an API request, recorded by endpoint template.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440017",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "api_latency_recorded",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440217",
+        "properties": {
+          "api_endpoint": "/inventory/products/[id]",
+          "duration_ms": 185
+        }
+      }],
       "x-category": "Rendimiento",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -738,6 +996,20 @@
         }
       ],
       "description": "Client-side LCP, INP or CLS metric for a route template.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440018",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "web_vital_recorded",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440218",
+        "properties": {
+          "route": "/inventory/products",
+          "metric_name": "LCP",
+          "metric_value": 1240
+        }
+      }],
       "x-category": "Rendimiento",
       "x-origin": "opportunity",
       "x-delivery": "batch",
@@ -772,6 +1044,20 @@
         }
       ],
       "description": "Frontend error after sanitizing its message and reducing stack frames to file:line.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440019",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "frontend_error_captured",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440219",
+        "properties": {
+          "route": "/inventory/orders",
+          "message": "TypeError: Cannot read property",
+          "stack_frames": ["orders/page.tsx:42"]
+        }
+      }],
       "x-category": "Errores",
       "x-origin": "opportunity",
       "x-delivery": "stream",
@@ -818,6 +1104,20 @@
         }
       ],
       "description": "HTTP 5xx or network failure from the backoffice; excludes 401, 403 and validation errors.",
+      "examples": [{
+        "eventId": "550e8400-e29b-41d4-a716-446655440020",
+        "timestamp": "2026-11-18T12:34:56.789Z",
+        "sessionId": "550e8400-e29b-41d4-a716-446655440100",
+        "userId": "usr_7b2c9f",
+        "event_type": "api_request_failed",
+        "schemaVersion": "1.0.0",
+        "requestId": "550e8400-e29b-41d4-a716-446655440220",
+        "properties": {
+          "api_endpoint": "/inventory/orders/outbound",
+          "failure_reason": "http_5xx",
+          "status_code": 503
+        }
+      }],
       "x-category": "Errores",
       "x-origin": "opportunity",
       "x-delivery": "stream",
