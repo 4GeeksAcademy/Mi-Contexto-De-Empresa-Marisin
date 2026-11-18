@@ -685,7 +685,7 @@
           "required": ["event_type", "properties"]
         }
       ],
-      "description": "Successful backoffice authentication after the token is stored.",
+      "description": "Successful backoffice authentication after token storage. Count daily distinct users by opaque userId and compare aggregate successes with login failures to measure adoption and detect access issues. No warehouse dimension.",
       "examples": [{
         "eventId": "550e8400-e29b-41d4-a716-446655440011",
         "timestamp": "2026-11-18T12:34:56.789Z",
