@@ -87,11 +87,11 @@ export function toStackFrames(stack: string | null | undefined): string[] {
   const frames: string[] = [];
 
   for (const line of stack.split("\n")) {
-    const match = line.trim().match(/((?:https?:\/\/|webpack-internal:\/\/|file:\/\/)?[^()\s]+):(\d+)(?::\d+)?\)?$/);
+    const match = line.trim().match(/(?:^|[\s(@])((?:https?:\/\/|webpack-internal:\/\/|file:\/\/)?[^()\s]+?):(\d+)(?::\d+)?\)?$/);
     if (!match) continue;
 
     let filePath = match[1].split(/[?#]/, 1)[0];
-    filePath = filePath.replace(/^[a-z]+:\/\/[^/]*/i, "");
+    filePath = filePath.replace(/^[a-z][a-z-]*:\/\/[^/]*/i, "");
     const sourceIndex = filePath.lastIndexOf("/src/");
     if (sourceIndex >= 0) {
       filePath = filePath.slice(sourceIndex + 5);
