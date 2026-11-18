@@ -16,7 +16,7 @@
 8. Throttle y debounce
 9. Privacidad y tratamiento de PII
 10. Riesgos, eventos descartados y exclusiones
-11. Mapeo previsto al almacenamiento
+11. Mapeo al almacenamiento
 12. Guía de instrumentación por evento
 
 ## 1. Contexto y alcance
@@ -95,6 +95,21 @@ Los eventos de este plan se emitirán desde el backoffice con `track()` del futu
 - **D28 — edición directa:** `PATCH /inventory/products/{product_id}/stock` responde siempre 405 ("El stock solo se modifica con órdenes de entrada o salida."), 404 si el SKU no existe, sin tocar modelos ni caché. El control "Ajustar stock" de Productos lo llama y, ante el rechazo, emite `direct_stock_edit_rejected` y enlaza a entrada y salida.
 - **D29 — conteo físico:** la página `/inventory/counts` compara lo contado con el stock del sistema por almacén y, si difiere, emite `inventory_discrepancy_detected` con `detection_source: physical_count`. El conteo no se persiste en la BD.
 - **D30 — mensaje fijo en errores:** `frontend_error_captured` envía un mensaje fijo por `error_source` en lugar del mensaje saneado, porque una excepción puede contener valores de formulario que el saneado no detecta. El diagnóstico se apoya en `error_fingerprint` y `stack_frames`.
+
+#### Decisiones de implementación (almacenamiento)
+
+- **D31 — rama:** el almacenamiento parte de `feature/telemetry-frontend-capture`, porque el stub, `TelemetryEvent` y el `TelemetryService` viven ahí.
+- **D32 — DDL versionado:** la tabla se define en `services/api/sql/001_telemetry_events.sql` y se aplica en el SQL Editor de Supabase. El backend la declara como `sqlalchemy.Table` en un `MetaData` propio, fuera de `SQLModel.metadata`, para que `create_all()` del arranque nunca cree una versión sin índice GIN, triggers ni RLS.
+- **D33 — inmutabilidad en la BD:** triggers `BEFORE UPDATE OR DELETE` (por fila) y `BEFORE TRUNCATE` (por sentencia) que lanzan una excepción, RLS activada sin políticas y `REVOKE UPDATE, DELETE, TRUNCATE` a `anon` y `authenticated`. El backend no tiene ninguna función de actualización o borrado.
+- **D34 — catálogo en Python:** `services/api/telemetry_catalog.py` replica, para los 20 `event_type`, `x-level`, `x-value-property`, el allowlist de `properties` y la `description` de `event-schemas.json`. Un test comprueba la paridad exacta. El contenedor de la API solo monta `services/`, así que el JSON no está disponible en runtime.
+- **D35 — validación por evento:** el body se acepta como `{ "events": [...] }` con items sin tipar (máximo 50, D27). Cada item se valida con `TelemetryEvent.model_validate` y se rechaza también si su `event_type` no está en el catálogo. `TelemetryEvent` no se modifica.
+- **D36 — `tags`:** objeto plano con las `properties` filtradas al allowlist del evento más `eventId`, `sessionId`, `userId`, `schemaVersion` y `requestId`. Las claves fuera del allowlist se descartan sin rechazar el evento.
+- **D37 — columnas derivadas:** `service` es la constante `backoffice` (D21); `level` sale de `x-level`; `value` es el valor numérico de `x-value-property` o `NULL`; `message` es la `description` fija del esquema, sin datos del evento.
+- **D38 — bulk insert:** un único `INSERT … VALUES` multi-fila y un `commit` por lote. Si no hay eventos válidos, no se accede a la BD.
+- **D39 — fallo de almacenamiento:** ante un error de la BD se hace `rollback` y se responde `503`. Como la transacción es todo o nada, el reintento del `TelemetryService` no deja duplicados parciales. Un `200` con rechazados no provoca reintentos.
+- **D40 — deduplicación:** por `eventId` en la consulta (`DISTINCT ON (tags->>'eventId')`), no en la ingesta; sin índice único.
+- **D41 — logs sin datos:** una línea por lote con `received`, `stored`, `rejected` y los `event_type` válidos; por cada rechazo, solo su índice y los códigos `type`/`loc` de Pydantic, sin `input` ni valores.
+- **D42 — respuesta:** `200 { "received", "stored", "rejected" }` con `stored + rejected = received`, mientras el envelope sea válido.
 
 ## 3. Catálogo de eventos
 
@@ -638,7 +653,7 @@ No se capturan IP, user agent completo, texto libre de búsquedas, query strings
 
 | Riesgo | Mitigación y límite |
 |---|---|
-| Doble conteo al reintentar un envío | Reenviar el mismo `eventId` y deduplicar por ese identificador antes de agregar. No generar un UUID nuevo para un reintento de transporte. |
+| Doble conteo al reintentar un envío | Reenviar el mismo `eventId` y deduplicar por ese identificador al consultar (D40, consulta en `docs/telemetry/storage-verification.md` §4). No generar un UUID nuevo para un reintento de transporte. |
 | Desfase del reloj del cliente | Conservar `timestamp` como hora de captura UTC. Compararlo con la hora de recepción como diagnóstico de desfase; no sobrescribirlo ni presentar ventanas recientes como completas si llegan eventos tardíos. |
 | Pérdida al cerrar la pestaña | Una orden puede quedar confirmada antes de que el backoffice capture o envíe el evento. Ausencia de telemetría no implica ausencia de la operación. Mantener el backend como fuente autoritativa recomendada a futuro (D21), sin emitir desde ambas fuentes durante una migración sin estrategia de deduplicación. |
 | Deriva de esquemas | Validar por `event_type` y `schemaVersion`, aplicar D5 y no mezclar versiones incompatibles en la misma agregación. |
@@ -650,17 +665,34 @@ No se capturan IP, user agent completo, texto libre de búsquedas, query strings
 | La telemetría de cliente no es una fuente contable (D21): los eventos pueden perderse o manipularse desde el navegador. | Usar los conteos de `inbound_order_created` y `outbound_order_created` para analizar tendencias y conciliarlos con `stock_entries` y `stock_exits`, respectivamente. Nunca sustituir la base de datos por estos conteos. |
 | Errores de extensiones del navegador capturados como `frontend_error_captured` (`unhandled_rejection`): en la verificación aparecieron rechazos de promesas lanzados por extensiones de Chrome, no por el backoffice. | Los topes de §8 (1 por `error_fingerprint` cada 60 s y 10 por minuto) acotan el volumen. Al analizar regresiones, filtrar por huellas y frames del propio backoffice antes de decidir un rollback. |
 
-## 11. Mapeo previsto al almacenamiento
+## 11. Mapeo al almacenamiento
 
-Este mapeo es conceptual; no define una tabla, índices ni un mecanismo de ingestión.
+Los eventos se guardan en la tabla `public.telemetry_events` de Supabase, definida en `services/api/sql/001_telemetry_events.sql` (D32 y D33). `POST /telemetry/events` valida cada evento por separado y guarda los válidos de un lote en un único `INSERT` multi-fila (D35 y D38). La guía de verificación está en `docs/telemetry/storage-verification.md`.
 
-| Destino | Origen |
+| Columna | Tipo | Origen |
+|---|---|---|
+| `id` | `uuid` PK, `gen_random_uuid()` | Lo genera la base de datos; no es el `eventId`. |
+| `timestamp` | `timestamptz NOT NULL` | `timestamp` del envelope: hora de captura en UTC, no de recepción. |
+| `service` | `text NOT NULL` | Constante `backoffice`: todos los eventos de esta versión se emiten desde el backoffice (D21). |
+| `event_type` | `text NOT NULL` | `event_type` del envelope, sin renombrar. |
+| `level` | `text`, default `info` | `x-level` del contrato del evento (§6): `info`, `warn` o `error`. El componente no lo envía. |
+| `value` | `numeric`, nulable | Valor de la propiedad `x-value-property` del esquema; `NULL` si el evento no tiene una asignada o si no está presente. Nunca se sustituye por cero. |
+| `message` | `text`, nulable | Resumen legible fijo del tipo de evento (la `description` del esquema); no contiene datos del evento. |
+| `tags` | `jsonb`, default `{}` | `properties` filtradas al allowlist del evento, más `eventId`, `sessionId`, `userId`, `schemaVersion` y `requestId` (D36). `warehouse`, `client_id`, `country`, `product_id` y `product_category` quedan en `tags` para agregar los eventos de inventario sin volver a derivar dimensiones. |
+
+Índices: `timestamp` (descendente), `event_type` y GIN sobre `tags`, que permite filtrar por contención (`tags @> '{"warehouse": "zaragoza"}'`).
+
+Ejemplo de fila para el `outbound_order_created` de §4:
+
+| Columna | Valor |
 |---|---|
-| `timestamp` | `timestamp` del envelope: hora de captura en UTC con milisegundos. |
-| `event_type` | `event_type` del envelope, sin renombrar. |
-| `level` | Nivel del contrato por evento (§6, `x-level` en el esquema), no un campo adicional que deba enviar el componente. |
-| `value` | Valor numérico de la propiedad indicada por `x-value-property` en el esquema; `null` si no hay una propiedad asignada o si es opcional y no está presente. No sustituir por cero. |
-| `tags` | Conservar `properties` y los campos `eventId`, `sessionId`, `userId`, `schemaVersion` y `requestId`. Mantener `warehouse`, `client_id` y `country` dentro de `properties` para agregar los eventos de inventario sin volver a derivar dimensiones. |
+| `timestamp` | `2026-11-18 12:34:56.789+00` |
+| `service` | `backoffice` |
+| `event_type` | `outbound_order_created` |
+| `level` | `info` |
+| `value` | `12` (`quantity`) |
+| `message` | `Outbound order created after the API returns HTTP 201; never includes tracking or recipient data.` |
+| `tags` | `{"warehouse": "los_angeles", "client_id": "nova_beauty", "product_id": "TF-COS-001", "product_category": "cosmetics", "quantity": 12, "country": "US", "order_id": 381, "exit_type": "b2c_order", "eventId": "550e8400-e29b-41d4-a716-446655440000", "sessionId": "550e8400-e29b-41d4-a716-446655440001", "userId": "usr_7b2c9f", "schemaVersion": "1.0.0", "requestId": "550e8400-e29b-41d4-a716-446655440002"}` |
 
 ## 12. Guía de instrumentación por evento
 
