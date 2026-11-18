@@ -57,5 +57,6 @@ Los SKUs sintéticos `LOAD-` no emiten eventos de negocio (D15): es el comportam
 
 ## 5. Evidencias
 
-- `evidence/network-batch-200.png`: DevTools → Network con lotes `events` en 200 y el Payload de un evento de negocio.
+- `evidence/network-batch-200.png`: DevTools → Network → Headers del lote: `POST /api/backend/telemetry/events` con `200 OK`.
+- `evidence/network-batch-payload.png`: Payload del mismo lote con `inbound_order_created` y `web_vital_recorded`.
 - Resultados verificados en navegador el 2026-11-18: las 5 métricas obligatorias (stock de `TF-BOTTLE-001` en Los Ángeles 27 → 50 → 49, ajuste directo rechazado con 405 y conteo con discrepancia de -4), además de `order_form_started`, `order_form_abandoned`, `outbound_order_validation_failed` (`validation_source: client`), `page_viewed`, `api_latency_recorded` y `sendBeacon` en 200.
