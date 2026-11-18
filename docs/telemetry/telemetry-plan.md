@@ -550,7 +550,6 @@ Se detallan las **15 oportunidades identificadas con esquema** de §3.2. `invent
 | `status_code` | integer 500–599 | No | Código HTTP cuando existe respuesta; ausente en fallo de red. | `503` |
 
 **Allowlist:** `api_endpoint`, `failure_reason`, `status_code`. **PII:** no; no incluir mensaje libre ni payload. **Nivel:** `error`. **Propiedad `value`:** `status_code` cuando esté presente.
-**Nivel:** `warn`. **Propiedad `value`:** `quantity`.
 
 ## 7. Estrategia de entrega: stream y batch
 
@@ -633,3 +632,15 @@ No se capturan IP, user agent completo, texto libre de búsquedas, query strings
 | Cardinalidad y exposición en `route` y `api_endpoint` | Usar plantillas conocidas; excluir IDs, query y fragmentos. El middleware actual registra la ruta con query: no trasladar esa URL cruda a telemetría ni correlacionar por ella (D20). |
 | Categorías reales fuera del enum de producto | Aplicar D15, excluir SKUs sintéticos `LOAD-` y normalizar el catálogo a `fashion`, `electronics` y `cosmetics`; no inventar categorías ni emitir valores fuera del contrato. |
 | Sesgo por muestreo y límites de volumen | Ponderar latencia como en §8. Los conteos de errores y accesos fallidos sujetos a topes son señales operativas, no cifras exhaustivas. |
+
+## 11. Mapeo previsto al almacenamiento
+
+Este mapeo es conceptual; no define una tabla, índices ni un mecanismo de ingestión.
+
+| Destino | Origen |
+|---|---|
+| `timestamp` | `timestamp` del envelope: hora de captura en UTC con milisegundos. |
+| `event_type` | `event_type` del envelope, sin renombrar. |
+| `level` | Nivel del contrato por evento (§6, `x-level` en el esquema), no un campo adicional que deba enviar el componente. |
+| `value` | Valor numérico de la propiedad indicada por `x-value-property` en el esquema; `null` si no hay una propiedad asignada o si es opcional y no está presente. No sustituir por cero. |
+| `tags` | Conservar `properties` y los campos `eventId`, `sessionId`, `userId`, `schemaVersion` y `requestId`. Mantener `warehouse`, `client_id` y `country` dentro de `properties` para agregar los eventos de inventario sin volver a derivar dimensiones. |
