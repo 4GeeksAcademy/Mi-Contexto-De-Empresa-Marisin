@@ -339,4 +339,208 @@ Las tablas siguientes especifican los allowlists de `properties`. Los campos mí
 | `detection_source` | enum `physical_count` \| `audit` | Sí | Procedencia del hallazgo. | `physical_count` |
 
 **Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `system_quantity`, `counted_quantity`, `detection_source`. **PII:** no en las propiedades; `userId` es seudónimo. No incluir observaciones libres del operario.
+
+### 6.2 Oportunidades identificadas
+
+Se detallan las **15 oportunidades identificadas con esquema** de §3.2. `inventory_search_performed` queda fuera de esta versión, sin esquema, según D17.
+
+#### `inbound_order_validation_failed`
+
+- **Descripción:** una recepción no supera las validaciones de la API.
+- **Disparo:** en el catch del submit inbound ante `ApiError` HTTP 400, 404 o 422.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `warehouse` | enum `los_angeles` \| `zaragoza` | Sí | Almacén previsto para la recepción. | `los_angeles` |
+| `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
+| `product_id` | string | Sí | Código SKU. | `TF-COS-001` |
+| `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
+| `quantity` | integer ≥ 1 | Sí | Unidades solicitadas. | `2` |
+| `country` | enum `US` \| `ES` | Sí | País derivado del almacén. | `US` |
+| `failure_reason` | enum `schema_invalid` \| `sku_not_found` \| `insufficient_stock` | Sí | Clasificación cerrada del error API; no copiar `detail`. | `sku_not_found` |
+| `validation_source` | enum `client` \| `api` | Sí | Fuente del rechazo; inbound usa `api`. | `api` |
+
+**Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `failure_reason`, `validation_source`. **PII:** no en las propiedades; `userId` es seudónimo. **Nivel:** `warn`. **Propiedad `value`:** `quantity`.
+
+#### `outbound_order_validation_failed`
+
+- **Descripción:** una salida se bloquea por validación local o por rechazo de la API.
+- **Disparo:** en el guard local si `quantity > currentStock` (`client`), o en el catch del submit ante `ApiError` HTTP 400, 404 o 422 (`api`).
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `warehouse` | enum `los_angeles` \| `zaragoza` | Sí | Almacén de salida. | `los_angeles` |
+| `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
+| `product_id` | string | Sí | Código SKU. | `TF-COS-001` |
+| `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
+| `quantity` | integer ≥ 1 | Sí | Unidades solicitadas. | `10` |
+| `country` | enum `US` \| `ES` | Sí | País derivado del almacén. | `US` |
+| `failure_reason` | enum `schema_invalid` \| `sku_not_found` \| `insufficient_stock` | Sí | Razón clasificada sin texto libre. | `insufficient_stock` |
+| `validation_source` | enum `client` \| `api` | Sí | Validación de cliente o respuesta de API. | `client` |
+
+**Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `failure_reason`, `validation_source`. **PII:** no en las propiedades; `userId` es seudónimo. **Nivel:** `warn`. **Propiedad `value`:** `quantity`.
+
+#### `order_form_started`
+
+- **Descripción:** el operador empieza a interactuar con un formulario de orden.
+- **Disparo:** primera interacción con un campo del formulario inbound u outbound, nunca al renderizar.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `order_kind` | enum `inbound` \| `outbound` | Sí | Tipo de formulario iniciado. | `inbound` |
+
+**Allowlist:** `order_kind`. **PII:** no; no se registran valores de campos. **Nivel:** `info`. **Propiedad `value`:** ninguna.
+
+#### `order_form_abandoned`
+
+- **Descripción:** formulario iniciado que se abandona sin submit correcto.
+- **Disparo:** tras `order_form_started`, al desmontarse por navegación o al ocultarse la pestaña sin éxito.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `order_kind` | enum `inbound` \| `outbound` | Sí | Tipo de formulario. | `outbound` |
+| `last_field_touched` | enum `sku` \| `warehouse` \| `quantity` \| `exit_type` \| `tracking_number` | Sí | Nombre lógico del último campo, nunca su valor. | `quantity` |
+| `fields_completed` | integer ≥ 0 | Sí | Número de campos completados. | `3` |
+| `time_in_form_ms` | integer ≥ 0 | Sí | Tiempo entre inicio y abandono. | `42000` |
+
+**Allowlist:** `order_kind`, `last_field_touched`, `fields_completed`, `time_in_form_ms`. **PII:** no; `last_field_touched` solo identifica el campo, nunca el valor de `tracking_number` ni de otro campo. **Nivel:** `info`. **Propiedad `value`:** `time_in_form_ms`.
+
+#### `stock_threshold_cleared`
+
+- **Descripción:** un SKU vuelve a estar en el umbral o por encima después de una alerta.
+- **Disparo:** tras respuesta HTTP 201 inbound, si el stock previo era `< min_threshold` y el posterior es `>= min_threshold`; requiere implementar cálculo de stock en inbound.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `warehouse` | enum `los_angeles` \| `zaragoza` | Sí | Almacén del SKU. | `zaragoza` |
+| `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
+| `product_id` | string | Sí | Código SKU. | `TF-COS-001` |
+| `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
+| `quantity` | integer ≥ 0 | Sí | Stock resultante tras la entrada. | `55` |
+| `country` | enum `US` \| `ES` | Sí | País derivado del almacén. | `ES` |
+| `min_threshold` | integer ≥ 0 | Sí | Umbral que se cruzó. | `50` |
+| `threshold_source` | enum `global_default` \| `client_config` | Sí | Origen del umbral; hoy `global_default`. | `global_default` |
+| `trigger_order_id` | integer ≥ 1 | Sí | `id` de la orden inbound que produjo el cruce. | `384` |
+
+**Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `min_threshold`, `threshold_source`, `trigger_order_id`. **PII:** no en las propiedades; `userId` es seudónimo. **Nivel:** `info`. **Propiedad `value`:** `quantity`.
+
+#### `user_login_succeeded`
+
+- **Descripción:** autenticación correcta en el backoffice.
+- **Disparo:** después de respuesta correcta y almacenamiento del token; rotar `sessionId`.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| — | — | — | No hay propiedades específicas; el `userId` opaco del envelope identifica al usuario autenticado. | `{}` |
+
+**Allowlist:** lista vacía. **PII:** no hay propiedades directas; `userId` es seudónimo y no se adjuntan credenciales. **Nivel:** `info`. **Propiedad `value`:** ninguna.
+
+#### `user_login_failed`
+
+- **Descripción:** intento de autenticación rechazado.
+- **Disparo:** ante fallo en `/login`; `userId` será `null`.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `failure_reason` | enum `invalid_credentials` \| `session_expired` \| `network_error` \| `account_locked` | Sí | Clasificación cerrada; nunca email, contraseña, hash ni detalle literal. | `invalid_credentials` |
+
+**Allowlist:** `failure_reason`. **PII:** no; `userId` es `null`. No se registran credenciales ni identificadores introducidos en el formulario. **Nivel:** `warn`. **Propiedad `value`:** ninguna.
+
+#### `session_expired`
+
+- **Descripción:** una llamada protegida recibe HTTP 401 y la sesión debe cerrarse.
+- **Disparo:** en `fetchWithAuth`, antes de limpiar tokens y redirigir a `/login`.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `route` | string | Sí | Ruta de interfaz como plantilla, sin query params. | `/inventory/orders/outbound` |
+| `api_endpoint` | string | Sí | Endpoint protegido como plantilla, sin query params. | `/inventory/orders/outbound` |
+
+**Allowlist:** `route`, `api_endpoint`. **PII:** no; rutas como plantillas, sin query params ni datos de usuario. **Nivel:** `warn`. **Propiedad `value`:** ninguna.
+
+#### `user_logged_out`
+
+- **Descripción:** el usuario cierra voluntariamente su sesión.
+- **Disparo:** en `handleLogout`, antes de eliminar el token y navegar a `/login`.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `session_duration_ms` | integer ≥ 0 | Sí | Duración de la sesión en milisegundos. | `28800000` |
+
+**Allowlist:** `session_duration_ms`. **PII:** no en las propiedades; `userId` es seudónimo. **Nivel:** `info`. **Propiedad `value`:** `session_duration_ms`.
+
+#### `route_access_denied`
+
+- **Descripción:** se deniega el acceso a una ruta o endpoint del backoffice.
+- **Disparo:** ante HTTP 403 o al redirigir el guard por ausencia de sesión.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `route` | string | Sí | Ruta de interfaz como plantilla, sin query params. | `/inventory/products` |
+| `reason` | enum `insufficient_permissions` \| `inactive_user` \| `no_session` | Sí | Motivo cerrado, sin copiar el detalle de API. | `no_session` |
+| `api_endpoint` | string | No | Endpoint como plantilla; solo para respuesta 403. | `/inventory/products` |
+
+**Allowlist:** `route`, `reason`, `api_endpoint`. **PII:** no en las propiedades; `userId` es `null` solo para `no_session`, si no es opaco. **Nivel:** `warn`. **Propiedad `value`:** ninguna.
+
+#### `page_viewed`
+
+- **Descripción:** navegación a una ruta del backoffice.
+- **Disparo:** al cambiar la ruta; capturar únicamente una plantilla sin query params. En `/login`, `userId` es `null`.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `route` | string | Sí | Ruta de interfaz normalizada y sin query params. | `/inventory/products` |
+
+**Allowlist:** `route`. **PII:** no; sin query params. `userId` opaco o `null` únicamente en `/login`. **Nivel:** `info`. **Propiedad `value`:** ninguna.
+
+#### `api_latency_recorded`
+
+- **Descripción:** latencia de una llamada API del backoffice.
+- **Disparo:** desde `fetchWithAuth`, al completar la llamada; conservar ruta/endpoint como plantilla.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `api_endpoint` | string | Sí | Endpoint normalizado, sin query params ni valores de path. | `/inventory/products/[id]` |
+| `duration_ms` | integer ≥ 0 | Sí | Duración observada por el cliente en milisegundos. | `185` |
+
+**Allowlist:** `api_endpoint`, `duration_ms`. **PII:** no; solo plantilla de endpoint, sin query params. **Nivel:** `info`. **Propiedad `value`:** `duration_ms`.
+
+#### `web_vital_recorded`
+
+- **Descripción:** métrica de rendimiento percibido de una ruta.
+- **Disparo:** futuro, al integrar medición de Web Vitals en el backoffice.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `route` | string | Sí | Ruta como plantilla, sin query params. | `/inventory/products` |
+| `metric_name` | enum `LCP` \| `INP` \| `CLS` | Sí | Métrica de Web Vitals. | `LCP` |
+| `metric_value` | number ≥ 0 | Sí | Valor numérico; ms para LCP/INP y sin unidad para CLS. | `1240` |
+
+**Allowlist:** `route`, `metric_name`, `metric_value`. **PII:** no; ruta sin query params. **Nivel:** `info`. **Propiedad `value`:** `metric_value`.
+
+#### `frontend_error_captured`
+
+- **Descripción:** error JavaScript no controlado en el backoffice.
+- **Disparo:** futuro, al añadir Error Boundary y captura global de errores.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `route` | string | Sí | Ruta como plantilla, sin query params. | `/inventory/orders` |
+| `message` | string, máximo 200 caracteres | Sí | Mensaje sanitizado: eliminar emails, tokens y secuencias numéricas largas, y truncar a 200 caracteres. | `TypeError: Cannot read property` |
+| `stack_frames` | array de string | No | Frames reducidos a `archivo:línea`, sin query strings; máximo 10. | `["orders/page.tsx:42"]` |
+
+**Allowlist:** `route`, `message`, `stack_frames`. **PII:** posible antes de sanitizar; eliminar emails, tokens y secuencias numéricas largas del mensaje, truncar y reducir stack a archivo/línea. **Nivel:** `error`. **Propiedad `value`:** ninguna.
+
+#### `api_request_failed`
+
+- **Descripción:** error 5xx o fallo de red al llamar a la API desde el backoffice.
+- **Disparo:** desde `fetchWithAuth`; excluir 401/403 y errores de validación que tienen eventos específicos.
+
+| Propiedad | Tipo | Obligatoria | Descripción | Ejemplo |
+|---|---|---:|---|---|
+| `api_endpoint` | string | Sí | Endpoint como plantilla, sin query params. | `/inventory/orders/outbound` |
+| `failure_reason` | enum `http_5xx` \| `network_error` | Sí | Clasificación cerrada; no incluir mensajes ni payloads. | `http_5xx` |
+| `status_code` | integer 500–599 | No | Código HTTP cuando existe respuesta; ausente en fallo de red. | `503` |
+
+**Allowlist:** `api_endpoint`, `failure_reason`, `status_code`. **PII:** no; no incluir mensaje libre ni payload. **Nivel:** `error`. **Propiedad `value`:** `status_code` cuando esté presente.
 **Nivel:** `warn`. **Propiedad `value`:** `quantity`.
