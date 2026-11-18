@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useReportWebVitals } from "next/web-vitals";
 import { useEffect, useRef, type FormEvent, type ReactNode } from "react";
 import { track } from "@/lib/telemetry";
 import {
@@ -91,8 +92,28 @@ export async function captureFrontendError(
   }
 }
 
+const REPORTED_WEB_VITALS = new Set(["LCP", "INP", "CLS"]);
+const reportedWebVitalIds = new Set<string>();
+
+// Callback estable (fuera del componente): una observación final por métrica y carga de página.
+function reportWebVital(metric: { id: string; name: string; value: number }) {
+  try {
+    if (!REPORTED_WEB_VITALS.has(metric.name) || reportedWebVitalIds.has(metric.id)) return;
+    if (!Number.isFinite(metric.value) || metric.value < 0) return;
+    reportedWebVitalIds.add(metric.id);
+    track("web_vital_recorded", {
+      route: toRouteTemplate(window.location.pathname),
+      metric_name: metric.name,
+      metric_value: metric.value,
+    });
+  } catch {
+    // Las métricas de rendimiento nunca deben romper la aplicación.
+  }
+}
+
 export default function TelemetryProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  useReportWebVitals(reportWebVital);
 
   useEffect(() => {
     if (pathname) track("page_viewed", { route: toRouteTemplate(pathname) });
