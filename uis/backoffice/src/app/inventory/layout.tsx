@@ -4,6 +4,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchWithAuth, getAuthToken } from "@/lib/api";
+import { track } from "@/lib/telemetry";
+import { toRouteTemplate } from "@/lib/telemetry-mappers";
 
 export default function InventoryLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -12,6 +14,10 @@ export default function InventoryLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!getAuthToken()) {
+      track("route_access_denied", {
+        route: toRouteTemplate(window.location.pathname),
+        reason: "no_session",
+      });
       router.replace("/login");
       return;
     }
