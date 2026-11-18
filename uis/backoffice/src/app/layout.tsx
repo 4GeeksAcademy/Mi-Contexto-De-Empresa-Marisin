@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import BackofficeNav from "../components/BackofficeNav";
+import TelemetryProvider from "../components/TelemetryProvider";
 
 export const metadata: Metadata = {
   title: "TrackFlow Backoffice | Operaciones e Inventario",
@@ -13,8 +14,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es">
       <body>
-        <BackofficeNav />
-        {children}
+        <TelemetryProvider>
+          <BackofficeNav />
+          {children}
+        </TelemetryProvider>
       </body>
     </html>
   );
