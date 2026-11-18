@@ -145,3 +145,21 @@ Estos eventos quedan como hipótesis de versiones futuras y no forman parte de l
 | `warehouse_view_switched` | Futuro: el selector de almacén de un formulario no es una vista de almacén ni un dashboard. | Comparar el uso de vistas operativas por almacén y mejorar la navegación. | Capturamos `warehouse_view_switched` porque necesitamos saber qué vistas de almacén consulta cada operador, lo que nos permite mejorar la navegación entre operaciones. |
 | `telemetry_batch_discarded` | Futuro: aún no existe el servicio de telemetría ni su política de reintentos. | Hacer visible la pérdida de lotes tras agotar reintentos y detectar problemas de entrega. | Capturamos `telemetry_batch_discarded` porque necesitamos saber cuándo se pierden eventos tras reintentos, lo que nos permite investigar fallos de entrega de telemetría. |
 | `inventory_search_performed` | Futuro: no existe búsqueda en el backoffice; no emitir eventos de búsqueda en esta versión. | Analizar búsquedas sin resultados cuando se implemente la función; limitar las propiedades futuras a `query_length` y `results_count`, nunca al texto buscado. | Capturamos `inventory_search_performed` porque necesitamos saber si las búsquedas encuentran productos, lo que nos permite mejorar el buscador o los maestros de SKU. |
+
+### 3.4 Resumen cuantitativo
+
+El catálogo de esta versión contiene **20 eventos con esquema**: **5 obligatorios** del BRIEFING y **15 oportunidades identificadas**. Además, §3.3 registra **7 eventos de catálogo futuro**, sin esquema en esta versión.
+
+| Categoría | Eventos con esquema |
+|---|---:|
+| Negocio/inventario | 5 |
+| Negocio/seguridad | 1 |
+| Negocio/calidad de datos | 2 |
+| UX/flujos | 2 |
+| Autenticación | 3 |
+| Autenticación/seguridad | 1 |
+| Seguridad/permisos | 1 |
+| Navegación | 1 |
+| Rendimiento | 2 |
+| Errores | 2 |
+| **Total** | **20** |
