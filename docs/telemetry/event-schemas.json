@@ -44,7 +44,7 @@
       },
       "exit_type": {
         "type": "string",
-        "enum": ["B2C Order", "B2B Transfer", "Return / Damaged"]
+        "enum": ["b2c_order", "b2b_transfer", "return_damaged"]
       },
       "validation_source": {
         "type": "string",
@@ -244,7 +244,7 @@
           "quantity": 3,
           "country": "ES",
           "order_id": 382,
-          "exit_type": "B2C Order"
+          "exit_type": "b2c_order"
         }
       }],
       "x-category": "Negocio/inventario",

@@ -207,7 +207,7 @@ Ejemplo completo:
     "quantity": 12,
     "country": "US",
     "order_id": 381,
-    "exit_type": "B2C Order"
+    "exit_type": "b2c_order"
   }
 }
 ```
@@ -231,8 +231,9 @@ Ejemplo completo:
 | `validation_source` | `string` | `client` \| `api`; fuente de la validación de una orden. |
 | `order_kind` | `string` | `inbound` \| `outbound`. |
 | `threshold_source` | `string` | `global_default` \| `client_config`; el valor actual es `global_default`. |
+| `exit_type` | `string` | **D22:** normalizar a snake_case como en D13: `B2C Order` → `b2c_order`, `B2B Transfer` → `b2b_transfer`, `Return / Damaged` → `return_damaged`. |
 
-Los enums propios de autenticación, permisos, errores, conteos y tipo de salida se definen en §6 y se cierran en el esquema correspondiente. Los campos `client_id` y `product_id` no contienen nombres libres adicionales ni datos del consumidor final.
+Los enums propios de autenticación, permisos, errores y conteos se definen en §6 y se cierran en el esquema correspondiente. Los campos `client_id` y `product_id` no contienen nombres libres adicionales ni datos del consumidor final.
 
 ### Allowlist y versionado
 
@@ -278,7 +279,7 @@ Las tablas siguientes especifican los allowlists de `properties`. En las cinco m
 | `quantity` | integer ≥ 1 | Sí | Unidades despachadas. | `3` |
 | `country` | enum `US` \| `ES` | Sí | País derivado de `warehouse`. | `ES` |
 | `order_id` | integer ≥ 1 | Sí | `id` devuelto por la respuesta de creación. | `382` |
-| `exit_type` | enum `B2C Order` \| `B2B Transfer` \| `Return / Damaged` | Sí | Tipo de salida; no incluir tracking ni datos del destinatario (D14). | `B2C Order` |
+| `exit_type` | enum `b2c_order` \| `b2b_transfer` \| `return_damaged` | Sí | Tipo de salida normalizado según D22 (§5); no incluir tracking ni datos del destinatario (D14). | `b2c_order` |
 
 **Allowlist:** `warehouse`, `client_id`, `product_id`, `product_category`, `quantity`, `country`, `order_id`, `exit_type`. **PII:** no en las propiedades; `userId` es seudónimo en el envelope. Excluir `tracking_number`, transportista y destinatario.
 **Nivel:** `info`. **Propiedad `value`:** `quantity`.
