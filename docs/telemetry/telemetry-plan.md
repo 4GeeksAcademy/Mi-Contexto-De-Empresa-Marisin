@@ -210,3 +210,31 @@ Ejemplo completo:
   }
 }
 ```
+
+## 5. Convenciones de nombres, enums y versionado
+
+### Taxonomía
+
+`event_type` sigue `entidad_acción`: minúsculas ASCII separadas por `_`, con el verbo en participio pasado y perteneciente al conjunto cerrado definido en D7. La expresión regular es `^[a-z]+(_[a-z]+)+$`; ejemplos válidos son `inbound_order_created`, `stock_threshold_cleared` y `user_logged_out`. No se crean sinónimos ni variantes de un evento ya definido.
+
+### Enums y tipos compartidos
+
+| Propiedad | Tipo | Valores o regla |
+|---|---|---|
+| `warehouse` | `string` | `los_angeles` \| `zaragoza`; normalizar los valores reales `Los Angeles` y `Zaragoza`. |
+| `country` | `string` | `US` \| `ES`; derivar de `warehouse` (`los_angeles` → `US`, `zaragoza` → `ES`). |
+| `product_category` | `string` | `fashion` \| `electronics` \| `cosmetics`; normalizar el catálogo real según D15 y excluir los SKUs sintéticos `LOAD-`. |
+| `client_id` | `string` | Slug estable en minúsculas, espacios convertidos en `_` (`Nova Beauty` → `nova_beauty`), hasta que exista un ID propio de cliente (D11). |
+| `product_id` | `string` | Código `sku` (`TF-ELEC-001`), nunca el ID entero de la tabla (D12). |
+| `quantity` | `integer` | Unidades; su semántica se documenta por evento. En discrepancias puede ser negativo (`counted_quantity - system_quantity`). |
+| `validation_source` | `string` | `client` \| `api`; fuente de la validación de una orden. |
+| `order_kind` | `string` | `inbound` \| `outbound`. |
+| `threshold_source` | `string` | `global_default` \| `client_config`; el valor actual es `global_default`. |
+
+Los enums propios de autenticación, permisos, errores, conteos y tipo de salida se definen en §6 y se cierran en el esquema correspondiente. Los campos `client_id` y `product_id` no contienen nombres libres adicionales ni datos del consumidor final.
+
+### Allowlist y versionado
+
+Cada `properties` tiene un allowlist explícito y `additionalProperties: false`. Una instrumentación solo envía las claves definidas para su `event_type`; no copia objetos de API, datos de formulario ni errores sin clasificar.
+
+`schemaVersion` es semver compartido, inicialmente `1.0.0`. Añadir una propiedad permitida es un cambio minor; cambiar el tipo o eliminar una propiedad es un cambio major. El valor se mantiene constante entre eventos para una misma versión de contrato.
