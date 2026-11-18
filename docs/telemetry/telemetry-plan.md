@@ -551,3 +551,32 @@ Se detallan las **15 oportunidades identificadas con esquema** de §3.2. `invent
 
 **Allowlist:** `api_endpoint`, `failure_reason`, `status_code`. **PII:** no; no incluir mensaje libre ni payload. **Nivel:** `error`. **Propiedad `value`:** `status_code` cuando esté presente.
 **Nivel:** `warn`. **Propiedad `value`:** `quantity`.
+
+## 7. Estrategia de entrega: stream y batch
+
+Según D9, **stream** y **batch** describen cómo se procesan y consumen los eventos, no su transporte. En ambos casos, el backoffice envía micro-lotes con un intervalo de hasta 10 s. En stream, la alerta o el dato del panel debe estar disponible en hasta 1 min desde la captura; en batch, los eventos se agregan en la ventana indicada y se consultan al cierre.
+
+| `event_type` | Entrega | Ventana de agregación | Consumidor | Por qué esa urgencia |
+|---|---|---|---|---|
+| `inbound_order_created` | Batch | 1 h | Ana, Operaciones | El volumen horario basta para ajustar capacidad y personal del turno. |
+| `outbound_order_created` | Stream | Móvil de 1 min | Ana, Operaciones | Ver caer el ritmo de despacho permite reasignar personal antes de incumplir el SLA. |
+| `stock_threshold_triggered` | Stream | Sin esperar agregación | Miguel, Comercial; Ana, Operaciones | Avisar en cuanto se cruza el mínimo da margen para reponer antes de una rotura. |
+| `direct_stock_edit_rejected` | Batch | 1 día; revisión semanal | Ana, Operaciones; Tecnología | Detectar patrones por almacén para decidir formación o revisar permisos; no requiere intervención por intento. |
+| `inventory_discrepancy_detected` | Batch | 1 día | Ana, Operaciones | Consolidar los resultados del conteo basta para priorizar la siguiente auditoría. |
+| `inbound_order_validation_failed` | Batch | 1 día | Ana, Operaciones | Identificar errores recurrentes antes de decidir qué datos maestros corregir o dónde formar. |
+| `outbound_order_validation_failed` | Batch | 1 día | Ana, Operaciones | Revisar patrones de falta de existencias y fallos de proceso; el formulario ya advierte al operador. |
+| `order_form_started` | Batch | 1 día | Tecnología | Aporta el denominador de conversión de formularios para priorizar mejoras. |
+| `order_form_abandoned` | Batch | 1 día | Tecnología | Agrupar abandonos por formulario y campo revela fricción recurrente, no incidentes urgentes. |
+| `stock_threshold_cleared` | Stream | Sin esperar agregación | Miguel, Comercial; Ana, Operaciones | Cerrar la alerta al confirmar la reposición evita gestionar un aviso ya resuelto y permite medir su duración. |
+| `user_login_succeeded` | Batch | 1 día | Tecnología | Contar usuarios únicos diarios y comparar totales con los fallos permite evaluar adopción y acceso sin segmentar por almacén. |
+| `user_login_failed` | Stream | Móvil de 1 min | Tecnología | Una ráfaga de fallos merece revisión temprana; no hay que esperar al informe diario. |
+| `session_expired` | Batch | 1 día | Tecnología | Los patrones diarios permiten evaluar si las sesiones se interrumpen durante el trabajo y revisar su TTL. |
+| `user_logged_out` | Batch | 1 día | Tecnología; Ana, Operaciones | Las distribuciones de duración de sesión sirven para revisar TTL y turnos, no para alertas inmediatas. |
+| `route_access_denied` | Stream | Móvil de 1 min | Tecnología | Detectar ráfagas o denegaciones generalizadas permite revisar permisos antes de que se extienda el bloqueo operativo. |
+| `page_viewed` | Batch | 1 día | Tecnología | La adopción por sección se decide sobre tendencias, no por una visita aislada. |
+| `api_latency_recorded` | Batch | 5 min | Tecnología | El p95 por operación distingue degradaciones sostenidas de llamadas aisladas y ayuda a priorizar optimización o caché. |
+| `web_vital_recorded` | Batch | 1 día | Tecnología | Comparar rendimiento percibido por ruta requiere acumular mediciones antes de decidir qué optimizar. |
+| `frontend_error_captured` | Stream | Móvil de 1 min | Tecnología | Detectar una regresión tras un despliegue permite decidir pronto si revertir o aplicar un hotfix. |
+| `api_request_failed` | Stream | Móvil de 1 min | Tecnología | Detectar 5xx o fallos de red repetidos permite investigar antes de recibir un ticket. |
+
+`direct_stock_edit_rejected` queda en batch, aun siendo un evento de seguridad: las decisiones de formación y revisión de permisos se toman por semanas. Los patrones sospechosos de acceso en ráfaga se observan en stream con `route_access_denied` y `user_login_failed`; ninguno sustituye el registro del intento de edición.
