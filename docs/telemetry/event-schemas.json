@@ -1038,10 +1038,22 @@
                 "stack_frames": {
                   "type": "array",
                   "maxItems": 10,
-                  "items": { "type": "string", "pattern": "^[^?]+:[1-9][0-9]*$" }
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_.\\[\\]/-]+:[1-9][0-9]*$",
+                    "not": { "pattern": "^//" }
+                  }
+                },
+                "error_source": { "type": "string", "enum": ["window_error", "unhandled_rejection", "error_boundary"] },
+                "error_fingerprint": {
+                  "type": "string",
+                  "minLength": 16,
+                  "maxLength": 16,
+                  "pattern": "^[A-Fa-f0-9]{16}$",
+                  "description": "First 16 hex characters of SHA-256 of the sanitized error name and first sanitized frame, separated by a newline (UTF-8). Use an empty frame if unavailable."
                 }
               },
-              "required": ["route", "message"],
+              "required": ["route", "message", "error_source", "error_fingerprint"],
               "additionalProperties": false
             }
           },
@@ -1060,7 +1072,9 @@
         "properties": {
           "route": "/inventory/orders",
           "message": "TypeError: Cannot read property",
-          "stack_frames": ["orders/page.tsx:42"]
+          "stack_frames": ["orders/page.tsx:42"],
+          "error_source": "error_boundary",
+          "error_fingerprint": "ff689ff13473c06e"
         }
       }],
       "x-category": "Errores",
