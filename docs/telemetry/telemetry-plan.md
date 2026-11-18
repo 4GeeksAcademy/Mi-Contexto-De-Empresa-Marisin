@@ -88,7 +88,7 @@ Los eventos de este plan se emitirán desde el backoffice con `track()` del futu
 
 ### 3.1 Métricas obligatorias del BRIEFING
 
-Todos los eventos de inventario requieren `warehouse`, `client_id`, `product_id`, `product_category`, `quantity` y `country`, además del envelope común. `warehouse` usa `los_angeles` o `zaragoza`; `country` se deriva como `US` o `ES`. `client_id` es el slug provisional derivado de `client_name`; `product_id` es el código `sku`, no el ID entero de la tabla. Las categorías se normalizan según D15 y el enum no admite valores fuera de `fashion`, `electronics` y `cosmetics`.
+Las cinco métricas obligatorias de inventario requieren `warehouse`, `client_id`, `product_id`, `product_category`, `quantity` y `country`, además del envelope común. `warehouse` usa `los_angeles` o `zaragoza`; `country` se deriva como `US` o `ES`. `client_id` es el slug provisional derivado de `client_name`; `product_id` es el código `sku`, no el ID entero de la tabla. Las categorías se normalizan según D15 y el enum no admite valores fuera de `fashion`, `electronics` y `cosmetics`.
 
 | `event_type` | Categoría | Origen | Punto de captura (frontend, esta versión) | Fuente autoritativa futura (backend) | Propiedades adicionales y semántica de `quantity` | Entrega | Regla de oro |
 |---|---|---|---|---|---|---|---|
@@ -103,6 +103,7 @@ Si en el futuro una orden contiene varias líneas, se emitirá un evento por lí
 ### 3.2 Oportunidades identificadas
 
 `inbound_order_validation_failed` y `outbound_order_validation_failed` incluyen `validation_source` con el enum `client` | `api`, para distinguir la validación local de la respuesta de la API.
+En ambos eventos `quantity` es un entero opcional sin mínimo: se conserva si el valor rechazado es un entero y se omite si falta o no es entero.
 
 #### Negocio, inventario y UX de órdenes
 
@@ -241,7 +242,7 @@ Cada `properties` tiene un allowlist explícito y `additionalProperties: false`.
 
 ## 6. Esquemas de eventos
 
-Las tablas siguientes especifican los allowlists de `properties`. Los campos mínimos de inventario se repiten en cada evento aplicable: `warehouse`, `client_id`, `product_id`, `product_category`, `quantity` y `country` son obligatorios (BRIEFING y D1). `client_id` es el slug provisional (D11), `product_id` es el código SKU (D12), y las categorías se normalizan según D13/D15.
+Las tablas siguientes especifican los allowlists de `properties`. En las cinco métricas obligatorias de inventario se requieren `warehouse`, `client_id`, `product_id`, `product_category`, `quantity` y `country` (BRIEFING y D1). `client_id` es el slug provisional (D11), `product_id` es el código SKU (D12), y las categorías se normalizan según D13/D15.
 
 ### 6.1 Métricas obligatorias
 
@@ -355,7 +356,7 @@ Se detallan las **15 oportunidades identificadas con esquema** de §3.2. `invent
 | `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
 | `product_id` | string | Sí | Código SKU. | `TF-COS-001` |
 | `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
-| `quantity` | integer ≥ 1 | Sí | Unidades solicitadas. | `2` |
+| `quantity` | integer | No | Cantidad solicitada si es un entero, incluso si es inválida para la orden. Omitir si falta o no es entera. | `0` |
 | `country` | enum `US` \| `ES` | Sí | País derivado del almacén. | `US` |
 | `failure_reason` | enum `schema_invalid` \| `sku_not_found` \| `insufficient_stock` | Sí | Clasificación cerrada del error API; no copiar `detail`. | `sku_not_found` |
 | `validation_source` | enum `client` \| `api` | Sí | Fuente del rechazo; inbound usa `api`. | `api` |
@@ -373,7 +374,7 @@ Se detallan las **15 oportunidades identificadas con esquema** de §3.2. `invent
 | `client_id` | string slug | Sí | Marca propietaria del SKU. | `nova_beauty` |
 | `product_id` | string | Sí | Código SKU. | `TF-COS-001` |
 | `product_category` | enum `fashion` \| `electronics` \| `cosmetics` | Sí | Categoría normalizada. | `cosmetics` |
-| `quantity` | integer ≥ 1 | Sí | Unidades solicitadas. | `10` |
+| `quantity` | integer | No | Cantidad solicitada si es un entero, incluso si es inválida para la orden. Omitir si falta o no es entera. | `10` |
 | `country` | enum `US` \| `ES` | Sí | País derivado del almacén. | `US` |
 | `failure_reason` | enum `schema_invalid` \| `sku_not_found` \| `insufficient_stock` | Sí | Razón clasificada sin texto libre. | `insufficient_stock` |
 | `validation_source` | enum `client` \| `api` | Sí | Validación de cliente o respuesta de API. | `client` |

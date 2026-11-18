@@ -435,12 +435,12 @@
                 "client_id": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$" },
                 "product_id": { "type": "string", "minLength": 1 },
                 "product_category": { "$ref": "#/definitions/enums/product_category" },
-                "quantity": { "type": "integer", "minimum": 1 },
+                "quantity": { "type": "integer" },
                 "country": { "$ref": "#/definitions/enums/country" },
                 "failure_reason": { "$ref": "#/definitions/enums/validation_failure_reason" },
                 "validation_source": { "$ref": "#/definitions/enums/validation_source" }
               },
-              "required": ["warehouse", "client_id", "product_id", "product_category", "quantity", "country", "failure_reason", "validation_source"],
+              "required": ["warehouse", "client_id", "product_id", "product_category", "country", "failure_reason", "validation_source"],
               "additionalProperties": false
             }
           },
@@ -461,9 +461,8 @@
           "client_id": "nova_beauty",
           "product_id": "TF-COS-001",
           "product_category": "cosmetics",
-          "quantity": 2,
           "country": "US",
-          "failure_reason": "sku_not_found",
+          "failure_reason": "schema_invalid",
           "validation_source": "api"
         }
       }],
@@ -489,12 +488,12 @@
                 "client_id": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9]+(?:_[a-z0-9]+)*$" },
                 "product_id": { "type": "string", "minLength": 1 },
                 "product_category": { "$ref": "#/definitions/enums/product_category" },
-                "quantity": { "type": "integer", "minimum": 1 },
+                "quantity": { "type": "integer" },
                 "country": { "$ref": "#/definitions/enums/country" },
                 "failure_reason": { "$ref": "#/definitions/enums/validation_failure_reason" },
                 "validation_source": { "$ref": "#/definitions/enums/validation_source" }
               },
-              "required": ["warehouse", "client_id", "product_id", "product_category", "quantity", "country", "failure_reason", "validation_source"],
+              "required": ["warehouse", "client_id", "product_id", "product_category", "country", "failure_reason", "validation_source"],
               "additionalProperties": false
             }
           },
