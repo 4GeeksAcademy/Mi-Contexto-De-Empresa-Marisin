@@ -72,3 +72,15 @@ export async function createOutboundOrder(payload: OutboundOrderPayload): Promis
 export async function getOrders(): Promise<InventoryOrder[]> {
   return fetchWithAuth("/inventory/orders");
 }
+
+// La API rechaza siempre este intento con 405 (D28): el stock solo cambia con órdenes.
+export async function requestDirectStockEdit(
+  productId: number,
+  warehouse: string,
+  quantity: number,
+): Promise<unknown> {
+  return fetchWithAuth(`/inventory/products/${productId}/stock`, {
+    method: "PATCH",
+    body: JSON.stringify({ warehouse, quantity }),
+  });
+}

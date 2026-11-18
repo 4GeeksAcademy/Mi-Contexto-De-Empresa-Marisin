@@ -1,14 +1,79 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useInventoryData } from "@/hooks/useInventoryData";
-import { getProducts } from "@/lib/inventory";
+import { ApiError } from "@/lib/api";
+import {
+  computeStockIndex,
+  getOrders,
+  getProducts,
+  requestDirectStockEdit,
+  type SKUProduct,
+} from "@/lib/inventory";
+import { track, withRequestId } from "@/lib/telemetry";
+import { inventoryProperties } from "@/lib/telemetry-mappers";
 
 const LOW_STOCK_THRESHOLD = 50;
 
 export default function InventoryProductsPage() {
   const { data, loading, error } = useInventoryData(getProducts);
   const products = data ?? [];
+  const [editProduct, setEditProduct] = useState<SKUProduct | null>(null);
+  const [editWarehouse, setEditWarehouse] = useState("Los Angeles");
+  const [editQuantity, setEditQuantity] = useState(0);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editRejected, setEditRejected] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  function openDirectEdit(product: SKUProduct) {
+    setEditProduct(product);
+    setEditWarehouse("Los Angeles");
+    setEditQuantity(0);
+    setEditRejected(false);
+    setEditError(null);
+  }
+
+  async function handleDirectEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editProduct) return;
+    const product = editProduct;
+    const warehouse = editWarehouse;
+    const quantity = editQuantity;
+    setEditBusy(true);
+    setEditRejected(false);
+    setEditError(null);
+    try {
+      await requestDirectStockEdit(product.id, warehouse, quantity);
+      setEditError("La API no rechazó el ajuste directo: revisa el endpoint de stock.");
+    } catch (error: unknown) {
+      if (error instanceof ApiError && [404, 405, 422].includes(error.status)) {
+        if (error.status === 405) setEditRejected(true);
+        else setEditError(error.message);
+        const rejection_reason = `http_${error.status}`;
+        const properties = inventoryProperties(product, warehouse, quantity);
+        if (properties) {
+          let attempted_delta: number | undefined;
+          try {
+            const current = computeStockIndex(await getOrders())
+              .get(`${product.sku}|${warehouse}`) ?? 0;
+            attempted_delta = quantity - current;
+          } catch {
+            attempted_delta = undefined;
+          }
+          const report = () => track("direct_stock_edit_rejected", {
+            ...properties, rejection_reason, attempted_delta,
+          });
+          if (error.requestId) withRequestId(error.requestId, report);
+          else report();
+        }
+      } else {
+        setEditError(error instanceof Error ? error.message : "No se pudo enviar el ajuste.");
+      }
+    } finally {
+      setEditBusy(false);
+    }
+  }
 
   if (error) {
     return (
@@ -43,6 +108,74 @@ export default function InventoryProductsPage() {
           </Link>
         </div>
       </div>
+
+      {editProduct && (
+        <form
+          onSubmit={handleDirectEdit}
+          className="bg-white p-4 shadow rounded-lg border border-gray-200 space-y-3"
+        >
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Ajustar stock de {editProduct.sku}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setEditProduct(null)}
+              className="text-sm text-gray-600 hover:text-gray-900 underline"
+            >
+              Cerrar
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-3 items-end">
+            <label className="text-sm font-medium text-gray-700">
+              Almacén
+              <select
+                value={editWarehouse}
+                onChange={(e) => setEditWarehouse(e.target.value)}
+                className="mt-1 block border border-gray-300 p-2 rounded-md"
+              >
+                <option value="Los Angeles">Los Angeles (EE.UU.)</option>
+                <option value="Zaragoza">Zaragoza (España)</option>
+              </select>
+            </label>
+            <label className="text-sm font-medium text-gray-700">
+              Nuevo stock
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={editQuantity}
+                onChange={(e) => setEditQuantity(Number(e.target.value))}
+                className="mt-1 block w-32 border border-gray-300 p-2 rounded-md"
+                required
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={editBusy}
+              className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-md font-medium text-sm disabled:opacity-50"
+            >
+              {editBusy ? "Enviando..." : "Guardar ajuste"}
+            </button>
+          </div>
+          {editRejected && (
+            <div role="alert" className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-md text-sm">
+              El stock solo se modifica con órdenes de entrada o salida.{" "}
+              <Link href={`/inventory/orders/inbound?sku_id=${editProduct.id}`} className="underline font-medium">
+                Registrar entrada
+              </Link>{" "}
+              o{" "}
+              <Link href={`/inventory/orders/outbound?sku_id=${editProduct.id}`} className="underline font-medium">
+                Registrar salida
+              </Link>
+              .
+            </div>
+          )}
+          {editError && (
+            <p role="alert" className="text-sm text-red-700">{editError}</p>
+          )}
+        </form>
+      )}
 
       <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
@@ -106,6 +239,14 @@ export default function InventoryProductsPage() {
                     >
                       Salida
                     </Link>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => openDirectEdit(item)}
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      Ajustar stock
+                    </button>
                   </td>
                 </tr>
               );
