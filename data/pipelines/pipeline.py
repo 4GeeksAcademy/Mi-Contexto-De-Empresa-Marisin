@@ -16,9 +16,16 @@ Ejecución (desde la raíz del repo, con el entorno virtual activado):
     python data/pipelines/pipeline.py --week-start 2026-11-16  # una semana concreta
     python data/pipelines/pipeline.py --serve                  # programación semanal (cron)
 
-Etapas (tasks): open_pipeline_run → extract_kpi_events → transform_weekly_kpis →
-validate_weekly_kpis → [check_capture_coverage, opcional] → load_weekly_kpis →
-[export_eval_snapshot, opcional] → close_pipeline_run.
+Topología (Parte 3): el flow principal `weekly_warehouse_client_performance`
+solo coordina; cada etapa es un subflow con entradas y salidas explícitas.
+
+    open_pipeline_run
+    → extract_warehouse_client_kpi_events          (subflow: extracción)
+    → compute_weekly_warehouse_client_kpis         (subflow: transformación, un task por KPI)
+    → [check_capture_coverage, opcional]           (subflow: calidad)
+    → load_weekly_warehouse_client_performance     (subflow: carga)
+    → [export_weekly_performance_snapshot, opcional] (subflow: eval)
+    → close_pipeline_run
 """
 
 from __future__ import annotations
@@ -46,7 +53,7 @@ from prefect.states import Cancelled, State
 from data.pipelines import extract, load, runs
 from data.pipelines.config import REPO_ROOT, get_engine, load_config
 from data.process import weekly_kpis
-from data.process.weekly_kpis import TransformResult
+from data.process.weekly_kpis import PreparedEvents, TransformResult
 
 
 FLOW_NAME = "weekly_warehouse_client_performance"
@@ -129,7 +136,7 @@ def close_pipeline_run(
 
 
 # ---------------------------------------------------------------------------
-# Extracción → transformación → validación → carga
+# Extracción
 # ---------------------------------------------------------------------------
 
 
@@ -160,8 +167,13 @@ def extract_kpi_events(window_start: date, window_end: date) -> dict[str, Any]:
     return {"events": events, "signals": signals}
 
 
-def _transform_cache_key(context: TaskRunContext, parameters: dict[str, Any]) -> str:
-    """Clave de caché de transform_weekly_kpis.
+# ---------------------------------------------------------------------------
+# Transformación: preparación + un task por KPI del BRIEFING
+# ---------------------------------------------------------------------------
+
+
+def _prepare_cache_key(context: TaskRunContext, parameters: dict[str, Any]) -> str:
+    """Clave de caché de prepare_kpi_events.
 
     La define el contenido exacto de los eventos extraídos (huella de todas sus
     filas), la lista de `excluded_user_ids` y la versión de la lógica
@@ -173,26 +185,63 @@ def _transform_cache_key(context: TaskRunContext, parameters: dict[str, Any]) ->
     )
 
 
-# Caché de 1 hora: si la misma extracción ya se transformó con éxito en la última
+# Caché de 1 hora: si la misma extracción ya se preparó con éxito en la última
 # hora (p. ej. un reintento manual tras un fallo en la carga), se reutiliza el
 # resultado. Una hora cubre los reintentos de una corrida y los disparos manuales
 # seguidos sin servir nunca un resultado de otra semana: la clave depende de los datos.
 @task(
-    name="transform_weekly_kpis",
-    cache_key_fn=_transform_cache_key,
+    name="prepare_kpi_events",
+    cache_key_fn=_prepare_cache_key,
     cache_expiration=timedelta(hours=1),
     persist_result=True,
 )
-def transform_weekly_kpis(raw_events: pd.DataFrame, excluded_user_ids: tuple[str, ...]) -> TransformResult:
-    result = weekly_kpis.transform_events(raw_events, excluded_user_ids)
+def prepare_kpi_events(raw_events: pd.DataFrame, excluded_user_ids: tuple[str, ...]) -> PreparedEvents:
+    """Refina tipos, rechaza filas inválidas, deduplica por eventId, excluye verificación y añade week_start."""
+    prepared = weekly_kpis.prepare_events(raw_events, excluded_user_ids)
+    stats = prepared.stats
     get_run_logger().info(
-        "Transformación: %d filas de KPIs, %d duplicados, %d excluidos, %d rechazados",
-        result.stats["kpi_rows"],
-        result.stats["duplicates_dropped"],
-        result.stats["events_excluded"],
-        result.stats["events_rejected"],
+        "Preparación: %d eventos válidos, %d duplicados, %d excluidos, %d rechazados",
+        len(prepared.events),
+        stats["duplicates_dropped"],
+        stats["events_excluded"],
+        stats["events_rejected"],
     )
-    return result
+    return prepared
+
+
+@task(name="compute_inbound_volume", cache_policy=NO_CACHE)
+def compute_inbound_volume(events: pd.DataFrame) -> pd.DataFrame:
+    """KPI Volumen de entrada → `inbound_units_count`."""
+    return weekly_kpis.inbound_volume(events)
+
+
+@task(name="compute_outbound_throughput", cache_policy=NO_CACHE)
+def compute_outbound_throughput(events: pd.DataFrame) -> pd.DataFrame:
+    """KPI Throughput de salida → `outbound_orders_count`."""
+    return weekly_kpis.outbound_throughput(events)
+
+
+@task(name="compute_stockout_frequency", cache_policy=NO_CACHE)
+def compute_stockout_frequency(events: pd.DataFrame) -> pd.DataFrame:
+    """KPI Frecuencia de quiebre de stock → `stockout_events_count`."""
+    return weekly_kpis.stockout_frequency(events)
+
+
+@task(name="compute_discrepancy_rate", cache_policy=NO_CACHE)
+def compute_discrepancy_rate(
+    events: pd.DataFrame,
+    inbound: pd.DataFrame,
+    outbound: pd.DataFrame,
+    stockouts: pd.DataFrame,
+) -> pd.DataFrame:
+    """KPI Tasa de discrepancia → `discrepancy_events_count` y `discrepancy_rate`.
+
+    Une los cuatro KPIs en el grano del BRIEFING (almacén × cliente × semana) y
+    calcula discrepancias / pedidos de salida, con 0 si no hubo pedidos.
+    """
+    return weekly_kpis.combine_weekly_kpis(
+        inbound, outbound, stockouts, weekly_kpis.discrepancy_events(events)
+    )
 
 
 # Sin reintentos: valida en memoria; repetirla daría el mismo resultado.
@@ -202,6 +251,11 @@ def validate_weekly_kpis(kpis: pd.DataFrame, weeks: list[date]) -> int:
     if problems:
         raise KpiValidationError("; ".join(problems))
     return len(kpis)
+
+
+# ---------------------------------------------------------------------------
+# Carga
+# ---------------------------------------------------------------------------
 
 
 # 3 reintentos cada 30 s: la carga es una sola transacción idempotente (upsert por
@@ -220,7 +274,7 @@ def load_weekly_kpis(run_id: UUID, kpis: pd.DataFrame, weeks: list[date]) -> dic
 
 
 # ---------------------------------------------------------------------------
-# Tasks opcionales (no críticas): se invocan con return_state=True
+# Tasks opcionales (no críticas)
 # ---------------------------------------------------------------------------
 
 
@@ -262,7 +316,81 @@ def export_eval_snapshot(
 
 
 # ---------------------------------------------------------------------------
-# Flow
+# Subflows: una etapa cada uno, con entradas y salidas explícitas
+# ---------------------------------------------------------------------------
+# Los subflows que reciben DataFrames desactivan `validate_parameters`: Pydantic no
+# sabe validar un DataFrame, y la forma ya la comprueba `weekly_kpis.ensure_raw_events`.
+
+
+@flow(name="extract_warehouse_client_kpi_events")
+def extract_warehouse_client_kpi_events_flow(window_start: date, window_end: date) -> dict[str, Any]:
+    """Extracción: eventos de los cuatro KPIs + señales de silencio de `telemetry_events`.
+
+    Devuelve `{"events": DataFrame, "signals": {...}}`. Se puede ejecutar sola:
+    `extract_warehouse_client_kpi_events_flow(date(2026, 11, 16), date(2026, 11, 23))`.
+    """
+    return extract_kpi_events(window_start, window_end)
+
+
+@flow(name="compute_weekly_warehouse_client_kpis", validate_parameters=False)
+def compute_weekly_warehouse_client_kpis_flow(
+    raw_events: pd.DataFrame,
+    excluded_user_ids: tuple[str, ...],
+    weeks: list[date],
+) -> TransformResult:
+    """Transformación: Volumen de entrada, Throughput de salida, Frecuencia de
+    quiebre de stock y Tasa de discrepancia por almacén × cliente × semana ISO.
+
+    No toca la base de datos: se puede ejecutar sola con un DataFrame en memoria.
+    """
+    prepared = prepare_kpi_events(raw_events, excluded_user_ids)
+    inbound = compute_inbound_volume(prepared.events)
+    outbound = compute_outbound_throughput(prepared.events)
+    stockouts = compute_stockout_frequency(prepared.events)
+    kpis = compute_discrepancy_rate(prepared.events, inbound, outbound, stockouts)
+    validate_weekly_kpis(kpis, weeks)
+    return TransformResult(kpis=kpis, stats={**prepared.stats, "kpi_rows": int(len(kpis))})
+
+
+@flow(name="load_weekly_warehouse_client_performance", validate_parameters=False)
+def load_weekly_warehouse_client_performance_flow(
+    run_id: UUID,
+    kpis: pd.DataFrame,
+    weeks: list[date],
+) -> dict[str, int]:
+    """Carga idempotente en `reporting.weekly_warehouse_client_performance`.
+
+    Devuelve los conteos `rows_inserted`, `rows_updated`, `rows_unchanged` y `rows_deleted`.
+    """
+    return load_weekly_kpis(run_id, kpis, weeks)
+
+
+@flow(name="check_capture_coverage")
+def check_capture_coverage_flow(
+    window_start: date,
+    window_end: date,
+    events_by_warehouse: dict[str, dict[str, int]],
+    warning_threshold: float,
+) -> tuple[dict[str, Any], list[str]]:
+    """Opcional: cobertura de captura frente a `stock_entries`/`stock_exits` (§10.3)."""
+    return check_capture_coverage(window_start, window_end, events_by_warehouse, warning_threshold)
+
+
+@flow(name="export_weekly_performance_snapshot", validate_parameters=False)
+def export_weekly_performance_snapshot_flow(
+    run_id: UUID,
+    weeks: list[date],
+    kpis: pd.DataFrame,
+    stats: dict[str, Any],
+    load_counts: dict[str, int],
+    warnings: list[str],
+) -> str:
+    """Opcional: snapshot de eval de la corrida en `data/eval/snapshots/`."""
+    return export_eval_snapshot(run_id, weeks, kpis, stats, load_counts, warnings)
+
+
+# ---------------------------------------------------------------------------
+# Flow principal
 # ---------------------------------------------------------------------------
 
 
@@ -286,7 +414,7 @@ def weekly_warehouse_client_performance_flow(
     run_id: UUID | None = None,
     triggered_by: str | None = None,
 ) -> dict[str, Any] | State:
-    """Recalcula las semanas de la ventana y las carga de forma idempotente."""
+    """Coordina los subflows: recalcula las semanas de la ventana y las carga de forma idempotente."""
     logger = get_run_logger()
     config = load_config()
     today = datetime.now(timezone.utc).date()
@@ -306,10 +434,11 @@ def weekly_warehouse_client_performance_flow(
     warnings: list[str] = []
     coverage: dict[str, Any] | None = None
     try:
-        # Etapas críticas: return_state=True para registrar el fallo en pipeline_runs
+        # Subflows críticos: return_state=True para registrar el fallo en pipeline_runs
         # antes de detener el flow, en lugar de dejar que la excepción se propague sola.
         extracted = _required(
-            extract_kpi_events(window_start, window_end, return_state=True), "extract"
+            extract_warehouse_client_kpi_events_flow(window_start, window_end, return_state=True),
+            "extract",
         )
         signals = extracted["signals"]
         heartbeat_pipeline_run(
@@ -324,13 +453,15 @@ def weekly_warehouse_client_performance_flow(
             warnings.append("capture_silence:no_technical_events")
 
         transformed: TransformResult = _required(
-            transform_weekly_kpis(extracted["events"], config.excluded_user_ids, return_state=True),
+            compute_weekly_warehouse_client_kpis_flow(
+                extracted["events"], config.excluded_user_ids, weeks, return_state=True
+            ),
             "transform",
         )
         stats = transformed.stats
         heartbeat_pipeline_run(
             run_id,
-            "transform",
+            "validate",
             {
                 "duplicates_dropped": stats["duplicates_dropped"],
                 "events_excluded": stats["events_excluded"],
@@ -340,11 +471,8 @@ def weekly_warehouse_client_performance_flow(
         )
         warnings.extend(f"rejected:{reason}:{count}" for reason, count in stats["rejected_by_reason"].items())
 
-        _required(validate_weekly_kpis(transformed.kpis, weeks, return_state=True), "validate")
-        heartbeat_pipeline_run(run_id, "validate", {})
-
         # Opcional: si falla, se anota el aviso y la carga sigue.
-        coverage_state = check_capture_coverage(
+        coverage_state = check_capture_coverage_flow(
             window_start,
             window_end,
             stats["events_by_warehouse"],
@@ -359,11 +487,14 @@ def weekly_warehouse_client_performance_flow(
             logger.warning("check_capture_coverage falló; la corrida continúa sin cobertura.")
 
         load_counts = _required(
-            load_weekly_kpis(run_id, transformed.kpis, weeks, return_state=True), "load"
+            load_weekly_warehouse_client_performance_flow(
+                run_id, transformed.kpis, weeks, return_state=True
+            ),
+            "load",
         )
 
         # Opcional: el snapshot de eval no debe tumbar una carga ya confirmada.
-        snapshot_state = export_eval_snapshot(
+        snapshot_state = export_weekly_performance_snapshot_flow(
             run_id, weeks, transformed.kpis, stats, load_counts, warnings, return_state=True
         )
         if not snapshot_state.is_completed():
@@ -399,7 +530,7 @@ def weekly_warehouse_client_performance_flow(
 
 
 # ---------------------------------------------------------------------------
-# CLI
+# CLI (sin cambios desde la Parte 2)
 # ---------------------------------------------------------------------------
 
 
