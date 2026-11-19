@@ -161,7 +161,7 @@ def rejection_reasons(events: pd.DataFrame) -> pd.Series:
 def add_week_start(events: pd.DataFrame) -> pd.DataFrame:
     """T4: lunes de la semana ISO en UTC."""
     timestamps = events["timestamp"]
-    monday = timestamps.dt.normalize() - pd.to_timedelta(timestamps.dt.weekday, unit="D")
+    monday = timestamps.dt.normalize() - pd.to_timedelta(timestamps.dt.day_of_week, unit="D")
     return events.assign(week_start=monday.dt.date)
 
 
