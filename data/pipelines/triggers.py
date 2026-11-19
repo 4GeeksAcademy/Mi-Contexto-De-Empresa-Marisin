@@ -1,73 +1,51 @@
-"""Disparo manual del pipeline desde la API (§11.3 y §13.1 del diseño).
+"""Corrida manual del pipeline desde la cola de tareas (§11.3 y §13.1 del diseño).
 
-`POST /reporting/pipeline-runs` llama a `trigger_manual_run`: comprueba que no
-haya otra corrida viva (409 en la API) y lanza el flow de `pipeline.py` en un
-hilo aparte, para responder 202 sin esperar a que termine. La lógica del
-pipeline no se duplica: el hilo ejecuta el mismo flow que el cron y el CLI.
+Desde el Ticket #DEV-55, `POST /reporting/pipeline-runs` ya no lanza el flow en un
+hilo dentro de FastAPI: encola la tarea `trackflow.reporting.run_pipeline`
+(`services/tasks.py`) y responde 202 con su `task_id`. Un worker de Celery, en un
+proceso aparte, llama a `run_manual_flow()`.
+
+La lógica del pipeline no se duplica: se ejecuta el mismo flow que el cron y el
+CLI. La concurrencia la sigue resolviendo `pipeline_runs` (advisory lock + estado
+`running`): si ya hay una corrida viva, el flow termina en `Cancelled`.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-import logging
-import threading
-from uuid import UUID, uuid4
-
-from sqlalchemy.engine import Engine
-
-from data.pipelines import runs
-from data.pipelines.config import load_config
-
-
-logger = logging.getLogger(__name__)
-
-
-class PipelineRunAlreadyActiveError(RuntimeError):
-    def __init__(self, active_run_id: UUID):
-        self.active_run_id = active_run_id
-        super().__init__(f"Ya hay una corrida en marcha: {active_run_id}")
+from typing import Any
+from uuid import UUID
 
 
 @dataclass(frozen=True)
-class ManualRun:
-    run_id: UUID
-    status: str
-    week_start: date | None
+class ManualRunOutcome:
+    status: str  # "completed" | "cancelled" | "failed"
+    summary: dict[str, Any] | None = None
+    message: str | None = None
+    error: BaseException | None = None
 
 
-def run_flow(run_id: UUID, week_start: date | None, triggered_by: str | None) -> None:
-    """Ejecuta el flow; los errores quedan en pipeline_runs y en el log de la API."""
+def run_manual_flow(run_id: UUID, week_start: date | None, triggered_by: str | None) -> ManualRunOutcome:
+    """Ejecuta el flow con `return_state=True` y traduce su state final.
+
+    - `Completed` → `completed` con el resumen de la corrida.
+    - `Cancelled` (otra corrida viva) → `cancelled`: no es un fallo y no se reintenta.
+    - Cualquier otro state → `failed` con la excepción original.
+    """
     from data.pipelines.pipeline import weekly_warehouse_client_performance_flow
 
-    try:
-        weekly_warehouse_client_performance_flow(
-            week_start=week_start,
-            trigger="manual",
-            run_id=run_id,
-            triggered_by=triggered_by,
-        )
-    except Exception:
-        logger.exception("La corrida manual %s terminó con error", run_id)
-
-
-def trigger_manual_run(
-    engine: Engine,
-    *,
-    week_start: date | None = None,
-    triggered_by: str | None = None,
-) -> ManualRun:
-    """Valida, comprueba concurrencia y lanza la corrida en segundo plano."""
-    if week_start is not None and week_start.weekday() != 0:
-        raise ValueError("week_start debe ser un lunes (inicio de semana ISO).")
-    active = runs.find_active_run(engine, load_config().stale_run_minutes)
-    if active is not None:
-        raise PipelineRunAlreadyActiveError(active)
-    run_id = uuid4()
-    threading.Thread(
-        target=run_flow,
-        args=(run_id, week_start, triggered_by),
-        name=f"pipeline-run-{run_id}",
-        daemon=True,
-    ).start()
-    return ManualRun(run_id=run_id, status="pending", week_start=week_start)
+    state = weekly_warehouse_client_performance_flow(
+        week_start=week_start,
+        trigger="manual",
+        run_id=run_id,
+        triggered_by=triggered_by,
+        return_state=True,
+    )
+    if state.is_completed():
+        return ManualRunOutcome(status="completed", summary=state.result())
+    if state.is_cancelled():
+        return ManualRunOutcome(status="cancelled", message=state.message)
+    cause = state.result(raise_on_failure=False)
+    error = cause if isinstance(cause, BaseException) else RuntimeError(state.message or str(cause))
+    return ManualRunOutcome(status="failed", message=state.message, error=error)
