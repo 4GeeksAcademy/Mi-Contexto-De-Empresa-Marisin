@@ -137,11 +137,12 @@ def close_pipeline_run(
 # breves del pooler de Supabase y timeouts de red. Más allá, el fallo ya no es
 # transitorio y conviene alertar; el cron de las 05:00 UTC deja ~2 h de margen.
 # Sin caché: la extracción debe leer siempre la fuente para recoger eventos tardíos.
+# Sin timeout_seconds: en una task síncrona Prefect no puede interrumpir una consulta
+# bloqueante; la espera de conexión ya está acotada con connect_timeout=10 (config.py).
 @task(
     name="extract_kpi_events",
     retries=3,
     retry_delay_seconds=[10, 30, 60],
-    timeout_seconds=120,
     cache_policy=NO_CACHE,
 )
 def extract_kpi_events(window_start: date, window_end: date) -> dict[str, Any]:
@@ -210,7 +211,6 @@ def validate_weekly_kpis(kpis: pd.DataFrame, weeks: list[date]) -> int:
     name="load_weekly_kpis",
     retries=3,
     retry_delay_seconds=30,
-    timeout_seconds=120,
     cache_policy=NO_CACHE,
 )
 def load_weekly_kpis(run_id: UUID, kpis: pd.DataFrame, weeks: list[date]) -> dict[str, int]:

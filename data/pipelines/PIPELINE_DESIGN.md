@@ -439,11 +439,11 @@ Una fila por corrida, creada **antes** de extraer (`status = 'running'`) y cerra
 | Task | Etapa | Entrada → salida | Configuración Prefect |
 |---|---|---|---|
 | `open_pipeline_run` | Control | ventana, trigger → `OpenRunResult`; inserta `pipeline_runs` (`running`), cierra corridas `stale` y no abre si hay otra viva | `retries=2`, `retry_delay_seconds=5` |
-| `extract_kpi_events` | **Extracción** | ventana → DataFrame crudo + señales de silencio (§10.1) | `retries=3`, `retry_delay_seconds=[10, 30, 60]`, `timeout_seconds=120`, sin caché |
+| `extract_kpi_events` | **Extracción** | ventana → DataFrame crudo + señales de silencio (§10.1) | `retries=3`, `retry_delay_seconds=[10, 30, 60]`, sin caché |
 | `transform_weekly_kpis` | **Transformación** | DataFrame crudo → `TransformResult` (grano del BRIEFING + estadísticas) | **caché**: `cache_key_fn` (huella de los eventos + exclusiones + versión) y `cache_expiration=1 h`; sin reintentos (determinista) |
 | `validate_weekly_kpis` | Transformación (calidad) | DataFrame final → falla si viola los contratos del BRIEFING | sin reintentos |
 | `check_capture_coverage` | Calidad (**opcional**) | órdenes de `stock_entries`/`stock_exits` → cobertura y avisos (§10.3) | `retries=1`; se invoca con `return_state=True` |
-| `load_weekly_kpis` | **Carga** | DataFrame final → conteos `rows_*`; transacción única con upsert + reconciliación | `retries=3`, `retry_delay_seconds=30`, `timeout_seconds=120` |
+| `load_weekly_kpis` | **Carga** | DataFrame final → conteos `rows_*`; transacción única con upsert + reconciliación | `retries=3`, `retry_delay_seconds=30` |
 | `export_eval_snapshot` | Eval (**opcional**) | KPIs + estadísticas → `data/eval/snapshots/weekly_warehouse_client_performance_latest.json` | sin reintentos; se invoca con `return_state=True` |
 | `heartbeat_pipeline_run` | Control | fase + conteos → checkpoint en `pipeline_runs` | `retries=2` |
 | `close_pipeline_run` | Control | estado, avisos y error → `pipeline_runs` (`completed`/`failed`) | `retries=2` |
