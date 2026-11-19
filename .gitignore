@@ -10,3 +10,6 @@ __pycache__/
 
 # Base TinyDB local (datos de runtime, no se versiona)
 data/suppliers.json
+
+# Snapshots de eval del pipeline de negocio (se regeneran en cada corrida)
+data/eval/snapshots/
