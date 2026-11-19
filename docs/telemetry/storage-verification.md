@@ -125,4 +125,46 @@ Las filas de la verificación manual con curl llevan `tags->>'userId' = 'curl_ve
 
 ## 5. Resultados de la verificación
 
-_Se completa en las fases 1 y 3 del plan con las salidas reales de Supabase, la respuesta del lote mixto y la prueba de inmutabilidad._
+Verificación realizada el 2026-11-19 sobre el proyecto de Supabase `trackflow-inventory-hito5-db`.
+
+**Estructura (§2).** La consulta combinada de columnas, índices, triggers y RLS devolvió 15 filas: las 8 columnas con los tipos y defaults de la tabla de §2, los índices `telemetry_events_pkey`, `telemetry_events_timestamp_idx`, `telemetry_events_event_type_idx` y `telemetry_events_tags_gin_idx`, los triggers `telemetry_events_no_update_delete` y `telemetry_events_no_truncate`, y `relrowsecurity = true`. Evidencia: `evidence/supabase-table-structure.png`.
+
+**Lote mixto.** `curl -s -X POST http://localhost:8000/telemetry/events -H 'Content-Type: application/json' -d @docs/telemetry/evidence/mixed-batch.json` respondió `200` con:
+
+```json
+{"received":6,"stored":2,"rejected":4}
+```
+
+El log de la API registró solo conteos y códigos de error, sin datos de los eventos:
+
+```text
+Telemetry batch: received=6 stored=2 rejected=4 dropped_property_keys=1 types=['inbound_order_created', 'api_request_failed']
+Telemetry rejected events: [{'index': 2, 'errors': [{'type': 'missing', 'loc': ['eventId']}]}, {'index': 3, 'errors': [{'type': 'timezone_aware', 'loc': ['timestamp']}]}, {'index': 4, 'errors': [{'type': 'unknown_event_type', 'loc': ['event_type']}]}, {'index': 5, 'errors': [{'type': 'model_type', 'loc': []}]}]
+```
+
+En Supabase aparecen las 2 filas válidas (`inbound_order_created` con `level = info`, `value = 12`; `api_request_failed` con `level = error`, `value = 503`), y `tags ? 'unexpected_key'` es `false` en ambas: la clave fuera del allowlist se descartó. Evidencia: `evidence/mixed-batch.json` y `evidence/mixed-batch-response.json`.
+
+**Eventos reales del backoffice.** Con la API y el backoffice en marcha (login fallido y correcto, navegación, una orden de entrada y una de salida), la API registró lotes con `rejected=0` y la tabla quedó así:
+
+| `event_type` | `level` | Total |
+|---|---|---|
+| `api_latency_recorded` | `info` | 23 |
+| `page_viewed` | `info` | 13 |
+| `web_vital_recorded` | `info` | 4 |
+| `inbound_order_created` | `info` | 2 |
+| `api_request_failed` | `error` | 1 |
+| `user_login_failed` | `warn` | 1 |
+| `user_login_succeeded` | `info` | 1 |
+| `outbound_order_created` | `info` | 1 |
+
+Los totales incluyen las 2 filas del lote mixto (`userId = curl_verification`). Los eventos de inventario guardan en `tags` las dimensiones del BRIEFING (`warehouse = los_angeles`, `client_id = ecowear_usa`, `country = US`), los técnicos guardan su medida en `value` (ms de latencia) y `page_viewed` deja `value` en `NULL`. Evidencia: `evidence/supabase-telemetry-rows.png`.
+
+**Inmutabilidad (§3).** Sobre una fila real, las dos sentencias fallaron:
+
+```text
+ERROR: 42501: telemetry_events es de solo escritura: UPDATE no está permitido
+ERROR: 42501: telemetry_events es de solo escritura: DELETE no está permitido
+CONTEXT: PL/pgSQL function telemetry_events_block_mutation() line 3 at RAISE
+```
+
+**Frontend sin cambios.** `git diff --stat origin/main -- uis/ services/api/telemetry_schemas.py` no devuelve nada: el `TelemetryService` y el modelo `TelemetryEvent` son los del proyecto anterior.
