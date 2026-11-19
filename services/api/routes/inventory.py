@@ -14,9 +14,11 @@ from ..cache import (
 from ..database import get_db
 from ..models import SKU, StockEntry, StockExit
 from ..schemas import (
+    DirectStockEditRequest,
     InboundOrderCreate,
     InboundOrderResponse,
     InventoryOrderListItem,
+    MessageResponse,
     OutboundOrderCreate,
     OutboundOrderResponse,
     ProductCreate,
@@ -122,6 +124,33 @@ def get_product(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
     stock = sum(_warehouse_balances(session, product_id).values())
     return _product_response(sku_obj, stock)
+
+
+DIRECT_STOCK_EDIT_REJECTED = "El stock solo se modifica con órdenes de entrada o salida."
+
+
+@router.patch(
+    "/products/{product_id}/stock",
+    response_model=MessageResponse,
+    responses={405: {"model": MessageResponse, "description": DIRECT_STOCK_EDIT_REJECTED}},
+)
+def reject_direct_stock_edit(
+    product_id: int,
+    payload: DirectStockEditRequest,
+    session: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[dict, Depends(get_current_user)],
+):
+    """Regla de negocio explícita: el stock nunca se edita directamente (D28).
+
+    No toca modelos, caché ni balances; solo responde 405 para que el
+    backoffice registre el intento como direct_stock_edit_rejected.
+    """
+    if session.get(SKU, product_id) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail=DIRECT_STOCK_EDIT_REJECTED,
+    )
 
 
 @router.post(

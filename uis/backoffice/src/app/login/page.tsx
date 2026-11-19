@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/lib/api";
+import { ApiError, login } from "@/lib/api";
+import { rotateSession, track, withRequestId } from "@/lib/telemetry";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,8 +18,24 @@ export default function LoginPage() {
     setError(null);
     try {
       await login(email, password);
+      rotateSession();
+      try {
+        sessionStorage.setItem("tf_telemetry_login_at", String(Date.now()));
+      } catch {
+        // Storage restrictions must not prevent login.
+      }
+      track("user_login_succeeded", {});
       router.replace("/inventory/orders/inbound");
     } catch (error) {
+      const failure_reason = error instanceof ApiError
+        ? error.status === 401 || error.status === 422 ? "invalid_credentials"
+          : error.status === 403 ? "account_locked" : null
+        : error instanceof TypeError ? "network_error" : null;
+      if (failure_reason) {
+        const report = () => track("user_login_failed", { failure_reason });
+        if (error instanceof ApiError && error.requestId) withRequestId(error.requestId, report);
+        else report();
+      }
       setError(error instanceof Error ? error.message : "No se pudo iniciar sesion.");
     } finally {
       setLoading(false);

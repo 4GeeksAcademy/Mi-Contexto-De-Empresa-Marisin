@@ -35,6 +35,16 @@ export interface InventoryOrder {
   user_uuid: string;
 }
 
+export function computeStockIndex(orders: InventoryOrder[]) {
+  const index = new Map<string, number>();
+  for (const order of orders) {
+    const key = `${order.product.sku}|${order.warehouse}`;
+    const quantity = order.order_type === "inbound" ? order.quantity : -order.quantity;
+    index.set(key, (index.get(key) ?? 0) + quantity);
+  }
+  return index;
+}
+
 // --- Funciones de Servicio de Inventario ---
 
 export async function getProducts(): Promise<SKUProduct[]> {
@@ -45,14 +55,14 @@ export async function getProductById(id: number): Promise<SKUProduct> {
   return fetchWithAuth(`/inventory/products/${id}`);
 }
 
-export async function createInboundOrder(payload: InboundOrderPayload) {
+export async function createInboundOrder(payload: InboundOrderPayload): Promise<{ id: number }> {
   return fetchWithAuth("/inventory/orders/inbound", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export async function createOutboundOrder(payload: OutboundOrderPayload) {
+export async function createOutboundOrder(payload: OutboundOrderPayload): Promise<{ id: number }> {
   return fetchWithAuth("/inventory/orders/outbound", {
     method: "POST",
     body: JSON.stringify(payload),
@@ -61,4 +71,16 @@ export async function createOutboundOrder(payload: OutboundOrderPayload) {
 
 export async function getOrders(): Promise<InventoryOrder[]> {
   return fetchWithAuth("/inventory/orders");
+}
+
+// La API rechaza siempre este intento con 405 (D28): el stock solo cambia con órdenes.
+export async function requestDirectStockEdit(
+  productId: number,
+  warehouse: string,
+  quantity: number,
+): Promise<unknown> {
+  return fetchWithAuth(`/inventory/products/${productId}/stock`, {
+    method: "PATCH",
+    body: JSON.stringify({ warehouse, quantity }),
+  });
 }

@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { track } from "@/lib/telemetry";
 
 const LINKS = [
   { href: "/inventory/products", label: "Productos" },
   { href: "/inventory/orders", label: "Historial" },
   { href: "/inventory/orders/inbound", label: "Registrar entrada" },
   { href: "/inventory/orders/outbound", label: "Registrar salida" },
+  { href: "/inventory/counts", label: "Conteo físico" },
 ];
 
 export default function BackofficeNav() {
@@ -18,6 +20,16 @@ export default function BackofficeNav() {
   if (pathname === "/login" || pathname === "/") return null;
 
   function handleLogout() {
+    try {
+      const loginAt = Number(sessionStorage.getItem("tf_telemetry_login_at"));
+      const now = Date.now();
+      if (Number.isSafeInteger(loginAt) && loginAt > 0 && loginAt <= now) {
+        track("user_logged_out", { session_duration_ms: now - loginAt });
+      }
+      sessionStorage.removeItem("tf_telemetry_login_at");
+    } catch {
+      // Storage restrictions must not prevent logout.
+    }
     localStorage.removeItem("access_token");
     localStorage.removeItem("token");
     router.push("/login");
