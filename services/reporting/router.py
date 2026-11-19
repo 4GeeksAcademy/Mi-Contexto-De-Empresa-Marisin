@@ -2,31 +2,36 @@
 
 - `GET  /reporting/weekly-warehouse-client-performance`: filas de KPIs (feed del dashboard).
 - `GET  /reporting/pipeline-runs/latest`: estado y metadata de la última corrida.
-- `POST /reporting/pipeline-runs`: dispara una corrida manual.
+- `POST /reporting/pipeline-runs`: encola una corrida manual en Celery (Ticket #DEV-55)
+  y responde 202 con su `task_id`; el estado se consulta en `GET /tasks/{task_id}`.
 
-Sin lógica de ETL: validan la petición, llaman a `data/pipelines/` y traducen
-errores a HTTP. Misma autenticación que el resto de la API (`get_current_user`).
+Sin lógica de ETL: validan la petición, llaman a `data/pipelines/` (lecturas) o a la
+cola de tareas (corridas) y traducen errores a HTTP. Misma autenticación que el
+resto de la API (`get_current_user`).
 """
 
 from datetime import date
 import logging
 from typing import Annotated
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import SQLAlchemyError
 
 try:
     # API arrancada desde la raíz del repo: `uvicorn services.api.main:app`.
+    from services import celery_app as task_queue
     from services.api import database
     from services.api.security import get_current_user
 except ModuleNotFoundError as exc:
-    if exc.name not in {"services", "services.api"}:
+    if exc.name not in {"services", "services.api", "services.celery_app"}:
         raise
     # Contenedor de Docker: /app es `services/`, así que el paquete es `api`.
+    import celery_app as task_queue
     from api import database
     from api.security import get_current_user
 
-from data.pipelines import queries, triggers
+from data.pipelines import queries
 
 from .schemas import (
     PipelineRunAccepted,
@@ -41,6 +46,7 @@ logger = logging.getLogger("api.reporting")
 
 TRIGGER_ROLES = {"admin", "manager"}
 STORAGE_UNAVAILABLE = "Reporting storage unavailable"
+BROKER_UNAVAILABLE = "Task broker unavailable"
 
 
 def _engine():
@@ -106,7 +112,13 @@ def trigger_pipeline_run(
     user: Annotated[dict, Depends(get_current_user)],
     body: PipelineRunRequest | None = None,
 ) -> PipelineRunAccepted:
-    """Lanza una corrida manual en segundo plano (solo `admin` o `manager`)."""
+    """Encola una corrida manual (solo `admin` o `manager`) y responde sin esperarla.
+
+    El request no toca la base de datos ni ejecuta el pipeline: solo publica en Redis
+    un mensaje con referencias (`week_start`, `triggered_by`). La concurrencia la
+    resuelve el worker con `pipeline_runs`: si ya hay una corrida viva, la tarea
+    termina con `pipeline_status = "cancelled"`.
+    """
     if user.get("role") not in TRIGGER_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -114,18 +126,15 @@ def trigger_pipeline_run(
         )
     week_start = body.week_start if body else None
     _require_monday(week_start)
-    engine = _engine()
+    task_id = uuid4()
     try:
-        accepted = triggers.trigger_manual_run(
-            engine, week_start=week_start, triggered_by=str(user.get("id"))
+        task_queue.enqueue_pipeline_run(
+            task_id,
+            week_start.isoformat() if week_start else None,
+            str(user.get("id")),
         )
-    except triggers.PipelineRunAlreadyActiveError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail={"message": "Ya hay una corrida en marcha.", "active_run_id": str(exc.active_run_id)},
-        )
-    except SQLAlchemyError:
-        logger.exception("Reporting manual trigger failed")
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=STORAGE_UNAVAILABLE)
-    logger.info("Pipeline manual run %s accepted (week_start=%s)", accepted.run_id, week_start)
-    return PipelineRunAccepted(run_id=accepted.run_id, status=accepted.status, week_start=accepted.week_start)
+    except task_queue.BrokerUnavailableError:
+        logger.exception("No se pudo encolar la corrida manual del pipeline")
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=BROKER_UNAVAILABLE)
+    logger.info("Pipeline manual run encolada: task_id=%s week_start=%s", task_id, week_start)
+    return PipelineRunAccepted(task_id=str(task_id), run_id=task_id, status="pending", week_start=week_start)
