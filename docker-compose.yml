@@ -36,6 +36,61 @@ services:
     env_file:
       - path: ./.env
         required: false
+    environment:
+      # Dentro de la red de Docker, Redis es el servicio `redis` (no localhost).
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+    networks:
+      - trackflow-network
+
+  # Broker y result backend de Celery (Ticket #DEV-55).
+  # noeviction: si se llena la memoria, Redis rechaza escrituras en lugar de borrar
+  # mensajes de la cola. appendonly: los mensajes sobreviven a un reinicio.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - trackflow-network
+
+  # Monitor de la cola (solo desarrollo): http://localhost:5555
+  flower:
+    image: mher/flower:2.0
+    command: ["celery", "--broker=redis://redis:6379/0", "flower", "--port=5555"]
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    networks:
+      - trackflow-network
+
+  # Worker de Celery: proceso separado de la API, con la misma imagen y código.
+  # En el Codespace se arranca como proceso local (README); este servicio es la
+  # forma de desplegarlo en contenedor: `docker compose up -d worker`.
+  worker:
+    build:
+      context: ./services
+    command: ["celery", "-A", "celery_app", "worker", "-l", "info", "--concurrency=2"]
+    volumes:
+      - ./services:/app
+      - ./packages:/app/packages
+      - ./data:/app/data
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
     networks:
       - trackflow-network
 
@@ -44,6 +99,7 @@ networks:
     name: trackflow-network
 
 volumes:
+  redis_data:
   ui_website_node_modules:
   ui_backoffice_node_modules:
   ui_application_node_modules:
