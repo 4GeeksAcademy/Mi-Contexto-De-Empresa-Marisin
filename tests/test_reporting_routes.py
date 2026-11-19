@@ -7,8 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import OperationalError
 
-from data.pipelines import triggers
-from data.pipelines.config import PipelineConfig
+from services import celery_app as task_queue
 from services.api import database
 from services.api.main import app
 from services.api.security import get_current_user
@@ -149,40 +148,70 @@ def test_latest_run_404_when_never_ran(client, monkeypatch):
     assert client.get("/reporting/pipeline-runs/latest").status_code == 404
 
 
-def test_manual_trigger_returns_202_and_uses_pipeline_trigger(client, monkeypatch):
+def test_manual_trigger_returns_202_and_enqueues_light_message(client, monkeypatch):
     calls = []
 
-    def fake_trigger(engine, *, week_start, triggered_by):
-        calls.append((week_start, triggered_by))
-        return triggers.ManualRun(run_id=RUN_ID, status="pending", week_start=week_start)
+    def fake_enqueue(task_id, week_start, triggered_by):
+        calls.append((task_id, week_start, triggered_by))
+        return str(task_id)
 
-    monkeypatch.setattr(reporting_router.triggers, "trigger_manual_run", fake_trigger)
+    monkeypatch.setattr(reporting_router.task_queue, "enqueue_pipeline_run", fake_enqueue)
     response = client.post("/reporting/pipeline-runs", json={"week_start": "2026-11-16"})
 
     assert response.status_code == 202
-    assert response.json() == {"run_id": str(RUN_ID), "status": "pending", "week_start": "2026-11-16"}
-    assert calls == [(date(2026, 11, 16), "1")]
+    body = response.json()
+    assert set(body) == {"task_id", "run_id", "status", "week_start"}
+    assert body["status"] == "pending"
+    assert body["week_start"] == "2026-11-16"
+    assert body["run_id"] == body["task_id"]
+    UUID(body["task_id"])
+    # El mensaje solo lleva referencias: el lunes en ISO y el id de quien lo pide.
+    assert calls == [(UUID(body["task_id"]), "2026-11-16", "1")]
 
 
 def test_manual_trigger_without_body(client, monkeypatch):
+    calls = []
     monkeypatch.setattr(
-        reporting_router.triggers,
-        "trigger_manual_run",
-        lambda engine, *, week_start, triggered_by: triggers.ManualRun(RUN_ID, "pending", week_start),
+        reporting_router.task_queue,
+        "enqueue_pipeline_run",
+        lambda task_id, week_start, triggered_by: calls.append(week_start) or str(task_id),
     )
     response = client.post("/reporting/pipeline-runs")
     assert response.status_code == 202
     assert response.json()["week_start"] is None
+    assert calls == [None]
 
 
-def test_manual_trigger_409_when_a_run_is_active(client, monkeypatch):
-    def busy(engine, *, week_start, triggered_by):
-        raise triggers.PipelineRunAlreadyActiveError(RUN_ID)
+def test_manual_trigger_does_not_touch_the_database(client, monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("el endpoint no debe consultar la base de datos")
 
-    monkeypatch.setattr(reporting_router.triggers, "trigger_manual_run", busy)
+    monkeypatch.setattr(reporting_router, "_engine", forbidden)
+    monkeypatch.setattr(
+        reporting_router.task_queue,
+        "enqueue_pipeline_run",
+        lambda task_id, week_start, triggered_by: str(task_id),
+    )
+    assert client.post("/reporting/pipeline-runs").status_code == 202
+
+
+def test_manual_trigger_503_when_broker_is_down(client, monkeypatch):
+    def broker_down(task_id, week_start, triggered_by):
+        raise task_queue.BrokerUnavailableError("ConnectionError: redis")
+
+    monkeypatch.setattr(reporting_router.task_queue, "enqueue_pipeline_run", broker_down)
     response = client.post("/reporting/pipeline-runs")
-    assert response.status_code == 409
-    assert response.json()["detail"]["active_run_id"] == str(RUN_ID)
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Task broker unavailable"
+
+
+def test_manual_trigger_rejects_non_monday(client, monkeypatch):
+    monkeypatch.setattr(
+        reporting_router.task_queue,
+        "enqueue_pipeline_run",
+        lambda *args: pytest.fail("no debe encolar una semana inválida"),
+    )
+    assert client.post("/reporting/pipeline-runs", json={"week_start": "2026-11-18"}).status_code == 422
 
 
 def test_manual_trigger_requires_admin_or_manager(client, user):
@@ -196,13 +225,3 @@ def test_reporting_requires_session():
     assert plain.get("/reporting/weekly-warehouse-client-performance").status_code == 401
     assert plain.get("/reporting/pipeline-runs/latest").status_code == 401
     assert plain.post("/reporting/pipeline-runs").status_code == 401
-
-
-def test_trigger_manual_run_checks_active_run_before_starting(monkeypatch):
-    started = []
-    monkeypatch.setattr(triggers, "load_config", PipelineConfig)
-    monkeypatch.setattr(triggers.runs, "find_active_run", lambda engine, stale_minutes: RUN_ID)
-    monkeypatch.setattr(triggers, "run_flow", lambda *args: started.append(args))
-    with pytest.raises(triggers.PipelineRunAlreadyActiveError):
-        triggers.trigger_manual_run(object())
-    assert started == []
