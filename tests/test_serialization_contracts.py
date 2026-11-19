@@ -8,7 +8,7 @@ from tinydb.storages import MemoryStorage
 
 from services.api.database import get_db
 from services.api.main import app
-from services.api.telemetry_schemas import TelemetryReceived
+from services.api.telemetry_ingest import TelemetryIngestResult
 from services.api.models import (
     SKU,
     StockEntry,
@@ -116,7 +116,7 @@ def test_every_api_route_declares_a_response_model_or_documented_204():
     telemetry_route = next(
         route for route in routes if route.path == "/telemetry/events"
     )
-    assert telemetry_route.response_model is TelemetryReceived
+    assert telemetry_route.response_model is TelemetryIngestResult
 
 
 def test_auth_responses_do_not_expose_credentials_or_email(api_client):
