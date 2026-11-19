@@ -443,7 +443,7 @@ Una fila por corrida, creada **antes** de extraer (`status = 'running'`) y cerra
 |---|---|---|---|
 | `open_pipeline_run` | — (flow principal) | ventana, trigger → `OpenRunResult`; inserta `pipeline_runs` (`running`), cierra corridas `stale` y no abre si hay otra viva | `retries=2`, `retry_delay_seconds=5` |
 | `extract_kpi_events` | extracción | ventana → DataFrame crudo + señales de silencio (§10.1) | `retries=3`, `retry_delay_seconds=[10, 30, 60]`, sin caché |
-| `prepare_kpi_events` | transformación | DataFrame crudo → `PreparedEvents` (tipos, rechazos, deduplicación, exclusión, `week_start`) | **caché**: `cache_key_fn` (huella de los eventos + exclusiones + versión) y `cache_expiration=1 h` |
+| `prepare_kpi_events` | transformación | DataFrame crudo → `PreparedEvents` (tipos, rechazos, deduplicación, exclusión, `week_start`) | **caché**: `cache_key_fn` = `prepare-kpi-events-` + versión de la lógica (`TRANSFORM_VERSION = "2"`) + huella de los eventos + exclusiones; `cache_expiration=1 h` |
 | `compute_inbound_volume` | transformación | eventos → **Volumen de entrada** (`inbound_units_count`) | sin reintentos (determinista) |
 | `compute_outbound_throughput` | transformación | eventos → **Throughput de salida** (`outbound_orders_count`) | sin reintentos |
 | `compute_stockout_frequency` | transformación | eventos → **Frecuencia de quiebre de stock** (`stockout_events_count`) | sin reintentos |
@@ -502,6 +502,8 @@ El flow principal `weekly_warehouse_client_performance` ya no contiene lógica d
 | `export_weekly_performance_snapshot` (opcional) | Eval | KPIs, estadísticas y conteos → ruta del snapshot | `export_eval_snapshot` |
 
 Los subflows que reciben DataFrames usan `validate_parameters=False`, porque Pydantic no valida DataFrames. La forma de la entrada la comprueba `weekly_kpis.ensure_raw_events`, que lanza `TypeError` si no es un DataFrame y `RawEventsSchemaError` si faltan columnas. El de transformación no toca la base de datos, así que se ejecuta aislado con un DataFrame en memoria (`tests/test_pipeline_flow.py::test_compute_subflow_runs_on_its_own`).
+
+**Caché tras el refactor (corrección de la revisión):** en la primera entrega de la Parte 3, `prepare_kpi_events` reutilizaba la clave del `transform_weekly_kpis` de la Parte 2 (`weekly-kpis-v1-…`). En un entorno que venía de la Parte 2, Prefect servía el `TransformResult` cacheado en lugar de un `PreparedEvents` y el subflow de transformación fallaba con `'TransformResult' object has no attribute 'events'`. Ahora la clave lleva el nombre del task (`prepare-kpi-events-…`) y `TRANSFORM_VERSION` sube a `"2"`, porque el tipo devuelto cambió. `test_prepare_cache_key_never_matches_the_part_2_transform_key` impide que vuelvan a coincidir. Regla para el futuro: cada task cacheado lleva su propio prefijo, y la versión sube cuando cambia el cálculo o el tipo que devuelve.
 
 **Tests unitarios:** `python -m pytest tests/pipelines/test_pipeline.py` prueba cada task de KPI con eventos en memoria con la forma de `telemetry_events`: valores calculados a mano (Volumen 20 + 5 = 25 unidades, Tasa 1 / 4 = 0,25), la regla de tasa 0 sin pedidos, la deduplicación, la exclusión de verificación, el corte de semana ISO y el comportamiento defensivo (cliente nulo, cantidad no numérica, timestamp ilegible, almacén desconocido, evento fuera del BRIEFING, columnas ausentes y tipo de entrada incorrecto).
 
