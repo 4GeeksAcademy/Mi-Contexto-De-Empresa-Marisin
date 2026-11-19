@@ -22,8 +22,11 @@ import pandas as pd
 
 
 # Versión de la lógica de transformación. Forma parte de la clave de caché:
-# si cambia el cálculo, se sube este número y ningún resultado antiguo se reutiliza.
-TRANSFORM_VERSION = "1"
+# si cambia el cálculo o el tipo que devuelve, se sube este número y ningún
+# resultado antiguo se reutiliza.
+# v1: Parte 2 (transform_weekly_kpis → TransformResult).
+# v2: Parte 3 (prepare_kpi_events → PreparedEvents).
+TRANSFORM_VERSION = "2"
 
 INBOUND = "inbound_order_created"
 OUTBOUND = "outbound_order_created"

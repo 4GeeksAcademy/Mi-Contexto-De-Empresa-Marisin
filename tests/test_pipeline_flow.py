@@ -136,6 +136,21 @@ def test_prepare_task_declares_cache():
     assert pipeline.prepare_kpi_events.cache_expiration.total_seconds() == 3600
 
 
+def test_prepare_cache_key_never_matches_the_part_2_transform_key():
+    """Regresión: la clave de la Parte 2 (`weekly-kpis-v1-…`) guardaba un TransformResult.
+
+    Si prepare_kpi_events la reutilizara, Prefect serviría ese objeto y el subflow
+    de transformación fallaría con "'TransformResult' object has no attribute 'events'".
+    """
+    events = _events("cache-key")
+    key = pipeline._prepare_cache_key(None, {"raw_events": events, "excluded_user_ids": ("curl_verification",)})
+    part_2_key = f"weekly-kpis-v1-{weekly_kpis.events_fingerprint(events)}"
+
+    assert key.startswith("prepare-kpi-events-weekly-kpis-v2-")
+    assert not key.startswith(part_2_key)
+    assert weekly_kpis.TRANSFORM_VERSION != "1"
+
+
 def test_flow_completes_when_optional_task_fails(fake_db):
     summary = pipeline.weekly_warehouse_client_performance_flow(week_start=WEEK, trigger="manual")
 

@@ -182,15 +182,20 @@ def extract_kpi_events(window_start: date, window_end: date) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+PREPARE_CACHE_NAMESPACE = "prepare-kpi-events"
+
+
 def _prepare_cache_key(context: TaskRunContext, parameters: dict[str, Any]) -> str:
     """Clave de caché de prepare_kpi_events.
 
-    La define el contenido exacto de los eventos extraídos (huella de todas sus
-    filas), la lista de `excluded_user_ids` y la versión de la lógica
-    (`weekly_kpis.TRANSFORM_VERSION`). Si llega un evento tardío o cambia la
+    La define el nombre del task (`prepare-kpi-events`, para no compartir clave con
+    ningún otro task ni con el `transform_weekly_kpis` de la Parte 2, que guardaba un
+    `TransformResult`), la versión de la lógica (`weekly_kpis.TRANSFORM_VERSION`),
+    el contenido exacto de los eventos extraídos (huella de todas sus filas) y la
+    lista de `excluded_user_ids`. Si llega un evento tardío o cambia la
     configuración, la clave cambia y se recalcula; si no, se reutiliza el resultado.
     """
-    return weekly_kpis.transform_cache_key(
+    return f"{PREPARE_CACHE_NAMESPACE}-" + weekly_kpis.transform_cache_key(
         parameters["raw_events"], parameters["excluded_user_ids"]
     )
 
