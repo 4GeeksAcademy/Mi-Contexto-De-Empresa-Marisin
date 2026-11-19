@@ -1,0 +1,75 @@
+{
+  "events": [
+    {
+      "eventId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f601",
+      "timestamp": "2026-11-19T07:00:01.000Z",
+      "sessionId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f600",
+      "userId": "curl_verification",
+      "event_type": "inbound_order_created",
+      "schemaVersion": "1.0.0",
+      "requestId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f611",
+      "properties": {
+        "warehouse": "los_angeles",
+        "client_id": "nova_beauty",
+        "product_id": "TF-COS-001",
+        "product_category": "cosmetics",
+        "quantity": 12,
+        "country": "US",
+        "order_id": 381,
+        "unexpected_key": "x"
+      }
+    },
+    {
+      "eventId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f602",
+      "timestamp": "2026-11-19T07:00:02.000Z",
+      "sessionId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f600",
+      "userId": "curl_verification",
+      "event_type": "api_request_failed",
+      "schemaVersion": "1.0.0",
+      "requestId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f612",
+      "properties": {
+        "api_endpoint": "/inventory/orders/outbound",
+        "failure_reason": "http_5xx",
+        "status_code": 503
+      }
+    },
+    {
+      "timestamp": "2026-11-19T07:00:03.000Z",
+      "sessionId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f600",
+      "userId": "curl_verification",
+      "event_type": "page_viewed",
+      "schemaVersion": "1.0.0",
+      "requestId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f613",
+      "properties": {}
+    },
+    {
+      "eventId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f604",
+      "timestamp": "2026-11-19T07:00:04",
+      "sessionId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f600",
+      "userId": "curl_verification",
+      "event_type": "inbound_order_created",
+      "schemaVersion": "1.0.0",
+      "requestId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f614",
+      "properties": {
+        "warehouse": "los_angeles",
+        "client_id": "nova_beauty",
+        "product_id": "TF-COS-001",
+        "product_category": "cosmetics",
+        "quantity": 12,
+        "country": "US",
+        "order_id": 381
+      }
+    },
+    {
+      "eventId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f605",
+      "timestamp": "2026-11-19T07:00:05.000Z",
+      "sessionId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f600",
+      "userId": "curl_verification",
+      "event_type": "inventory_teleported",
+      "schemaVersion": "1.0.0",
+      "requestId": "7f1d2c3b-4a5e-4f60-8a71-b2c3d4e5f615",
+      "properties": {}
+    },
+    "no-soy-un-objeto"
+  ]
+}
