@@ -1,0 +1,15 @@
+# TrackFlow · Script nocturno de telemetría (Ticket #DEV-53) · crontab del sistema.
+#
+# Expresión: 15 1 * * *  → todos los días a las 01:15 en la zona del sistema.
+# El Codespace (y el contenedor de producción) corren en UTC: 01:15 UTC son las
+# 02:15 de Madrid en invierno y las 03:15 en verano. Así el día "ayer" (UTC) ya
+# está cerrado y el CSV y el pipeline terminan mucho antes de las 07:00 de Madrid.
+#
+# __REPO_ROOT__ se sustituye al instalar (ver infra/cron/README.md):
+#   sed "s#__REPO_ROOT__#$(pwd)#g" infra/cron/nightly_export.crontab | crontab -
+#
+# Es un proceso del sistema operativo, independiente de uvicorn/FastAPI: si la
+# API está caída o reiniciándose, el job corre igual, y al revés.
+SHELL=/bin/bash
+
+15 1 * * * cd __REPO_ROOT__ && mkdir -p logs && .venv/bin/python scripts/nightly_export.py >> logs/nightly_export.log 2>&1
