@@ -75,3 +75,20 @@ Con la API en `python -m uvicorn services.api.main:app --reload --port 8000` y t
 ## 6. Fuera de alcance comprobado
 
 `git diff --stat feature/pipeline-design -- services/telemetry services/api/routes/telemetry.py services/api/sql` está vacío: ni `analysis.py`, ni `GET /telemetry/report`, ni la tabla `telemetry_events` cambian. El pipeline solo ejecuta `select` sobre `telemetry_events`.
+
+## 7. Evidencias
+
+Capturas del Codespace y de Supabase del 19-11-2026. En `api-kpis.png` se recortaron el login, la contraseña de pruebas y el token.
+
+| Evidencia | Fichero |
+|---|---|
+| Corrida 1 por CLI (`rows_inserted = 1`) | [cli-primera-corrida.png](evidence/cli-primera-corrida.png) |
+| Corrida 2: transformación `Cached` y `rows_unchanged = 1` | [cli-segunda-corrida-cached.png](evidence/cli-segunda-corrida-cached.png) |
+| Corrida 3 por defecto sobre las 4 semanas cerradas | [cli-corrida-por-defecto.png](evidence/cli-corrida-por-defecto.png) |
+| Fuente: `inbound_order_created` en `telemetry_events` | [supabase-fuente-inbound.png](evidence/supabase-fuente-inbound.png) |
+| Tabla de destino con una sola fila | [supabase-kpis-una-fila.png](evidence/supabase-kpis-una-fila.png) |
+| Log de ejecución en `reporting.pipeline_runs` (corridas 1 y 2) | [supabase-pipeline-runs.png](evidence/supabase-pipeline-runs.png) |
+| `GET /reporting/weekly-warehouse-client-performance` | [api-kpis.png](evidence/api-kpis.png) |
+| `POST /reporting/pipeline-runs` → 202 | [api-post-respuesta.png](evidence/api-post-respuesta.png) |
+| Flow de la corrida 4 en el log de la API | [api-post-y-log.png](evidence/api-post-y-log.png) |
+| `GET /reporting/pipeline-runs/latest` tras el disparo manual | [api-ultima-corrida-manual.png](evidence/api-ultima-corrida-manual.png) |
