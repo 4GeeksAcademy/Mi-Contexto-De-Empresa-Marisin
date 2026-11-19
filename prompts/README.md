@@ -11,6 +11,7 @@ Cada carpeta contiene `prompt.md` (instrucciones para el agente) y `progress.md`
 | Captura de telemetría en el frontend | `telemetry-frontend-capture/` | `feature/telemetry-frontend-capture` | Mergeado | #18 |
 | Almacenamiento de telemetría | `telemetry-storage/` | `feature/telemetry-storage` | PR abierto | #19 |
 | Reporte técnico de telemetría | `telemetry-report/` | `feature/telemetry-report` | PR abierto | — |
+| Diseño del Pipeline de Desempeño de Negocio (1/3) | `pipeline-design/` | `feature/pipeline-design` | En curso | — |
 
 Convención desde el proyecto de caching: el plan y su registro de avance se
 guardan juntos en `memory-bank/history/AAAA-MM-DD_<proyecto>.md`;
