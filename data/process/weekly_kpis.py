@@ -132,10 +132,34 @@ def transform_cache_key(raw_events: pd.DataFrame, excluded_user_ids: Iterable[st
 # ---------------------------------------------------------------------------
 
 
+class RawEventsSchemaError(ValueError):
+    """La extracción no tiene la forma esperada (§3.3 del diseño)."""
+
+
+@dataclass(frozen=True)
+class PreparedEvents:
+    """Eventos limpios, deduplicados y con `week_start`, listos para calcular KPIs."""
+
+    events: pd.DataFrame
+    stats: dict[str, Any] = field(default_factory=dict)
+
+
+def ensure_raw_events(raw_events: Any) -> pd.DataFrame:
+    """Defensa de entrada: un DataFrame con todas las columnas de la extracción."""
+    if not isinstance(raw_events, pd.DataFrame):
+        raise TypeError(
+            f"Se esperaba un DataFrame de telemetry_events y llegó {type(raw_events).__name__}."
+        )
+    missing = [column for column in RAW_COLUMNS if column not in raw_events.columns]
+    if missing:
+        raise RawEventsSchemaError(f"Faltan columnas de la extracción: {', '.join(missing)}.")
+    return raw_events
+
+
 def refine_events(raw_events: pd.DataFrame) -> pd.DataFrame:
-    """T1: tipos correctos antes de agrupar."""
-    events = raw_events.reindex(columns=list(RAW_COLUMNS)).copy()
-    events["timestamp"] = pd.to_datetime(events["timestamp"], utc=True, format="ISO8601")
+    """T1: tipos correctos antes de agrupar. Un `timestamp` ilegible queda como NaT."""
+    events = ensure_raw_events(raw_events).reindex(columns=list(RAW_COLUMNS)).copy()
+    events["timestamp"] = pd.to_datetime(events["timestamp"], utc=True, format="ISO8601", errors="coerce")
     for column in ("id", "event_type", "event_id", "warehouse", "client_id", "user_id", "request_id"):
         events[column] = events[column].astype("string").str.strip()
     quantity = pd.to_numeric(events["quantity"], errors="coerce")
@@ -150,11 +174,20 @@ def rejection_reasons(events: pd.DataFrame) -> pd.Series:
     quantity_ok = events["quantity"].fillna(0) >= 1
     conditions = [
         events["event_id"].isna() | (events["event_id"] == ""),
+        events["timestamp"].isna(),
+        ~events["event_type"].isin(KPI_EVENT_TYPES).fillna(False),
         ~events["warehouse"].isin(WAREHOUSES).fillna(False),
         ~client_ok.astype(bool),
         (events["event_type"] == INBOUND).fillna(False) & ~quantity_ok.astype(bool),
     ]
-    choices = ["missing_event_id", "invalid_warehouse", "invalid_client_id", "invalid_quantity"]
+    choices = [
+        "missing_event_id",
+        "invalid_timestamp",
+        "invalid_event_type",
+        "invalid_warehouse",
+        "invalid_client_id",
+        "invalid_quantity",
+    ]
     return pd.Series(np.select(conditions, choices, default=""), index=events.index)
 
 
@@ -165,45 +198,8 @@ def add_week_start(events: pd.DataFrame) -> pd.DataFrame:
     return events.assign(week_start=monday.dt.date)
 
 
-def aggregate_weekly_kpis(events: pd.DataFrame) -> pd.DataFrame:
-    """T5 y T6: una fila por almacén × cliente × semana con los cuatro KPIs."""
-    if events.empty:
-        return pd.DataFrame({column: pd.Series(dtype="object") for column in OUTPUT_COLUMNS})
-
-    event_type = events["event_type"]
-    flags = events.assign(
-        inbound_units=events["quantity"].where(event_type == INBOUND, 0).fillna(0).astype("int64"),
-        is_outbound=(event_type == OUTBOUND).astype("int64"),
-        is_stockout=(event_type == STOCKOUT).astype("int64"),
-        is_discrepancy=(event_type == DISCREPANCY).astype("int64"),
-    )
-    kpis = flags.groupby(list(GRAIN), as_index=False, observed=True).agg(
-        inbound_units_count=("inbound_units", "sum"),
-        outbound_orders_count=("is_outbound", "sum"),
-        stockout_events_count=("is_stockout", "sum"),
-        discrepancy_events_count=("is_discrepancy", "sum"),
-    )
-    outbound = kpis["outbound_orders_count"]
-    # BRIEFING §4: discrepancias / pedidos de salida, 0 si no hubo pedidos esa semana.
-    kpis["discrepancy_rate"] = (
-        (kpis["discrepancy_events_count"] / outbound.where(outbound > 0)).fillna(0.0).astype("float64")
-    )
-    kpis["warehouse"] = kpis["warehouse"].astype(object)
-    kpis["client_id"] = kpis["client_id"].astype(object)
-    for column in KPI_COLUMNS[:-1]:
-        kpis[column] = kpis[column].astype("int64")
-    return (
-        kpis[list(OUTPUT_COLUMNS)]
-        .sort_values(["week_start", "warehouse", "client_id"], kind="stable")
-        .reset_index(drop=True)
-    )
-
-
-def transform_events(
-    raw_events: pd.DataFrame,
-    excluded_user_ids: Iterable[str] = (),
-) -> TransformResult:
-    """Encadena T1–T6 y devuelve los KPIs con las estadísticas para `pipeline_runs`."""
+def prepare_events(raw_events: pd.DataFrame, excluded_user_ids: Iterable[str] = ()) -> PreparedEvents:
+    """T1–T4: refinar, rechazar inválidos, deduplicar por eventId, excluir verificación y semana ISO."""
     excluded = tuple(excluded_user_ids)
     events = refine_events(raw_events)
     events = events.assign(rejection_reason=rejection_reasons(events))
@@ -218,9 +214,8 @@ def transform_events(
     kept = deduplicated[~is_excluded]
     is_rejected = kept["rejection_reason"] != ""
     rejected = kept[is_rejected]
-    valid = add_week_start(kept[~is_rejected])
+    valid = add_week_start(kept[~is_rejected]).drop(columns=["rejection_reason"])
 
-    kpis = aggregate_weekly_kpis(valid)
     stats = {
         "events_extracted": int(len(raw_events)),
         "duplicates_dropped": int(duplicates_dropped),
@@ -239,9 +234,105 @@ def transform_events(
             }
             for warehouse in WAREHOUSES
         },
-        "kpi_rows": int(len(kpis)),
     }
-    return TransformResult(kpis=kpis, stats=stats)
+    return PreparedEvents(events=valid.reset_index(drop=True), stats=stats)
+
+
+# ---------------------------------------------------------------------------
+# T5: un cálculo por KPI de la sección "KPIs a medir" del BRIEFING
+# ---------------------------------------------------------------------------
+
+
+def _empty_grain(column: str) -> pd.DataFrame:
+    return pd.DataFrame({name: pd.Series(dtype="object") for name in GRAIN}).assign(
+        **{column: pd.Series(dtype="int64")}
+    )
+
+
+def _per_grain(events: pd.DataFrame, event_type: str, column: str, units: bool = False) -> pd.DataFrame:
+    selected = events[events["event_type"] == event_type]
+    if selected.empty:
+        return _empty_grain(column)
+    grouped = selected.groupby(list(GRAIN), as_index=False, observed=True)
+    if units:
+        result = grouped["quantity"].sum().rename(columns={"quantity": column})
+    else:
+        result = grouped.size().rename(columns={"size": column})
+    result[column] = result[column].astype("int64")
+    return result
+
+
+def inbound_volume(events: pd.DataFrame) -> pd.DataFrame:
+    """Volumen de entrada: unidades recibidas (suma de `quantity` de inbound_order_created)."""
+    return _per_grain(events, INBOUND, "inbound_units_count", units=True)
+
+
+def outbound_throughput(events: pd.DataFrame) -> pd.DataFrame:
+    """Throughput de salida: pedidos preparados y despachados (conteo de outbound_order_created)."""
+    return _per_grain(events, OUTBOUND, "outbound_orders_count")
+
+
+def stockout_frequency(events: pd.DataFrame) -> pd.DataFrame:
+    """Frecuencia de quiebre de stock: cruces bajo el mínimo (conteo de stock_threshold_triggered)."""
+    return _per_grain(events, STOCKOUT, "stockout_events_count")
+
+
+def discrepancy_events(events: pd.DataFrame) -> pd.DataFrame:
+    """Conteo de apoyo de la Tasa de discrepancia (inventory_discrepancy_detected)."""
+    return _per_grain(events, DISCREPANCY, "discrepancy_events_count")
+
+
+def discrepancy_rate(discrepancy_events_count: pd.Series, outbound_orders_count: pd.Series) -> pd.Series:
+    """Tasa de discrepancia: discrepancias / pedidos de salida, 0 si no hubo pedidos (BRIEFING §4)."""
+    outbound = outbound_orders_count.astype("float64")
+    rate = discrepancy_events_count.astype("float64") / outbound.where(outbound > 0)
+    return rate.fillna(0.0).astype("float64")
+
+
+def combine_weekly_kpis(
+    inbound: pd.DataFrame,
+    outbound: pd.DataFrame,
+    stockouts: pd.DataFrame,
+    discrepancies: pd.DataFrame,
+) -> pd.DataFrame:
+    """T6: una fila por almacén × cliente × semana con los cuatro KPIs."""
+    grain = list(GRAIN)
+    frames = [inbound, outbound, stockouts, discrepancies]
+    if all(frame.empty for frame in frames):
+        return pd.DataFrame({column: pd.Series(dtype="object") for column in OUTPUT_COLUMNS})
+    kpis = frames[0]
+    for frame in frames[1:]:
+        kpis = kpis.merge(frame, on=grain, how="outer")
+    for column in KPI_COLUMNS[:-1]:
+        kpis[column] = kpis[column].fillna(0).astype("int64")
+    kpis["discrepancy_rate"] = discrepancy_rate(kpis["discrepancy_events_count"], kpis["outbound_orders_count"])
+    kpis["warehouse"] = kpis["warehouse"].astype(object)
+    kpis["client_id"] = kpis["client_id"].astype(object)
+    return (
+        kpis[list(OUTPUT_COLUMNS)]
+        .sort_values(["week_start", "warehouse", "client_id"], kind="stable")
+        .reset_index(drop=True)
+    )
+
+
+def aggregate_weekly_kpis(events: pd.DataFrame) -> pd.DataFrame:
+    """T5 + T6 sobre eventos ya preparados."""
+    return combine_weekly_kpis(
+        inbound_volume(events),
+        outbound_throughput(events),
+        stockout_frequency(events),
+        discrepancy_events(events),
+    )
+
+
+def transform_events(
+    raw_events: pd.DataFrame,
+    excluded_user_ids: Iterable[str] = (),
+) -> TransformResult:
+    """Encadena T1–T6 y devuelve los KPIs con las estadísticas para `pipeline_runs`."""
+    prepared = prepare_events(raw_events, excluded_user_ids)
+    kpis = aggregate_weekly_kpis(prepared.events)
+    return TransformResult(kpis=kpis, stats={**prepared.stats, "kpi_rows": int(len(kpis))})
 
 
 def validate_kpis(kpis: pd.DataFrame, weeks: list[date]) -> list[str]:
