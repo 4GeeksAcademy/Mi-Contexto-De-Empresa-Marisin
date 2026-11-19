@@ -185,7 +185,7 @@ La consulta aprovecha los índices de `timestamp` y `event_type`. Una segunda co
 ## 4. Flujo de datos
 
 ```mermaid
-flowchart LR
+flowchart TB
     subgraph Fuente["Fuente · solo lectura"]
         TE[("public.telemetry_events<br/>inbound_order_created<br/>outbound_order_created<br/>stock_threshold_triggered<br/>inventory_discrepancy_detected")]
         DOM[("public.stock_entries<br/>public.stock_exits")]
