@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from services.api import database
-from services.api.auth import get_current_user
+from services.api.security import get_current_user
 from services.api.cache import telemetry_report_cache
 from services.api.main import app
 from services.api.routes import telemetry as telemetry_route

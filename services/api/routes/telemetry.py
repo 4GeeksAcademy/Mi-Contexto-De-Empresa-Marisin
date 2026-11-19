@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session
 
 from .. import database
-from ..auth import get_current_user
+from ..security import get_current_user
 from ..cache import CACHE_ENABLED, TELEMETRY_REPORT_TTL, telemetry_report_cache
 from ..database import get_db
 from ..telemetry_ingest import (
