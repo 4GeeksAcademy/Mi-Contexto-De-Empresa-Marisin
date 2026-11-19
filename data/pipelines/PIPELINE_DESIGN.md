@@ -3,7 +3,7 @@
 > **Proyecto 4Geeks:** Hito — Diseño de un Pipeline de Desempeño de Negocio (Parte 1 de 3).
 > **Compañía:** TrackFlow · monorepo `Mi-Contexto-De-Empresa-Marisin`.
 > **Fuente de verdad del negocio:** `trackflow-BRIEFING` de data pipelines (syllabus, `content/contexts/06-telemetry-data-pipelines/data-pipelines/`), construido sobre las métricas obligatorias del `trackflow-BRIEFING` de telemetría.
-> **Estado:** solo diseño. No hay código de orquestación todavía; la implementación llega en la Parte 2 y los subflows y tests en la Parte 3.
+> **Estado:** diseño aprobado (Parte 1) e **implementado en la Parte 2** (`data/pipelines/pipeline.py`). La §15 recoge cómo ejecutarlo; la Parte 3 dividirá las etapas en subflows.
 
 ## Ficha rápida
 
@@ -17,7 +17,7 @@
 | Grano | 1 fila por `warehouse` × `client_id` × semana ISO (`week_start` = lunes, UTC) |
 | KPIs | Volumen de entrada, Throughput de salida, Frecuencia de quiebre de stock, Tasa de discrepancia |
 | Exposición | Módulo nuevo `services/reporting/` (3 endpoints) |
-| Orquestador | Prefect: 1 flow principal, 6 tasks, 2 blocks, 1 deployment semanal |
+| Orquestador | Prefect 3: 1 flow, 9 tasks (2 opcionales), 2 blocks, programación semanal con `serve` |
 | Fuera de alcance | `services/telemetry/analysis.py`, `GET /telemetry/report` y cualquier escritura en `telemetry_events` |
 
 ---
@@ -207,7 +207,8 @@ flowchart TB
         T4["week_start = lunes ISO (UTC)"]
         T5["Agrupar warehouse × client_id × week_start<br/>sum(quantity) · count(...)"]
         T6["discrepancy_rate =<br/>discrepancias / pedidos (0 si no hay)"]
-        V["validate_weekly_kpis<br/>contratos + cobertura"]
+        V["validate_weekly_kpis<br/>contratos del BRIEFING"]
+        COV["check_capture_coverage<br/>(opcional)"]
     end
 
     subgraph L["3 · Carga"]
@@ -225,8 +226,9 @@ flowchart TB
     OPEN --> EX
     TE --> EX
     EX --> T1 --> T2 --> T3 --> T4 --> T5 --> T6 --> V
-    DOM -. cobertura .-> V
-    V --> LD --> DEST
+    DOM -. cobertura .-> COV
+    V --> COV --> LD --> DEST
+    LD --> SNAP["export_eval_snapshot<br/>(opcional) · data/eval/"]
     LD --> CLOSE["close_pipeline_run<br/>status · conteos · errores"] --> RUNS
     DEST --> API1
     RUNS --> API2
@@ -325,7 +327,7 @@ alter table reporting.pipeline_runs enable row level security;
 
 | | Reporte técnico (no se toca) | Este pipeline |
 |---|---|---|
-| Código | `services/telemetry/analysis.py` | `data/pipelines/weekly_warehouse_client_performance/` + `data/process/weekly_kpis.py` |
+| Código | `services/telemetry/analysis.py` | `data/pipelines/pipeline.py` (+ `extract.py`, `load.py`, `runs.py`…) y `data/process/weekly_kpis.py` |
 | Resultado | Calculado al vuelo, caché 60 s | Materializado en `reporting.*` |
 | Endpoint | `GET /telemetry/report` | `services/reporting/` → `/reporting/...` |
 | Relación con `telemetry_events` | Lee | Lee (nunca escribe) |
@@ -436,16 +438,21 @@ Una fila por corrida, creada **antes** de extraer (`status = 'running'`) y cerra
 
 | Task | Etapa | Entrada → salida | Configuración Prefect |
 |---|---|---|---|
-| `open_pipeline_run` | Control | ventana, trigger → `run_id`; inserta `pipeline_runs` (`running`), cierra corridas `stale` y rechaza si hay otra viva | `retries=2` |
-| `extract_kpi_events` | **Extracción** | ventana → DataFrame crudo (+ conteos de silencio §10.1) | `retries=3`, `retry_delay_seconds=[10, 30, 60]`, `timeout_seconds=120` |
-| `transform_weekly_kpis` | **Transformación** | DataFrame crudo → DataFrame con grano del BRIEFING + estadísticas (duplicados, excluidos, rechazados) | sin reintentos (determinista: reintentar no arregla un bug) |
-| `validate_weekly_kpis` | Transformación (calidad) | DataFrame final + `stock_entries`/`stock_exits` → avisos y cobertura; falla si viola contratos | sin reintentos |
+| `open_pipeline_run` | Control | ventana, trigger → `OpenRunResult`; inserta `pipeline_runs` (`running`), cierra corridas `stale` y no abre si hay otra viva | `retries=2`, `retry_delay_seconds=5` |
+| `extract_kpi_events` | **Extracción** | ventana → DataFrame crudo + señales de silencio (§10.1) | `retries=3`, `retry_delay_seconds=[10, 30, 60]`, `timeout_seconds=120`, sin caché |
+| `transform_weekly_kpis` | **Transformación** | DataFrame crudo → `TransformResult` (grano del BRIEFING + estadísticas) | **caché**: `cache_key_fn` (huella de los eventos + exclusiones + versión) y `cache_expiration=1 h`; sin reintentos (determinista) |
+| `validate_weekly_kpis` | Transformación (calidad) | DataFrame final → falla si viola los contratos del BRIEFING | sin reintentos |
+| `check_capture_coverage` | Calidad (**opcional**) | órdenes de `stock_entries`/`stock_exits` → cobertura y avisos (§10.3) | `retries=1`; se invoca con `return_state=True` |
 | `load_weekly_kpis` | **Carga** | DataFrame final → conteos `rows_*`; transacción única con upsert + reconciliación | `retries=3`, `retry_delay_seconds=30`, `timeout_seconds=120` |
-| `close_pipeline_run` | Control | estadísticas → `pipeline_runs` (`completed`) | `retries=2`; el fallo lo registra el hook `on_failure` del flow |
+| `export_eval_snapshot` | Eval (**opcional**) | KPIs + estadísticas → `data/eval/snapshots/weekly_warehouse_client_performance_latest.json` | sin reintentos; se invoca con `return_state=True` |
+| `heartbeat_pipeline_run` | Control | fase + conteos → checkpoint en `pipeline_runs` | `retries=2` |
+| `close_pipeline_run` | Control | estado, avisos y error → `pipeline_runs` (`completed`/`failed`) | `retries=2` |
 
-Las tasks llaman a funciones normales de `data/process/weekly_kpis.py` y `data/pipelines/weekly_warehouse_client_performance/`: Prefect orquesta, la lógica es Python puro y se prueba sin Prefect.
+**Tolerancia a fallos parciales:** las etapas críticas también se invocan con `return_state=True`: si su state no es `Completed`, el flow registra el error en `pipeline_runs` (`failed`, `error_type`, `error_message`) y se detiene. Las dos tasks opcionales, si fallan, solo añaden un aviso `<task>_failed:<Excepción>` a `warnings` y la corrida sigue.
 
-**Flow opcional (backfill):** `backfill_weekly_warehouse_client_performance(start_week: date, end_week: date)` llama al flow principal por tramos de 4 semanas con `trigger="backfill"`. En la Parte 3 las etapas pasan a ser subflows.
+Las tasks llaman a funciones normales de `data/process/weekly_kpis.py` y de los módulos de `data/pipelines/`: Prefect orquesta, la lógica es Python puro y se prueba sin Prefect.
+
+**Backfill:** en la Parte 2 se hace con el mismo flow y `--trigger backfill --week-start …` (o `--lookback-weeks N`). Un flow dedicado de backfill queda para la Parte 3, junto con los subflows.
 
 ### 9.2 States relevantes
 
@@ -455,9 +462,10 @@ Las tasks llaman a funciones normales de `data/process/weekly_kpis.py` y `data/p
 | `Running` | El flow empezó | `running` (creada por `open_pipeline_run`) |
 | `Retrying` | Una task de extracción o carga falló y Prefect la reintenta | sigue `running`; `heartbeat_at` se actualiza |
 | `Completed` | Todas las tasks terminaron | `completed` |
-| `Failed` | Una task agotó reintentos o falló la validación | `failed` (hook `on_failure` con `error_type`/`error_message`) |
+| `Cached` | `transform_weekly_kpis` reutiliza un resultado de la última hora con la misma clave | no cambia (sigue `running`) |
+| `Failed` | Una task crítica agotó reintentos o falló la validación | `failed` (el flow lo registra con `error_type`/`error_message` antes de detenerse) |
 | `Crashed` | El proceso murió (OOM, reinicio del worker) sin poder ejecutar hooks | queda `running`; la siguiente corrida la pasa a `failed` (`stale_run`) |
-| `Cancelled` | `open_pipeline_run` detecta otra corrida viva y cancela esta | no crea fila; el `POST` devuelve 409 |
+| `Cancelled` | `open_pipeline_run` detecta otra corrida viva y el flow devuelve `Cancelled` | no crea fila; el `POST` devuelve 409 |
 
 ### 9.3 Blocks
 
@@ -470,7 +478,7 @@ Cuando el pipeline corre dentro de la API (disparo manual), la URL sale de `DATA
 
 ### 9.4 Deployment
 
-- Nombre: `weekly-warehouse-client-performance/weekly`.
+- Nombre: `weekly_warehouse_client_performance/weekly`, creado con `python data/pipelines/pipeline.py --serve` (`flow.serve`).
 - Schedule: `cron "0 5 * * 1"`, zona `UTC` (lunes 06:00 en Madrid en invierno, 07:00 en verano; domingo 21:00/22:00 en Los Ángeles). Listo antes de las 07:00 de Madrid, como pide el CEO (D5).
 - Automation de Prefect: aviso si el flow termina en `Failed`/`Crashed` o si el lunes a las 06:30 UTC no hay corrida `Completed`.
 
@@ -496,7 +504,7 @@ Cuando el pipeline corre dentro de la API (disparo manual), la URL sale de `DATA
 
 ### 10.3 Crecimiento frente a pérdida de datos
 
-El volumen de eventos varía por la propia actividad (los domingos casi no hay operarios). Para saber si la caída es negocio o pérdida, `validate_weekly_kpis` compara por almacén y semana:
+El volumen de eventos varía por la propia actividad (los domingos casi no hay operarios). Para saber si la caída es negocio o pérdida, la task opcional `check_capture_coverage` compara por almacén en la ventana de la corrida:
 
 - `inbound_order_created` frente a filas de `stock_entries` y `outbound_order_created` frente a `stock_exits` (con "Los Angeles" → `los_angeles` y el cliente vía `skus.client_name` → slug, la misma normalización de `telemetry-mappers.ts`, excluyendo SKUs `LOAD-`).
 - `coverage = eventos / filas de dominio`. Por debajo de `coverage_warning_threshold` (0,9) → aviso `low_capture_coverage`; por encima de 1 → posibles duplicados no detectados.
@@ -555,11 +563,11 @@ Escenario: el cron empieza a las 05:00 UTC y a las 05:05 alguien pulsa "Correr p
 
 Módulo nuevo `services/reporting/` (router `prefix="/reporting"`, `tags=["reporting"]`), incluido en `services/api/main.py` junto a los demás routers, **sin tocar** `services/telemetry/` ni `services/api/routes/telemetry.py`. Todos exigen sesión (`security.get_current_user`) y declaran `response_model` (lo exige `tests/test_serialization_contracts.py`, que pasará de 33 a 36 rutas). Ningún endpoint contiene lógica de ETL: solo validan la petición, llaman a `data/pipelines/` y traducen errores a HTTP.
 
-| Endpoint | Uso | Llama a (en `data/pipelines/weekly_warehouse_client_performance/`) | Respuesta |
+| Endpoint | Uso | Llama a (en `data/pipelines/`) | Respuesta |
 |---|---|---|---|
 | `GET /reporting/weekly-warehouse-client-performance?week_start=AAAA-MM-DD` | **Consulta de KPIs**: el feed del dashboard de la Parte 3 | `queries.get_weekly_performance(engine, week_start)` | Formato del BRIEFING `{week_start, entries: [...]}`; sin `week_start`, la semana calculada más reciente. 422 si la fecha no es lunes; 404 si la semana no está calculada; 503 si falla la BD |
 | `GET /reporting/pipeline-runs/latest` | **Consulta de estado** de la última corrida | `queries.get_latest_pipeline_run(engine)` | `run_id`, `status`, `trigger`, ventana, horas, conteos y error; 404 si nunca corrió |
-| `POST /reporting/pipeline-runs` | **Disparo manual** (body opcional `{"week_start": "AAAA-MM-DD"}`) | `triggers.trigger_manual_run(week_start, triggered_by)` → ejecuta `flow.weekly_warehouse_client_performance_flow` en segundo plano | **202** `{run_id, status: "running"}`; **409** si ya hay una corrida viva; 403 si el rol no es `admin` o `manager` |
+| `POST /reporting/pipeline-runs` | **Disparo manual** (body opcional `{"week_start": "AAAA-MM-DD"}`) | `triggers.trigger_manual_run(engine, week_start=…, triggered_by=…)` → ejecuta `pipeline.weekly_warehouse_client_performance_flow` en un hilo aparte | **202** `{run_id, status: "pending", week_start}`; **409** si ya hay una corrida viva; 403 si el rol no es `admin` o `manager` |
 
 Forma esperada de `GET /reporting/weekly-warehouse-client-performance?week_start=2026-11-16` con los datos de hoy (unidades ilustrativas):
 
@@ -580,36 +588,37 @@ Forma esperada de `GET /reporting/weekly-warehouse-client-performance?week_start
 }
 ```
 
-(Los números exactos se confirmarán con la primera corrida real de la Parte 2.)
+(La muestra real de la Parte 2 queda en la evidencia del PR.)
 
 ### 13.2 Importaciones y despliegue
 
 - Dirección de dependencias: `services/reporting/` **importa** de `data/pipelines/`; `data/` nunca importa de `services/`. Las funciones de `data/pipelines/` reciben el `engine` como parámetro, igual que `analysis.py` (D47), para no depender de cómo arranque la API.
-- Hallazgo para la Parte 2: el contenedor de la API monta solo `./services` en `/app` (y `./packages`). Para que los endpoints importen `data.pipelines`, el `docker-compose.yml` necesitará montar también `./data` y el `PYTHONPATH` deberá incluirlo; con `uvicorn services.api.main:app` desde la raíz ya funciona. Se resolverá con el mismo patrón `try/except ModuleNotFoundError` que usa `routes/telemetry.py`.
-- `prefect` no está en `pyproject.toml` ni en `services/requirements.txt`: se añadirá en la Parte 2.
+- Docker: `docker-compose.yml` monta `./data` en `/app/data`, así que dentro del contenedor `data.pipelines` también se importa. `services/reporting/router.py` y `services/api/main.py` usan el mismo patrón `try/except ModuleNotFoundError` que `routes/telemetry.py`.
+- `prefect>=3` está en `pyproject.toml`/`uv.lock` (`uv add "prefect>=3"`) y en `services/requirements.txt` para la imagen de la API.
 
-### 13.3 Estructura de ficheros prevista (Parte 2)
+### 13.3 Estructura de ficheros (implementada en la Parte 2)
 
 ```text
 data/
 ├── pipelines/
-│   ├── PIPELINE_DESIGN.md                        ← este documento
-│   └── weekly_warehouse_client_performance/
-│       ├── __init__.py
-│       ├── flow.py          # flow + tasks de Prefect
-│       ├── extract.py       # consulta de §3.3
-│       ├── load.py          # upsert + reconciliación (§6)
-│       ├── runs.py          # pipeline_runs: abrir, heartbeat, cerrar, stale
-│       ├── queries.py       # lecturas para los endpoints
-│       ├── triggers.py      # disparo manual desde la API
-│       └── sql/001_reporting_schema.sql
-└── process/
-    └── weekly_kpis.py       # T1–T6, funciones puras de Pandas
+│   ├── PIPELINE_DESIGN.md        ← este documento
+│   ├── pipeline.py               # punto de entrada: flow + tasks de Prefect + CLI
+│   ├── config.py                 # blocks Secret/JSON, PipelineConfig y engine
+│   ├── extract.py                # consultas de §3.3, señales y cobertura (solo lectura)
+│   ├── load.py                   # upsert + reconciliación en una transacción (§6)
+│   ├── runs.py                   # pipeline_runs: abrir, heartbeat, cerrar, stale
+│   ├── queries.py                # lecturas para los endpoints
+│   ├── triggers.py               # disparo manual desde la API
+│   └── sql/001_reporting_schema.sql
+├── process/
+│   └── weekly_kpis.py            # T1–T6, funciones puras de Pandas
+└── eval/
+    └── snapshots/                # snapshot de la última corrida (ignorado por git)
 services/
 └── reporting/
     ├── __init__.py
-    ├── router.py            # los 3 endpoints
-    └── schemas.py           # modelos de respuesta
+    ├── router.py                 # los 3 endpoints
+    └── schemas.py                # modelos de respuesta (contrato del BRIEFING)
 ```
 
 ---
@@ -645,3 +654,31 @@ services/
 - KPIs de transportistas, devoluciones, coste o satisfacción (otros dashboards del CONTEXT).
 - Dimensión de moneda (el BRIEFING la excluye) y agregados entre clientes en la misma fila.
 - Generación del PDF o del correo del lunes: este pipeline deja los datos listos; el informe automático es un consumidor posterior.
+
+---
+
+## 15. Ejecución y frecuencia (Parte 2)
+
+**Frecuencia del ciclo de reporting:** semanal. El reporte se recalcula cada **lunes a las 05:00 UTC** (06:00/07:00 en Madrid, domingo por la noche en Los Ángeles), sobre las **4 últimas semanas ISO cerradas**, para que Thomas y Ana lo tengan antes de empezar la semana. Entre medias, `POST /reporting/pipeline-runs` permite recalcular una semana concreta.
+
+**Preparación (una vez):** ejecutar `data/pipelines/sql/001_reporting_schema.sql` en el SQL Editor de Supabase y tener `DATABASE_URL` en `.env` (la misma que usa la API).
+
+**Comandos** (desde la raíz del repo, con el entorno virtual activado):
+
+```bash
+# Corrida completa: 4 últimas semanas cerradas
+python data/pipelines/pipeline.py
+
+# Una semana concreta (lunes ISO), p. ej. la semana en curso
+python data/pipelines/pipeline.py --week-start 2026-11-16
+
+# Varias semanas hacia atrás (backfill)
+python data/pipelines/pipeline.py --lookback-weeks 8 --trigger backfill
+
+# Programación semanal (deja el proceso escuchando el cron 0 5 * * 1)
+python data/pipelines/pipeline.py --serve
+```
+
+El comando imprime un resumen JSON (`run_id`, semanas, eventos extraídos, filas de KPIs, `rows_*` y avisos). Cada corrida queda registrada en `reporting.pipeline_runs` y se consulta con `GET /reporting/pipeline-runs/latest`.
+
+**Idempotencia verificable:** ejecutar dos veces seguidas el mismo comando deja `reporting.weekly_warehouse_client_performance` idéntica: la segunda corrida muestra `rows_inserted = 0`, `rows_updated = 0` y todas las filas en `rows_unchanged`, y su transformación sale de la caché (state `Cached`).
