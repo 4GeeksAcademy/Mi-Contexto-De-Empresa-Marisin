@@ -31,6 +31,8 @@ services:
     volumes:
       - ./services:/app
       - ./packages:/app/packages
+      # El Pipeline de Desempeño de Negocio vive en data/pipelines/ y lo importa services/reporting/.
+      - ./data:/app/data
     env_file:
       - path: ./.env
         required: false
