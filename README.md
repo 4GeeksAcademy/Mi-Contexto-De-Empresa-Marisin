@@ -64,6 +64,30 @@ ai-engineering-company-project-monorepo/
 
 ---
 
+## Async task queue (Celery + Redis)
+
+Heavy operations do not run inside the FastAPI process. `POST /reporting/pipeline-runs`
+enqueues the business pipeline as a Celery task and returns `202 Accepted` with a
+`task_id`; a **separate worker process** runs it; `GET /tasks/{task_id}` returns its
+state (`pending`, `started`, `success`, `failure`). After 3 retries with exponential
+backoff (5 s, 10 s, 20 s) a task is sent to the `dead_letter` queue and recorded in
+`public.task_dead_letters`. Details: [`docs/async-tasks/README.md`](docs/async-tasks/README.md).
+
+**Start** (from the repo root, with `.venv` active):
+
+```bash
+docker compose up -d redis flower                  # broker on :6379, Flower on :5555
+celery -A services.celery_app worker -l info       # worker, in its own terminal
+python -m uvicorn services.api.main:app --port 8000 --reload   # API, in another terminal
+```
+
+**Stop the worker:** `Ctrl+C` once in its terminal (warm shutdown: it finishes the
+current task; unacknowledged messages stay in Redis). From another terminal:
+`pkill -TERM -f "celery -A services.celery_app worker"`. Stop Redis and Flower with
+`docker compose stop redis flower`. Stopping the API does not stop the worker.
+
+---
+
 ## Milestones (reference)
 
 | Milestone | Focus        | Typical deliverables                        |

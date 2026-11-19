@@ -64,6 +64,30 @@ ai-engineering-company-project-monorepo/
 
 ---
 
+## Cola de tareas asíncronas (Celery + Redis)
+
+Las operaciones pesadas no corren dentro del proceso de FastAPI. `POST /reporting/pipeline-runs`
+encola el pipeline de negocio como tarea de Celery y responde `202 Accepted` con un
+`task_id`; un **worker en un proceso aparte** la ejecuta; `GET /tasks/{task_id}` devuelve
+su estado (`pending`, `started`, `success`, `failure`). Tras 3 reintentos con backoff
+exponencial (5 s, 10 s, 20 s) la tarea pasa a la cola `dead_letter` y queda registrada en
+`public.task_dead_letters`. Detalle: [`docs/async-tasks/README.md`](docs/async-tasks/README.md).
+
+**Levantar** (desde la raíz del repo, con `.venv` activado):
+
+```bash
+docker compose up -d redis flower                  # broker en :6379, Flower en :5555
+celery -A services.celery_app worker -l info       # worker, en su propia terminal
+python -m uvicorn services.api.main:app --port 8000 --reload   # API, en otra terminal
+```
+
+**Detener el worker:** `Ctrl+C` una vez en su terminal (parada en caliente: termina la
+tarea en curso; los mensajes sin ACK siguen en Redis). Desde otra terminal:
+`pkill -TERM -f "celery -A services.celery_app worker"`. Redis y Flower se detienen con
+`docker compose stop redis flower`. Detener la API no detiene el worker.
+
+---
+
 ## Hitos (referencia)
 
 | Hito | Enfoque       | Entregables típicos                              |
