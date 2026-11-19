@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timedelta, timezone
 import json
+import logging
 from pathlib import Path
 import sys
 from typing import Any
@@ -47,6 +48,7 @@ import pandas as pd
 from prefect import flow, get_run_logger, task
 from prefect.cache_policies import NO_CACHE
 from prefect.context import TaskRunContext
+from prefect.exceptions import MissingContextError
 from prefect.runtime import flow_run
 from prefect.states import Cancelled, State
 
@@ -61,6 +63,14 @@ SCHEDULE_CRON = "0 5 * * 1"  # lunes 05:00 UTC
 EVAL_SNAPSHOT_PATH = (
     REPO_ROOT / "data" / "eval" / "snapshots" / "weekly_warehouse_client_performance_latest.json"
 )
+
+
+def task_logger() -> logging.Logger | logging.LoggerAdapter:
+    """Logger del run de Prefect; fuera de un run (tests con `task.fn`), el logger estándar."""
+    try:
+        return get_run_logger()
+    except MissingContextError:
+        return logging.getLogger(__name__)
 
 
 class PipelineStageError(RuntimeError):
@@ -153,7 +163,7 @@ def close_pipeline_run(
     cache_policy=NO_CACHE,
 )
 def extract_kpi_events(window_start: date, window_end: date) -> dict[str, Any]:
-    logger = get_run_logger()
+    logger = task_logger()
     engine = get_engine()
     events = extract.extract_events(engine, window_start, window_end)
     signals = extract.extract_source_signals(engine, window_start, window_end)
@@ -199,7 +209,7 @@ def prepare_kpi_events(raw_events: pd.DataFrame, excluded_user_ids: tuple[str, .
     """Refina tipos, rechaza filas inválidas, deduplica por eventId, excluye verificación y añade week_start."""
     prepared = weekly_kpis.prepare_events(raw_events, excluded_user_ids)
     stats = prepared.stats
-    get_run_logger().info(
+    task_logger().info(
         "Preparación: %d eventos válidos, %d duplicados, %d excluidos, %d rechazados",
         len(prepared.events),
         stats["duplicates_dropped"],
@@ -269,7 +279,7 @@ def validate_weekly_kpis(kpis: pd.DataFrame, weeks: list[date]) -> int:
 )
 def load_weekly_kpis(run_id: UUID, kpis: pd.DataFrame, weeks: list[date]) -> dict[str, int]:
     counts = load.upsert_weekly_kpis(get_engine(), run_id, weekly_kpis.kpis_to_records(kpis), weeks)
-    get_run_logger().info("Carga: %s", counts)
+    task_logger().info("Carga: %s", counts)
     return counts
 
 
