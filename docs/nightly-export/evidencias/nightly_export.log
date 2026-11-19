@@ -1,0 +1,26 @@
+2026-11-19T16:35:02Z | INFO | job=nightly_export | status=starting | target_date=2026-11-13 | run_id=- | Arranque (pid=44807, fecha de TARGET_DATE).
+2026-11-19T16:35:02Z | INFO | job=nightly_export | status=pending | target_date=2026-11-13 | run_id=74ffc363-a3c4-4cfd-bd59-ad2a35d9f8c7 | Ejecución registrada.
+2026-11-19T16:35:03Z | INFO | job=nightly_export | status=processing | target_date=2026-11-13 | run_id=74ffc363-a3c4-4cfd-bd59-ad2a35d9f8c7 | Inicio del trabajo (lock tomado).
+2026-11-19T16:35:03Z | INFO | job=nightly_export | status=processing | target_date=2026-11-13 | run_id=74ffc363-a3c4-4cfd-bd59-ad2a35d9f8c7 | CSV exportado: data/raw/telemetry_2026-11-13.csv (0 filas).
+2026-11-19T16:35:03Z | INFO | job=nightly_export | status=processing | target_date=2026-11-13 | run_id=74ffc363-a3c4-4cfd-bd59-ad2a35d9f8c7 | Lanzando el pipeline: -m data.pipelines.pipeline --week-start 2026-11-09 --trigger backfill
+2026-11-19T16:35:18Z | INFO | job=nightly_export | status=processing | target_date=2026-11-13 | run_id=74ffc363-a3c4-4cfd-bd59-ad2a35d9f8c7 | Pipeline terminado: pipeline_run_id=74148015-5d29-478b-bfe7-ba077db0fbc1 status=completed weeks=2026-11-09 inserted=0 updated=0
+2026-11-19T16:35:18Z | INFO | job=nightly_export | status=completed | target_date=2026-11-13 | run_id=74ffc363-a3c4-4cfd-bd59-ad2a35d9f8c7 | Fin del trabajo: ejecución completada.
+2026-11-19T16:35:18Z | INFO | job=nightly_export | status=finished | target_date=2026-11-13 | run_id=74ffc363-a3c4-4cfd-bd59-ad2a35d9f8c7 | Salida con código 0 (resultado: completed).
+2026-11-19T16:36:01Z | INFO | job=nightly_export | status=starting | target_date=2026-11-13 | run_id=- | Arranque (pid=45266, fecha de TARGET_DATE).
+2026-11-19T16:36:02Z | INFO | job=nightly_export | status=skipped | target_date=2026-11-13 | run_id=- | Ya hay una ejecución completed para este día: omisión por duplicado.
+2026-11-19T16:36:02Z | INFO | job=nightly_export | status=finished | target_date=2026-11-13 | run_id=- | Salida con código 0 (resultado: skipped_duplicate).
+2026-11-19T16:37:01Z | INFO | job=nightly_export | status=starting | target_date=2026-11-13 | run_id=- | Arranque (pid=45706, fecha de TARGET_DATE).
+2026-11-19T16:37:03Z | INFO | job=nightly_export | status=skipped | target_date=2026-11-13 | run_id=- | Ya hay una ejecución completed para este día: omisión por duplicado.
+2026-11-19T16:37:03Z | INFO | job=nightly_export | status=finished | target_date=2026-11-13 | run_id=- | Salida con código 0 (resultado: skipped_duplicate).
+2026-11-19T16:38:01Z | INFO | job=nightly_export | status=starting | target_date=2026-11-13 | run_id=- | Arranque (pid=46129, fecha de TARGET_DATE).
+2026-11-19T16:38:01Z | INFO | job=nightly_export | status=skipped | target_date=2026-11-13 | run_id=- | Ya hay una ejecución completed para este día: omisión por duplicado.
+2026-11-19T16:38:01Z | INFO | job=nightly_export | status=finished | target_date=2026-11-13 | run_id=- | Salida con código 0 (resultado: skipped_duplicate).
+2026-11-19T16:39:02Z | INFO | job=nightly_export | status=starting | target_date=2026-11-13 | run_id=- | Arranque (pid=46553, fecha de TARGET_DATE).
+2026-11-19T16:39:02Z | INFO | job=nightly_export | status=skipped | target_date=2026-11-13 | run_id=- | Ya hay una ejecución completed para este día: omisión por duplicado.
+2026-11-19T16:39:02Z | INFO | job=nightly_export | status=finished | target_date=2026-11-13 | run_id=- | Salida con código 0 (resultado: skipped_duplicate).
+2026-11-19T16:40:01Z | INFO | job=nightly_export | status=starting | target_date=2026-11-13 | run_id=- | Arranque (pid=47000, fecha de TARGET_DATE).
+2026-11-19T16:40:02Z | INFO | job=nightly_export | status=skipped | target_date=2026-11-13 | run_id=- | Ya hay una ejecución completed para este día: omisión por duplicado.
+2026-11-19T16:40:02Z | INFO | job=nightly_export | status=finished | target_date=2026-11-13 | run_id=- | Salida con código 0 (resultado: skipped_duplicate).
+2026-11-19T16:41:01Z | INFO | job=nightly_export | status=starting | target_date=2026-11-13 | run_id=- | Arranque (pid=47418, fecha de TARGET_DATE).
+2026-11-19T16:41:02Z | INFO | job=nightly_export | status=skipped | target_date=2026-11-13 | run_id=- | Ya hay una ejecución completed para este día: omisión por duplicado.
+2026-11-19T16:41:02Z | INFO | job=nightly_export | status=finished | target_date=2026-11-13 | run_id=- | Salida con código 0 (resultado: skipped_duplicate).

@@ -1,0 +1,27 @@
+2026-11-19T16:03:51Z | INFO | job=nightly_export | status=starting | target_date=2026-11-16 | run_id=- | Arranque (pid=29331, fecha de TARGET_DATE).
+2026-11-19T16:03:52Z | INFO | job=nightly_export | status=pending | target_date=2026-11-16 | run_id=79598105-721d-4c75-be31-d49c2f320e0c | Ejecución registrada.
+2026-11-19T16:03:52Z | INFO | job=nightly_export | status=processing | target_date=2026-11-16 | run_id=79598105-721d-4c75-be31-d49c2f320e0c | Inicio del trabajo (lock tomado).
+2026-11-19T16:03:52Z | INFO | job=nightly_export | status=processing | target_date=2026-11-16 | run_id=79598105-721d-4c75-be31-d49c2f320e0c | CSV exportado: data/raw/telemetry_2026-11-16.csv (0 filas).
+2026-11-19T16:03:52Z | INFO | job=nightly_export | status=processing | target_date=2026-11-16 | run_id=79598105-721d-4c75-be31-d49c2f320e0c | Lanzando el pipeline: -m data.pipelines.pipeline --week-start 2026-11-16 --trigger backfill
+2026-11-19T16:03:53Z | ERROR | job=nightly_export | status=failed | target_date=2026-11-16 | run_id=79598105-721d-4c75-be31-d49c2f320e0c | La ejecución falló: TimeoutExpired: Command '['/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/bin/python', '-m', 'data.pipelines.pipeline', '--week-start', '2026-11-16', '--trigger', 'backfill']' timed out after 1 seconds
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/job_runner.py", line 389, in run_job
+    work(run_id)
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/scripts/nightly_export.py", line 301, in work
+    summary = run_pipeline(command, timeout_seconds)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/scripts/nightly_export.py", line 239, in run_pipeline
+    completed = subprocess.run(
+                ^^^^^^^^^^^^^^^
+  File "/usr/local/python/current/lib/python3.12/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/current/lib/python3.12/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/current/lib/python3.12/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/usr/local/python/current/lib/python3.12/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/bin/python', '-m', 'data.pipelines.pipeline', '--week-start', '2026-11-16', '--trigger', 'backfill']' timed out after 1 seconds
+2026-11-19T16:03:53Z | ERROR | job=nightly_export | status=failed | target_date=2026-11-16 | run_id=- | Ejecución terminada con error: TimeoutExpired: Command '['/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/bin/python', '-m', 'data.pipelines.pipeline', '--week-start', '2026-11-16', '--trigger', 'backfill']' timed out after 1 seconds
