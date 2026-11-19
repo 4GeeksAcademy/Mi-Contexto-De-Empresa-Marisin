@@ -588,7 +588,7 @@ Forma esperada de `GET /reporting/weekly-warehouse-client-performance?week_start
 }
 ```
 
-(La muestra real de la Parte 2 queda en la evidencia del PR.)
+(Respuesta real de la Parte 2 en `docs/pipeline/business-pipeline-verification.md` §4: `inbound_units_count = 1`.)
 
 ### 13.2 Importaciones y despliegue
 
@@ -680,5 +680,7 @@ python data/pipelines/pipeline.py --serve
 ```
 
 El comando imprime un resumen JSON (`run_id`, semanas, eventos extraídos, filas de KPIs, `rows_*` y avisos). Cada corrida queda registrada en `reporting.pipeline_runs` y se consulta con `GET /reporting/pipeline-runs/latest`.
+
+**Verificación con datos reales:** `docs/pipeline/business-pipeline-verification.md`.
 
 **Idempotencia verificable:** ejecutar dos veces seguidas el mismo comando deja `reporting.weekly_warehouse_client_performance` idéntica: la segunda corrida muestra `rows_inserted = 0`, `rows_updated = 0` y todas las filas en `rows_unchanged`, y su transformación sale de la caché (state `Cached`).
