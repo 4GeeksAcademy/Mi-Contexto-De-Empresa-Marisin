@@ -15,7 +15,7 @@ Cada carpeta contiene `prompt.md` (instrucciones para el agente) y `progress.md`
 | Pipeline de Desempeño de Negocio Resiliente (2/3) | `pipeline-implementation/` | `feature/pipeline-implementation` | PR abierto | #22 |
 | Subflows, tests y dashboard del pipeline (3/3) | `pipeline-subflows/` | `feature/pipeline-subflows` | PR abierto | #23 |
 | Procesos en segundo plano: script nocturno de telemetría | `nightly-export/` | `feature/nightly-export` | PR abierto | #24 |
-| Colas de mensajes y tareas asíncronas (Redis + Celery) | `async-tasks/` | `feature/async-tasks` | En curso | — |
+| Colas de mensajes y tareas asíncronas (Redis + Celery) | `async-tasks/` | `feature/async-tasks` | PR abierto | #25 |
 
 Convención desde el proyecto de caching: el plan y su registro de avance se
 guardan juntos en `memory-bank/history/AAAA-MM-DD_<proyecto>.md`;
