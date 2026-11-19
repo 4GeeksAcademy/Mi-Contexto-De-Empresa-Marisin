@@ -5,8 +5,8 @@
 # 02:15 de Madrid en invierno y las 03:15 en verano. Así el día "ayer" (UTC) ya
 # está cerrado y el CSV y el pipeline terminan mucho antes de las 07:00 de Madrid.
 #
-# __REPO_ROOT__ se sustituye al instalar (ver infra/cron/README.md):
-#   sed "s#__REPO_ROOT__#$(pwd)#g" infra/cron/nightly_export.crontab | crontab -
+# El marcador de la ruta del repo (en la línea del job) se sustituye al instalar
+# con el sed de infra/cron/README.md.
 #
 # Es un proceso del sistema operativo, independiente de uvicorn/FastAPI: si la
 # API está caída o reiniciándose, el job corre igual, y al revés.
