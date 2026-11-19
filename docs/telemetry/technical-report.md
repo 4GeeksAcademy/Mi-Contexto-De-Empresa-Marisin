@@ -55,3 +55,16 @@ curl -s "http://localhost:8000/telemetry/report?start_date=2026-11-12&end_date=2
 ```
 
 Una muestra real de la respuesta está en `docs/telemetry/evidence/report-sample.json`.
+
+## Verificación con datos reales (2026-11-19)
+
+Con la API arrancada y un token de `/auth/login`, `GET /telemetry/report` sin parámetros devolvió `200` para la ventana `2026-11-12T07:30:00Z` – `2026-11-19T07:30:00Z` (muestra completa en `evidence/report-sample.json`):
+
+- `events_per_day`: 8 tipos de evento el 19 de noviembre (23 `api_latency_recorded`, 13 `page_viewed`, 4 `web_vital_recorded`, 2 `inbound_order_created`…).
+- `error_rate_per_day`: 46 eventos, 1 error y 1 aviso (`error_rate` y `warning_rate` de 0,0217).
+- `api_latency_per_day`: `GET /inventory/orders` es el endpoint más lento (p95 de 1868 ms y unas 23 peticiones estimadas), seguido de `GET /inventory/products` (p95 de 654 ms) y `POST /auth/login` (98 ms).
+- `auth_failure_rate`: 2 intentos de login, 1 fallido (`failure_rate` 0,5).
+
+**Caché.** Dos peticiones seguidas sin parámetros: el log de la API escribió `Telemetry report computed` una sola vez. La primera tardó 843 ms (pipeline contra Supabase) y la segunda 2,1 ms (servida desde la caché).
+
+**Autenticación.** Sin token o con un token inválido, el endpoint responde `401`.
