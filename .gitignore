@@ -13,3 +13,10 @@ data/suppliers.json
 
 # Snapshots de eval del pipeline de negocio (se regeneran en cada corrida)
 data/eval/snapshots/
+
+# Snapshots CSV del script nocturno (datos de runtime; evidencias en docs/nightly-export/)
+data/raw/telemetry_*.csv
+data/raw/telemetry_*.csv.tmp
+
+# Logs de los jobs en segundo plano (cron)
+logs/
