@@ -1,0 +1,134 @@
+ 
+ -------------- celery@codespaces-8bfc79 v5.7.0 (collider)
+--- ***** ----- 
+-- ******* ---- Linux-6.8.0-1070-azure-x86_64-with-glibc2.39 2026-11-19 20:57:43
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         trackflow:0x7fdffe331b80
+- ** ---------- .> transport:   redis://:**@localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 2 (prefork)
+-- ******* ---- .> task events: ON
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                .> dead_letter      exchange=celery(direct) key=celery
+
+[tasks]
+  . trackflow.dead_letter.record
+  . trackflow.reporting.run_pipeline
+
+[2026-11-19 20:57:43,428: INFO/MainProcess] Connected to redis://:**@localhost:6379/0
+[2026-11-19 20:57:43,446: INFO/MainProcess] mingle: searching for neighbors
+[2026-11-19 20:57:44,483: INFO/MainProcess] mingle: all alone
+[2026-11-19 20:57:44,559: INFO/MainProcess] celery@codespaces-8bfc79 ready.
+[2026-11-19 21:01:41,195: INFO/MainProcess] Task trackflow.reporting.run_pipeline[05050b62-b3fa-41fd-8195-76b3a6e3e58d] received
+[2026-11-19 21:01:41,198: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=1 state=STARTED
+[2026-11-19 21:01:41,225: INFO/MainProcess] Task trackflow.reporting.run_pipeline[05050b62-b3fa-41fd-8195-76b3a6e3e58d] received
+[2026-11-19 21:01:41,240: WARNING/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=1 state=RETRY next_attempt_in=5s error=Retry in 5s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 1 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/tasks.py", line 106, in run_pipeline
+    raise SimulatedTaskFailure(
+services.tasks.SimulatedTaskFailure: Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 1 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 564, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 883, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/tasks.py", line 137, in run_pipeline
+    raise self.retry(exc=exc, countdown=retry_countdown(self.request.retries))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/task.py", line 963, in retry
+    raise ret
+celery.exceptions.Retry: Retry in 5s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 1 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+
+[2026-11-19 21:01:41,240: INFO/ForkPoolWorker-2] Task trackflow.reporting.run_pipeline[05050b62-b3fa-41fd-8195-76b3a6e3e58d] retry: Retry in 5s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 1 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+[2026-11-19 21:01:41,240: WARNING/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=1 state=RETRY duration_ms=42.0
+[2026-11-19 21:01:46,217: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=2 state=STARTED
+[2026-11-19 21:01:46,225: INFO/MainProcess] Task trackflow.reporting.run_pipeline[05050b62-b3fa-41fd-8195-76b3a6e3e58d] received
+[2026-11-19 21:01:46,235: WARNING/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=2 state=RETRY next_attempt_in=10s error=Retry in 10s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 2 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/tasks.py", line 106, in run_pipeline
+    raise SimulatedTaskFailure(
+services.tasks.SimulatedTaskFailure: Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 2 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 564, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 883, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/tasks.py", line 137, in run_pipeline
+    raise self.retry(exc=exc, countdown=retry_countdown(self.request.retries))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/task.py", line 963, in retry
+    raise ret
+celery.exceptions.Retry: Retry in 10s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 2 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+
+[2026-11-19 21:01:46,235: INFO/ForkPoolWorker-2] Task trackflow.reporting.run_pipeline[05050b62-b3fa-41fd-8195-76b3a6e3e58d] retry: Retry in 10s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 2 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+[2026-11-19 21:01:46,235: WARNING/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=2 state=RETRY duration_ms=18.6
+[2026-11-19 21:01:56,223: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=3 state=STARTED
+[2026-11-19 21:01:56,233: INFO/MainProcess] Task trackflow.reporting.run_pipeline[05050b62-b3fa-41fd-8195-76b3a6e3e58d] received
+[2026-11-19 21:01:56,240: WARNING/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=3 state=RETRY next_attempt_in=20s error=Retry in 20s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 3 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/tasks.py", line 106, in run_pipeline
+    raise SimulatedTaskFailure(
+services.tasks.SimulatedTaskFailure: Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 3 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 564, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 883, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/tasks.py", line 137, in run_pipeline
+    raise self.retry(exc=exc, countdown=retry_countdown(self.request.retries))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/task.py", line 963, in retry
+    raise ret
+celery.exceptions.Retry: Retry in 20s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 3 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+
+[2026-11-19 21:01:56,241: INFO/ForkPoolWorker-2] Task trackflow.reporting.run_pipeline[05050b62-b3fa-41fd-8195-76b3a6e3e58d] retry: Retry in 20s: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 3 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+[2026-11-19 21:01:56,242: WARNING/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=3 state=RETRY duration_ms=18.8
+[2026-11-19 21:02:16,229: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=4 state=STARTED
+[2026-11-19 21:02:16,233: ERROR/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=4 reintentos agotados (3): se envía a la DLQ
+[2026-11-19 21:02:16,242: INFO/MainProcess] Task trackflow.dead_letter.record[7e016e1b-a946-45b3-97df-2706a84e3a03] received
+[2026-11-19 21:02:16,247: ERROR/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=4 state=FAILURE error=SimulatedTaskFailure: Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 4 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 564, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 883, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/tasks.py", line 106, in run_pipeline
+    raise SimulatedTaskFailure(
+services.tasks.SimulatedTaskFailure: Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 4 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d
+
+[2026-11-19 21:02:16,247: INFO/ForkPoolWorker-1] task=trackflow.dead_letter.record task_id=7e016e1b-a946-45b3-97df-2706a84e3a03 attempt=1 state=STARTED
+[2026-11-19 21:02:16,249: ERROR/ForkPoolWorker-2] Task trackflow.reporting.run_pipeline[05050b62-b3fa-41fd-8195-76b3a6e3e58d] raised unexpected: SimulatedTaskFailure('Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 4 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d')
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 564, in trace_task
+    R = retval = fun(*args, **kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/celery/app/trace.py", line 883, in __protected_call__
+    return self.run(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/tasks.py", line 106, in run_pipeline
+    raise SimulatedTaskFailure(
+services.tasks.SimulatedTaskFailure: Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 4 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d
+[2026-11-19 21:02:16,249: WARNING/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=4 state=FAILURE duration_ms=20.9
+[2026-11-19 21:02:16,688: ERROR/ForkPoolWorker-1] DLQ task=trackflow.reporting.run_pipeline task_id=05050b62-b3fa-41fd-8195-76b3a6e3e58d attempt=4 error=SimulatedTaskFailure: Fallo simulado (TRACKFLOW_TASKS_FORCE_FAILURE=1) en el intento 4 de la tarea 05050b62-b3fa-41fd-8195-76b3a6e3e58d recorded=inserted
+[2026-11-19 21:02:16,692: INFO/ForkPoolWorker-1] Task trackflow.dead_letter.record[7e016e1b-a946-45b3-97df-2706a84e3a03] succeeded in 0.44487699799992697s: {'task_id': '05050b62-b3fa-41fd-8195-76b3a6e3e58d', 'attempt': 4, 'recorded': True}
+[2026-11-19 21:02:16,692: INFO/ForkPoolWorker-1] task=trackflow.dead_letter.record task_id=7e016e1b-a946-45b3-97df-2706a84e3a03 attempt=1 state=SUCCESS duration_ms=445.0

@@ -472,7 +472,7 @@ Las tasks llaman a funciones normales de `data/process/weekly_kpis.py` y de los 
 | `Cached` | `transform_weekly_kpis` reutiliza un resultado de la última hora con la misma clave | no cambia (sigue `running`) |
 | `Failed` | Una task crítica agotó reintentos o falló la validación | `failed` (el flow lo registra con `error_type`/`error_message` antes de detenerse) |
 | `Crashed` | El proceso murió (OOM, reinicio del worker) sin poder ejecutar hooks | queda `running`; la siguiente corrida la pasa a `failed` (`stale_run`) |
-| `Cancelled` | `open_pipeline_run` detecta otra corrida viva y el flow devuelve `Cancelled` | no crea fila; el `POST` devuelve 409 |
+| `Cancelled` | `open_pipeline_run` detecta otra corrida viva y el flow devuelve `Cancelled` | no crea fila; desde #DEV-55 la tarea de Celery termina con `pipeline_status = "cancelled"` (antes, 409 en el `POST`) |
 
 ### 9.3 Blocks
 
@@ -559,7 +559,7 @@ El checkpoint persistido es `last_completed_phase` (+ `heartbeat_at`) en `pipeli
 
 Escenario: el cron empieza a las 05:00 UTC y a las 05:05 alguien pulsa "Correr pipeline ahora" en el backoffice.
 
-1. `POST /reporting/pipeline-runs` consulta `pipeline_runs`: hay una corrida `running` con `heartbeat_at` reciente → responde **409** con su `run_id` y no crea otra. El backoffice puede mostrar "ya hay una corrida en marcha" y consultar `GET /reporting/pipeline-runs/latest`.
+1. `POST /reporting/pipeline-runs` encola la corrida en Celery (Ticket #DEV-55) sin consultar la base de datos. El worker abre la corrida con `open_pipeline_run`: si hay otra `running` con `heartbeat_at` reciente, no crea otra y la tarea termina con `pipeline_status = "cancelled"` (antes de #DEV-55, el `POST` respondía **409**). El backoffice puede mostrar "ya hay una corrida en marcha" y consultar `GET /reporting/pipeline-runs/latest`.
 2. Si dos corridas llegaran a solaparse igualmente (carrera entre la comprobación y el insert), la carga está serializada por `pg_advisory_xact_lock`: la segunda espera a que la primera confirme. Como ambas recalculan desde la fuente, la segunda escribe el mismo resultado o uno más reciente; nunca duplica.
 3. Una corrida `running` con `heartbeat_at` de hace más de `stale_run_minutes` (30) se considera muerta: la siguiente la marca `failed` (`stale_run`) y continúa. Así un `Crashed` no bloquea el pipeline para siempre.
 
@@ -592,7 +592,7 @@ Módulo nuevo `services/reporting/` (router `prefix="/reporting"`, `tags=["repor
 |---|---|---|---|
 | `GET /reporting/weekly-warehouse-client-performance?week_start=AAAA-MM-DD` | **Consulta de KPIs**: el feed del dashboard de la Parte 3 | `queries.get_weekly_performance(engine, week_start)` | Formato del BRIEFING `{week_start, entries: [...]}`; sin `week_start`, la semana calculada más reciente. 422 si la fecha no es lunes; 404 si la semana no está calculada; 503 si falla la BD |
 | `GET /reporting/pipeline-runs/latest` | **Consulta de estado** de la última corrida | `queries.get_latest_pipeline_run(engine)` | `run_id`, `status`, `trigger`, ventana, horas, conteos y error; 404 si nunca corrió |
-| `POST /reporting/pipeline-runs` | **Disparo manual** (body opcional `{"week_start": "AAAA-MM-DD"}`) | `triggers.trigger_manual_run(engine, week_start=…, triggered_by=…)` → ejecuta `pipeline.weekly_warehouse_client_performance_flow` en un hilo aparte | **202** `{run_id, status: "pending", week_start}`; **409** si ya hay una corrida viva; 403 si el rol no es `admin` o `manager` |
+| `POST /reporting/pipeline-runs` | **Disparo manual** (body opcional `{"week_start": "AAAA-MM-DD"}`) | Desde #DEV-55: `services/celery_app.enqueue_pipeline_run(…)` → tarea `trackflow.reporting.run_pipeline` en un worker de Celery → `triggers.run_manual_flow(…)` → `pipeline.weekly_warehouse_client_performance_flow` | **202** `{task_id, run_id, status: "pending", week_start}` (estado en `GET /tasks/{task_id}`); 503 si Redis no responde; 403 si el rol no es `admin` o `manager` |
 
 Forma esperada de `GET /reporting/weekly-warehouse-client-performance?week_start=2026-11-16` con los datos de hoy (unidades ilustrativas):
 

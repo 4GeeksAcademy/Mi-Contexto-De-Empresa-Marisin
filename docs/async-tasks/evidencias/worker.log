@@ -1,0 +1,375 @@
+ 
+ -------------- celery@codespaces-8bfc79 v5.7.0 (collider)
+--- ***** ----- 
+-- ******* ---- Linux-6.8.0-1070-azure-x86_64-with-glibc2.39 2026-11-19 20:39:35
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         trackflow:0x79104abe5b50
+- ** ---------- .> transport:   redis://:**@localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 2 (prefork)
+-- ******* ---- .> task events: ON
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                .> dead_letter      exchange=celery(direct) key=celery
+
+[tasks]
+  . trackflow.dead_letter.record
+  . trackflow.reporting.run_pipeline
+
+[2026-11-19 20:39:35,415: INFO/MainProcess] Connected to redis://:**@localhost:6379/0
+[2026-11-19 20:39:35,422: INFO/MainProcess] mingle: searching for neighbors
+[2026-11-19 20:39:36,441: INFO/MainProcess] mingle: all alone
+[2026-11-19 20:39:36,463: INFO/MainProcess] celery@codespaces-8bfc79 ready.
+[2026-11-19 20:46:01,373: INFO/MainProcess] Task trackflow.reporting.run_pipeline[c525ec3a-cb5c-4451-8c27-e88cf1096da2] received
+[2026-11-19 20:46:01,376: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=c525ec3a-cb5c-4451-8c27-e88cf1096da2 attempt=1 state=STARTED
+[2026-11-19 20:46:08,077: INFO/ForkPoolWorker-2] Starting temporary server on http://127.0.0.1:8418
+See https://www.prefect.io/docs/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+[2026-11-19 20:46:17,093: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/health "HTTP/1.1 200 OK"
+[2026-11-19 20:46:17,911: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/admin/version "HTTP/1.1 200 OK"
+[2026-11-19 20:46:17,925: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/csrf-token?client=405d8b68-7e20-4af4-b615-b199b48e192b "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 20:46:17,935: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 20:46:17,968: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:18,001: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/63fe9e5d-bf4f-4b0d-bd74-0a01e7b4726c/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:18,013: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flow_runs/63fe9e5d-bf4f-4b0d-bd74-0a01e7b4726c "HTTP/1.1 200 OK"
+[2026-11-19 20:46:18,021: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/admin/storage "HTTP/1.1 200 OK"
+[2026-11-19 20:46:18,032: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/admin/storage "HTTP/1.1 200 OK"
+[2026-11-19 20:46:18,033: INFO/ForkPoolWorker-2] Beginning flow run 'vermilion-rottweiler' for flow 'weekly_warehouse_client_performance'
+[2026-11-19 20:46:18,042: INFO/ForkPoolWorker-2] Block trackflow-reporting-config no disponible: se usa la configuración por defecto.
+[2026-11-19 20:46:18,043: INFO/ForkPoolWorker-2] Corrida c525ec3a-cb5c-4451-8c27-e88cf1096da2 (manual): semanas ['2026-11-16']
+[2026-11-19 20:46:18,274: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/admin/version "HTTP/1.1 200 OK"
+[2026-11-19 20:46:18,315: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flows/e9bdad30-4828-4702-afdf-0ad69b71f5a1 "HTTP/1.1 200 OK"
+[2026-11-19 20:46:18,521: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:18,582: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/csrf-token?client=91a5528b-dac4-499d-89a6-a1c9f7d31b0f "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 20:46:18,661: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:18,702: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 20:46:18,716: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 20:46:18,765: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:18,802: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/d41f09cb-61ea-46d7-8f92-ce080aa54d8f/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:18,812: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flow_runs/d41f09cb-61ea-46d7-8f92-ce080aa54d8f "HTTP/1.1 200 OK"
+[2026-11-19 20:46:18,814: INFO/ForkPoolWorker-2] Beginning subflow run 'tidy-mink' for flow 'extract_warehouse_client_kpi_events'
+[2026-11-19 20:46:18,826: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flows/a9474da7-599e-4db8-85c6-5e9b7fe8f8a2 "HTTP/1.1 200 OK"
+[2026-11-19 20:46:19,117: INFO/ForkPoolWorker-2] Extraídos 3 eventos de negocio (60 eventos en total) entre 2026-11-16 y 2026-11-23
+[2026-11-19 20:46:19,120: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:19,177: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/d41f09cb-61ea-46d7-8f92-ce080aa54d8f/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:19,180: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:19,319: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:19,389: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/csrf-token?client=ddedffe0-a50d-4f51-83c7-791e3820450b "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 20:46:19,559: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:19,573: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 20:46:19,585: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 20:46:19,621: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:19,650: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/20b59eee-15ba-43c9-92c9-89edcd9a58e1/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:19,664: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flow_runs/20b59eee-15ba-43c9-92c9-89edcd9a58e1 "HTTP/1.1 200 OK"
+[2026-11-19 20:46:19,665: INFO/ForkPoolWorker-2] Beginning subflow run 'whimsical-dinosaur' for flow 'compute_weekly_warehouse_client_kpis'
+[2026-11-19 20:46:19,717: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flows/ab5e738d-b023-4e2f-a274-d9872526faba "HTTP/1.1 200 OK"
+[2026-11-19 20:46:19,766: INFO/ForkPoolWorker-2] Preparación: 2 eventos válidos, 0 duplicados, 1 excluidos, 0 rechazados
+[2026-11-19 20:46:19,779: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:19,810: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:19,864: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:19,893: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:19,953: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:19,977: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:20,099: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/csrf-token?client=feb41b06-f8e3-470c-825f-1b16d0513d21 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 20:46:20,211: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:20,373: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/20b59eee-15ba-43c9-92c9-89edcd9a58e1/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:20,374: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:20,531: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:20,610: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/csrf-token?client=8217d136-2e6b-4bd0-acf8-e8da34f202bd "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 20:46:20,661: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:20,689: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 20:46:20,726: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 20:46:20,769: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/ "HTTP/1.1 503 Service Unavailable"
+[2026-11-19 20:46:22,219: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:22,479: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:22,512: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/c9635c03-0c28-4fce-aab3-9705c2d1966c/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:22,524: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flow_runs/c9635c03-0c28-4fce-aab3-9705c2d1966c "HTTP/1.1 200 OK"
+[2026-11-19 20:46:22,525: INFO/ForkPoolWorker-2] Beginning subflow run 'durable-cheetah' for flow 'check_capture_coverage'
+[2026-11-19 20:46:22,557: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flows/f7b3232e-ff45-4a35-bb6a-8c009b201102 "HTTP/1.1 200 OK"
+[2026-11-19 20:46:22,748: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:22,796: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/c9635c03-0c28-4fce-aab3-9705c2d1966c/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:22,799: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:22,848: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/csrf-token?client=d2566293-f89e-4b9c-875c-1f4584746b6d "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 20:46:22,874: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:22,885: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 20:46:22,904: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 20:46:23,010: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:23,057: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/c859c705-690f-4c95-826e-85318a0b0076/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:23,069: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flow_runs/c859c705-690f-4c95-826e-85318a0b0076 "HTTP/1.1 200 OK"
+[2026-11-19 20:46:23,071: INFO/ForkPoolWorker-2] Beginning subflow run 'armored-butterfly' for flow 'load_weekly_warehouse_client_performance'
+[2026-11-19 20:46:23,087: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flows/8257fda4-9047-48b0-a8fd-9b2f011db3c0 "HTTP/1.1 200 OK"
+[2026-11-19 20:46:23,249: INFO/ForkPoolWorker-2] Carga: {'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0}
+[2026-11-19 20:46:23,257: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:23,310: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/c859c705-690f-4c95-826e-85318a0b0076/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:23,312: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:23,380: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/csrf-token?client=62eff6c2-d5fa-4c55-bfba-13f16436ba62 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 20:46:23,405: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:23,427: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 20:46:23,448: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 20:46:23,544: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 20:46:23,610: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/7e99183c-3d09-43ef-9cc2-39e895e4cc48/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:23,628: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flow_runs/7e99183c-3d09-43ef-9cc2-39e895e4cc48 "HTTP/1.1 200 OK"
+[2026-11-19 20:46:23,631: INFO/ForkPoolWorker-2] Beginning subflow run 'burrowing-pronghorn' for flow 'export_weekly_performance_snapshot'
+[2026-11-19 20:46:23,664: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:23,694: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8418/api/flows/14cc1f98-de61-488c-9930-a3c29ba3b832 "HTTP/1.1 200 OK"
+[2026-11-19 20:46:23,819: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/7e99183c-3d09-43ef-9cc2-39e895e4cc48/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:23,821: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:23,947: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:23,949: INFO/ForkPoolWorker-2] Corrida completada: {'run_id': 'c525ec3a-cb5c-4451-8c27-e88cf1096da2', 'status': 'completed', 'weeks': ['2026-11-16'], 'events_extracted': 3, 'kpi_rows': 1, 'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0, 'warnings': ['low_capture_coverage:los_angeles:inbound', 'low_capture_coverage:los_angeles:outbound']}
+[2026-11-19 20:46:23,999: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/flow_runs/63fe9e5d-bf4f-4b0d-bd74-0a01e7b4726c/set_state "HTTP/1.1 201 Created"
+[2026-11-19 20:46:24,001: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 20:46:24,012: INFO/ForkPoolWorker-2] Task trackflow.reporting.run_pipeline[c525ec3a-cb5c-4451-8c27-e88cf1096da2] succeeded in 22.63655225599996s: {'pipeline_status': 'completed', 'run_id': 'c525ec3a-cb5c-4451-8c27-e88cf1096da2', 'attempt': 1, 'week_start': '2026-11-16', 'summary': {'run_id': 'c525ec3a-cb5c-4451-8c27-e88cf1096da2', 'status': 'completed', 'weeks': ['2026-11-16'], 'events_extracted': 3, 'kpi_rows': 1, 'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0, 'warnings': ['low_capture_coverage:los_angeles:inbound', 'low_capture_coverage:los_angeles:outbound']}}
+[2026-11-19 20:46:24,013: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=c525ec3a-cb5c-4451-8c27-e88cf1096da2 attempt=1 state=SUCCESS duration_ms=22636.7
+[2026-11-19 20:46:24,241: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8418/api/logs/ "HTTP/1.1 201 Created"
+ 
+ -------------- celery@codespaces-8bfc79 v5.7.0 (collider)
+--- ***** ----- 
+-- ******* ---- Linux-6.8.0-1070-azure-x86_64-with-glibc2.39 2026-11-19 21:05:40
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         trackflow:0x772d0de49d00
+- ** ---------- .> transport:   redis://:**@localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 2 (prefork)
+-- ******* ---- .> task events: ON
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                .> dead_letter      exchange=celery(direct) key=celery
+
+[tasks]
+  . trackflow.dead_letter.record
+  . trackflow.reporting.run_pipeline
+
+[2026-11-19 21:05:40,631: INFO/MainProcess] Connected to redis://:**@localhost:6379/0
+[2026-11-19 21:05:40,647: INFO/MainProcess] mingle: searching for neighbors
+[2026-11-19 21:05:41,688: INFO/MainProcess] mingle: all alone
+[2026-11-19 21:05:41,712: INFO/MainProcess] celery@codespaces-8bfc79 ready.
+[2026-11-19 21:06:08,177: INFO/MainProcess] Task trackflow.reporting.run_pipeline[80884a17-52b9-4e9c-835e-8c6c02b45224] received
+[2026-11-19 21:06:08,185: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=80884a17-52b9-4e9c-835e-8c6c02b45224 attempt=1 state=STARTED
+[2026-11-19 21:06:15,939: INFO/ForkPoolWorker-2] Starting temporary server on http://127.0.0.1:8023
+See https://www.prefect.io/docs/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+[2026-11-19 21:06:24,982: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/health "HTTP/1.1 200 OK"
+[2026-11-19 21:06:25,662: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/admin/version "HTTP/1.1 200 OK"
+[2026-11-19 21:06:25,688: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/csrf-token?client=27f1d357-d667-497d-9cd7-31ef967a2dea "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:06:25,718: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:06:26,023: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:26,083: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/6988a20c-5a64-481e-8477-debce25752fd/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:26,102: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flow_runs/6988a20c-5a64-481e-8477-debce25752fd "HTTP/1.1 200 OK"
+[2026-11-19 21:06:26,123: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/admin/storage "HTTP/1.1 200 OK"
+[2026-11-19 21:06:26,140: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/admin/storage "HTTP/1.1 200 OK"
+[2026-11-19 21:06:26,143: INFO/ForkPoolWorker-2] Beginning flow run 'illegal-wolf' for flow 'weekly_warehouse_client_performance'
+[2026-11-19 21:06:26,163: INFO/ForkPoolWorker-2] Block trackflow-reporting-config no disponible: se usa la configuración por defecto.
+[2026-11-19 21:06:26,163: INFO/ForkPoolWorker-2] Corrida 80884a17-52b9-4e9c-835e-8c6c02b45224 (manual): semanas ['2026-11-16']
+[2026-11-19 21:06:26,381: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/admin/version "HTTP/1.1 200 OK"
+[2026-11-19 21:06:26,404: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flows/e9bdad30-4828-4702-afdf-0ad69b71f5a1 "HTTP/1.1 200 OK"
+[2026-11-19 21:06:26,638: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:26,754: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/csrf-token?client=a281faea-4469-4713-a67b-7da0b9dd8c20 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:06:27,016: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/task_runs/ "HTTP/1.1 503 Service Unavailable"
+[2026-11-19 21:06:28,252: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/csrf-token?client=abef619c-f9fa-461f-be43-631dc00e3141 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:06:28,387: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:29,517: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:29,560: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:06:29,603: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:06:29,655: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:29,688: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/2dbce36e-2da8-4dff-bcf9-4997c445ade9/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:29,694: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flow_runs/2dbce36e-2da8-4dff-bcf9-4997c445ade9 "HTTP/1.1 200 OK"
+[2026-11-19 21:06:29,695: INFO/ForkPoolWorker-2] Beginning subflow run 'rich-trout' for flow 'extract_warehouse_client_kpi_events'
+[2026-11-19 21:06:29,707: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flows/a9474da7-599e-4db8-85c6-5e9b7fe8f8a2 "HTTP/1.1 200 OK"
+[2026-11-19 21:06:29,967: INFO/ForkPoolWorker-2] Extraídos 3 eventos de negocio (60 eventos en total) entre 2026-11-16 y 2026-11-23
+[2026-11-19 21:06:29,982: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:31,921: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:32,066: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/2dbce36e-2da8-4dff-bcf9-4997c445ade9/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:32,070: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:32,226: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:32,324: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/csrf-token?client=af1357c7-97e3-4bd7-882e-e048eaddb476 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:06:32,363: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:32,383: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:06:32,392: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:06:32,419: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:32,443: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/7e7eaa8d-ab55-4970-902b-f1bbaa3046c6/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:32,450: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flow_runs/7e7eaa8d-ab55-4970-902b-f1bbaa3046c6 "HTTP/1.1 200 OK"
+[2026-11-19 21:06:32,453: INFO/ForkPoolWorker-2] Beginning subflow run 'efficient-mussel' for flow 'compute_weekly_warehouse_client_kpis'
+[2026-11-19 21:06:32,480: INFO/ForkPoolWorker-2] Finished in state Cached(type=COMPLETED)
+[2026-11-19 21:06:32,491: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:32,492: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flows/ab5e738d-b023-4e2f-a274-d9872526faba "HTTP/1.1 200 OK"
+[2026-11-19 21:06:32,512: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:32,523: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:32,547: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:32,576: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:32,859: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/7e7eaa8d-ab55-4970-902b-f1bbaa3046c6/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:32,864: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:33,036: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:33,156: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/csrf-token?client=f92c62b2-9945-4f55-8f42-e67a64560b7f "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:06:33,211: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:33,233: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:06:33,266: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:06:33,315: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ "HTTP/1.1 503 Service Unavailable"
+[2026-11-19 21:06:34,000: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:35,738: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:35,777: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/1ec0f1dc-c9a8-4ae3-932e-fb0e0dd5013c/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:35,790: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flow_runs/1ec0f1dc-c9a8-4ae3-932e-fb0e0dd5013c "HTTP/1.1 200 OK"
+[2026-11-19 21:06:35,792: INFO/ForkPoolWorker-2] Beginning subflow run 'prodigious-frigatebird' for flow 'check_capture_coverage'
+[2026-11-19 21:06:35,806: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flows/f7b3232e-ff45-4a35-bb6a-8c009b201102 "HTTP/1.1 200 OK"
+[2026-11-19 21:06:35,965: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:36,046: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/1ec0f1dc-c9a8-4ae3-932e-fb0e0dd5013c/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:36,047: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:36,083: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:36,129: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/csrf-token?client=3debbbed-e586-408c-b011-cc9b31122d85 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:06:36,169: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:36,192: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:06:36,202: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:06:36,241: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:36,269: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ddfbfbb0-f57e-450f-b6ad-c88141131a5e/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:36,284: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flow_runs/ddfbfbb0-f57e-450f-b6ad-c88141131a5e "HTTP/1.1 200 OK"
+[2026-11-19 21:06:36,286: INFO/ForkPoolWorker-2] Beginning subflow run 'sassy-cougar' for flow 'load_weekly_warehouse_client_performance'
+[2026-11-19 21:06:36,301: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flows/8257fda4-9047-48b0-a8fd-9b2f011db3c0 "HTTP/1.1 200 OK"
+[2026-11-19 21:06:36,501: INFO/ForkPoolWorker-2] Carga: {'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0}
+[2026-11-19 21:06:36,524: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:36,638: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ddfbfbb0-f57e-450f-b6ad-c88141131a5e/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:36,640: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:36,729: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/csrf-token?client=ce4a09f5-f599-4c1d-9492-31b8e42d56fb "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:06:36,753: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:36,766: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:06:36,796: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:06:36,855: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:06:37,028: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/7284ff55-706d-49bf-951c-c1dad0635e20/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:37,095: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flow_runs/7284ff55-706d-49bf-951c-c1dad0635e20 "HTTP/1.1 200 OK"
+[2026-11-19 21:06:37,097: INFO/ForkPoolWorker-2] Beginning subflow run 'charcoal-myna' for flow 'export_weekly_performance_snapshot'
+[2026-11-19 21:06:37,122: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:37,125: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8023/api/flows/14cc1f98-de61-488c-9930-a3c29ba3b832 "HTTP/1.1 200 OK"
+[2026-11-19 21:06:37,199: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/7284ff55-706d-49bf-951c-c1dad0635e20/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:37,200: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:37,347: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:37,348: INFO/ForkPoolWorker-2] Corrida completada: {'run_id': '80884a17-52b9-4e9c-835e-8c6c02b45224', 'status': 'completed', 'weeks': ['2026-11-16'], 'events_extracted': 3, 'kpi_rows': 1, 'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0, 'warnings': ['low_capture_coverage:los_angeles:inbound', 'low_capture_coverage:los_angeles:outbound']}
+[2026-11-19 21:06:37,440: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/flow_runs/6988a20c-5a64-481e-8477-debce25752fd/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:06:37,441: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:06:37,445: INFO/ForkPoolWorker-2] Task trackflow.reporting.run_pipeline[80884a17-52b9-4e9c-835e-8c6c02b45224] succeeded in 29.259890226000607s: {'pipeline_status': 'completed', 'run_id': '80884a17-52b9-4e9c-835e-8c6c02b45224', 'attempt': 1, 'week_start': '2026-11-16', 'summary': {'run_id': '80884a17-52b9-4e9c-835e-8c6c02b45224', 'status': 'completed', 'weeks': ['2026-11-16'], 'events_extracted': 3, 'kpi_rows': 1, 'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0, 'warnings': ['low_capture_coverage:los_angeles:inbound', 'low_capture_coverage:los_angeles:outbound']}}
+[2026-11-19 21:06:37,445: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=80884a17-52b9-4e9c-835e-8c6c02b45224 attempt=1 state=SUCCESS duration_ms=29260.2
+[2026-11-19 21:06:38,138: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8023/api/logs/ "HTTP/1.1 201 Created"
+ 
+ -------------- celery@codespaces-8bfc79 v5.7.0 (collider)
+--- ***** ----- 
+-- ******* ---- Linux-6.8.0-1070-azure-x86_64-with-glibc2.39 2026-11-19 21:13:53
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         trackflow:0x71e239bb1cd0
+- ** ---------- .> transport:   redis://:**@localhost:6379/0
+- ** ---------- .> results:     redis://localhost:6379/0
+- *** --- * --- .> concurrency: 2 (prefork)
+-- ******* ---- .> task events: ON
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                .> dead_letter      exchange=celery(direct) key=celery
+
+[tasks]
+  . trackflow.dead_letter.record
+  . trackflow.reporting.run_pipeline
+
+[2026-11-19 21:13:53,949: INFO/MainProcess] Connected to redis://:**@localhost:6379/0
+[2026-11-19 21:13:53,961: INFO/MainProcess] mingle: searching for neighbors
+[2026-11-19 21:13:54,984: INFO/MainProcess] mingle: all alone
+[2026-11-19 21:13:55,000: INFO/MainProcess] celery@codespaces-8bfc79 ready.
+[2026-11-19 21:13:55,006: INFO/MainProcess] Task trackflow.reporting.run_pipeline[8d144a89-55c3-4435-87b8-ee31a35734d8] received
+[2026-11-19 21:13:55,008: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=8d144a89-55c3-4435-87b8-ee31a35734d8 attempt=1 state=STARTED
+[2026-11-19 21:13:59,404: INFO/ForkPoolWorker-2] Starting temporary server on http://127.0.0.1:8617
+See https://www.prefect.io/docs/v3/concepts/server#how-to-guides for more information on running a dedicated Prefect server.
+[2026-11-19 21:14:04,227: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/health "HTTP/1.1 200 OK"
+[2026-11-19 21:14:04,667: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/admin/version "HTTP/1.1 200 OK"
+[2026-11-19 21:14:04,693: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/csrf-token?client=832eb3fa-4cda-4eb1-9907-cf56927ac455 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:14:04,710: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:14:04,781: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:04,810: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/89d59323-0ece-4362-8b5e-cc9f24578cda/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:04,819: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flow_runs/89d59323-0ece-4362-8b5e-cc9f24578cda "HTTP/1.1 200 OK"
+[2026-11-19 21:14:04,825: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/admin/storage "HTTP/1.1 200 OK"
+[2026-11-19 21:14:04,832: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/admin/storage "HTTP/1.1 200 OK"
+[2026-11-19 21:14:04,833: INFO/ForkPoolWorker-2] Beginning flow run 'ebony-wrasse' for flow 'weekly_warehouse_client_performance'
+[2026-11-19 21:14:04,839: INFO/ForkPoolWorker-2] Block trackflow-reporting-config no disponible: se usa la configuración por defecto.
+[2026-11-19 21:14:04,839: INFO/ForkPoolWorker-2] Corrida 8d144a89-55c3-4435-87b8-ee31a35734d8 (manual): semanas ['2026-11-16']
+[2026-11-19 21:14:04,954: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/admin/version "HTTP/1.1 200 OK"
+[2026-11-19 21:14:04,972: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flows/e9bdad30-4828-4702-afdf-0ad69b71f5a1 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:05,230: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:05,279: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/csrf-token?client=67a8bc89-e00e-4792-b9a5-3b48e6a31dba "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:14:05,493: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:05,510: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:14:05,516: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:14:05,544: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:05,580: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/9704587e-0456-467b-b008-145991107324/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:05,589: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flow_runs/9704587e-0456-467b-b008-145991107324 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:05,590: INFO/ForkPoolWorker-2] Beginning subflow run 'educational-centipede' for flow 'extract_warehouse_client_kpi_events'
+[2026-11-19 21:14:05,603: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flows/a9474da7-599e-4db8-85c6-5e9b7fe8f8a2 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:05,833: INFO/ForkPoolWorker-2] Extraídos 3 eventos de negocio (60 eventos en total) entre 2026-11-16 y 2026-11-23
+[2026-11-19 21:14:05,835: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:05,872: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/9704587e-0456-467b-b008-145991107324/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:05,875: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,027: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,068: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/csrf-token?client=405f9e67-a843-4f2c-8cf8-4713b0d2493f "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:14:06,105: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:06,111: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:14:06,119: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:14:06,146: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:06,174: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/b750b487-1b7b-4673-90c7-ace93c176556/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:06,186: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flow_runs/b750b487-1b7b-4673-90c7-ace93c176556 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:06,187: INFO/ForkPoolWorker-2] Beginning subflow run 'relaxed-sloth' for flow 'compute_weekly_warehouse_client_kpis'
+[2026-11-19 21:14:06,203: INFO/ForkPoolWorker-2] Finished in state Cached(type=COMPLETED)
+[2026-11-19 21:14:06,212: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flows/ab5e738d-b023-4e2f-a274-d9872526faba "HTTP/1.1 200 OK"
+[2026-11-19 21:14:06,214: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,229: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,241: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,273: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,290: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,355: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/b750b487-1b7b-4673-90c7-ace93c176556/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:06,356: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,507: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:06,566: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/csrf-token?client=90ae38ab-8a24-4baf-8659-052b66c26472 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:14:06,607: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/task_runs/ "HTTP/1.1 503 Service Unavailable"
+[2026-11-19 21:14:06,871: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/csrf-token?client=f9563de8-5750-40a5-bdec-f3c3796b80d0 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:14:06,887: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:08,487: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:08,493: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:14:08,503: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:14:08,527: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:08,550: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/5f2885cf-9cf4-47f7-970d-31b56ab8e125/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:08,556: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flow_runs/5f2885cf-9cf4-47f7-970d-31b56ab8e125 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:08,557: INFO/ForkPoolWorker-2] Beginning subflow run 'heavy-caracara' for flow 'check_capture_coverage'
+[2026-11-19 21:14:08,573: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flows/f7b3232e-ff45-4a35-bb6a-8c009b201102 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:08,698: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:08,735: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/5f2885cf-9cf4-47f7-970d-31b56ab8e125/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:08,737: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:08,778: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/csrf-token?client=35bcfa09-36a1-4024-8689-02a1b5dfa176 "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:14:08,794: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:08,800: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:14:08,810: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:14:08,839: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:08,858: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/dac20107-1625-4366-a018-bef7a9dcab26/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:08,867: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flow_runs/dac20107-1625-4366-a018-bef7a9dcab26 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:08,868: INFO/ForkPoolWorker-2] Beginning subflow run 'pastel-eel' for flow 'load_weekly_warehouse_client_performance'
+[2026-11-19 21:14:08,885: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flows/8257fda4-9047-48b0-a8fd-9b2f011db3c0 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:08,909: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:09,031: INFO/ForkPoolWorker-2] Carga: {'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0}
+[2026-11-19 21:14:09,033: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:09,065: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/dac20107-1625-4366-a018-bef7a9dcab26/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:09,066: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:09,105: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/csrf-token?client=4c5e599f-beed-48b8-9997-239480b69c0e "HTTP/1.1 422 Unprocessable Entity"
+[2026-11-19 21:14:09,121: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/task_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:09,127: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/filter "HTTP/1.1 200 OK"
+[2026-11-19 21:14:09,143: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flows/ "HTTP/1.1 200 OK"
+[2026-11-19 21:14:09,161: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/ "HTTP/1.1 503 Service Unavailable"
+[2026-11-19 21:14:10,917: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/logs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:11,451: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/ "HTTP/1.1 201 Created"
+[2026-11-19 21:14:11,480: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/05e252ae-3e69-46ce-90bc-cba22e7786d6/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:11,486: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flow_runs/05e252ae-3e69-46ce-90bc-cba22e7786d6 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:11,487: INFO/ForkPoolWorker-2] Beginning subflow run 'attractive-herring' for flow 'export_weekly_performance_snapshot'
+[2026-11-19 21:14:11,498: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:11,501: INFO/ForkPoolWorker-2] HTTP Request: GET http://127.0.0.1:8617/api/flows/14cc1f98-de61-488c-9930-a3c29ba3b832 "HTTP/1.1 200 OK"
+[2026-11-19 21:14:11,536: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/05e252ae-3e69-46ce-90bc-cba22e7786d6/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:11,537: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:11,687: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:11,687: INFO/ForkPoolWorker-2] Corrida completada: {'run_id': '8d144a89-55c3-4435-87b8-ee31a35734d8', 'status': 'completed', 'weeks': ['2026-11-16'], 'events_extracted': 3, 'kpi_rows': 1, 'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0, 'warnings': ['low_capture_coverage:los_angeles:inbound', 'low_capture_coverage:los_angeles:outbound']}
+[2026-11-19 21:14:11,724: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/flow_runs/89d59323-0ece-4362-8b5e-cc9f24578cda/set_state "HTTP/1.1 201 Created"
+[2026-11-19 21:14:11,726: INFO/ForkPoolWorker-2] Finished in state Completed()
+[2026-11-19 21:14:11,731: INFO/ForkPoolWorker-2] Task trackflow.reporting.run_pipeline[8d144a89-55c3-4435-87b8-ee31a35734d8] succeeded in 16.723487994000607s: {'pipeline_status': 'completed', 'run_id': '8d144a89-55c3-4435-87b8-ee31a35734d8', 'attempt': 1, 'week_start': '2026-11-16', 'summary': {'run_id': '8d144a89-55c3-4435-87b8-ee31a35734d8', 'status': 'completed', 'weeks': ['2026-11-16'], 'events_extracted': 3, 'kpi_rows': 1, 'rows_inserted': 0, 'rows_updated': 0, 'rows_unchanged': 1, 'rows_deleted': 0, 'warnings': ['low_capture_coverage:los_angeles:inbound', 'low_capture_coverage:los_angeles:outbound']}}
+[2026-11-19 21:14:11,731: INFO/ForkPoolWorker-2] task=trackflow.reporting.run_pipeline task_id=8d144a89-55c3-4435-87b8-ee31a35734d8 attempt=1 state=SUCCESS duration_ms=16723.6
+[2026-11-19 21:14:12,926: INFO/ForkPoolWorker-2] HTTP Request: POST http://127.0.0.1:8617/api/logs/ "HTTP/1.1 201 Created"

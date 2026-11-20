@@ -65,6 +65,13 @@ class PipelineRunRequest(BaseModel):
 
 
 class PipelineRunAccepted(BaseModel):
+    """202 de `POST /reporting/pipeline-runs`: la tarea está encolada, no terminada.
+
+    `task_id` se consulta en `GET /tasks/{task_id}`; `run_id` es el id de la fila
+    del primer intento en `reporting.pipeline_runs` (el mismo valor).
+    """
+
+    task_id: str
     run_id: UUID
     status: Literal["pending"]
     week_start: date | None
