@@ -1,4 +1,4 @@
-"""Flow de Prefect del Pipeline de Desempeño de Negocio, sin base de datos.
+"""Flow principal y subflows del Pipeline de Desempeño de Negocio, sin base de datos.
 
 Las funciones que tocan Supabase (`runs`, `extract`, `load`) se sustituyen por
 dobles en memoria. Se comprueba la resiliencia del flow: tasks opcionales que
@@ -131,9 +131,24 @@ def test_external_tasks_declare_retries():
     assert pipeline.close_pipeline_run.retries > 0
 
 
-def test_transform_task_declares_cache():
-    assert pipeline.transform_weekly_kpis.cache_key_fn is not None
-    assert pipeline.transform_weekly_kpis.cache_expiration.total_seconds() == 3600
+def test_prepare_task_declares_cache():
+    assert pipeline.prepare_kpi_events.cache_key_fn is not None
+    assert pipeline.prepare_kpi_events.cache_expiration.total_seconds() == 3600
+
+
+def test_prepare_cache_key_never_matches_the_part_2_transform_key():
+    """Regresión: la clave de la Parte 2 (`weekly-kpis-v1-…`) guardaba un TransformResult.
+
+    Si prepare_kpi_events la reutilizara, Prefect serviría ese objeto y el subflow
+    de transformación fallaría con "'TransformResult' object has no attribute 'events'".
+    """
+    events = _events("cache-key")
+    key = pipeline._prepare_cache_key(None, {"raw_events": events, "excluded_user_ids": ("curl_verification",)})
+    part_2_key = f"weekly-kpis-v1-{weekly_kpis.events_fingerprint(events)}"
+
+    assert key.startswith("prepare-kpi-events-weekly-kpis-v2-")
+    assert not key.startswith(part_2_key)
+    assert weekly_kpis.TRANSFORM_VERSION != "1"
 
 
 def test_flow_completes_when_optional_task_fails(fake_db):
@@ -155,7 +170,7 @@ def test_flow_completes_when_optional_task_fails(fake_db):
             }
         ]
     ]
-    assert fake_db.phases == ["extract", "transform", "validate"]
+    assert fake_db.phases == ["extract", "validate"]
     assert fake_db.closed[-1]["status"] == "completed"
     assert pipeline.EVAL_SNAPSHOT_PATH.exists()
 
@@ -191,16 +206,65 @@ def test_second_run_on_same_data_reuses_transform_cache(fake_db, monkeypatch):
     fake_db.events = _events("cache", "cache-2")
     fake_db.fail_coverage = False
     calls = []
-    original = weekly_kpis.transform_events
+    original = weekly_kpis.prepare_events
 
     def counting(raw_events, excluded_user_ids=()):
         calls.append(len(raw_events))
         return original(raw_events, excluded_user_ids)
 
-    monkeypatch.setattr(pipeline.weekly_kpis, "transform_events", counting)
+    monkeypatch.setattr(pipeline.weekly_kpis, "prepare_events", counting)
     first = pipeline.weekly_warehouse_client_performance_flow(week_start=WEEK, trigger="manual")
     second = pipeline.weekly_warehouse_client_performance_flow(week_start=WEEK, trigger="manual")
 
     assert first["kpi_rows"] == second["kpi_rows"] == 1
     assert fake_db.loads[0] == fake_db.loads[1]  # misma carga: el upsert deja el mismo estado
     assert len(calls) <= 1  # la segunda corrida sale de la caché (0 si ya estaba cacheada)
+
+
+def test_main_flow_coordinates_subflows():
+    """El flow principal delega cada etapa en un subflow (Parte 3)."""
+    subflows = [
+        pipeline.extract_warehouse_client_kpi_events_flow,
+        pipeline.compute_weekly_warehouse_client_kpis_flow,
+        pipeline.load_weekly_warehouse_client_performance_flow,
+        pipeline.check_capture_coverage_flow,
+        pipeline.export_weekly_performance_snapshot_flow,
+    ]
+    assert all(isinstance(subflow, prefect.Flow) for subflow in subflows)
+    assert {subflow.name for subflow in subflows} == {
+        "extract_warehouse_client_kpi_events",
+        "compute_weekly_warehouse_client_kpis",
+        "load_weekly_warehouse_client_performance",
+        "check_capture_coverage",
+        "export_weekly_performance_snapshot",
+    }
+
+
+def test_compute_subflow_runs_on_its_own():
+    """El subflow de transformación corre aislado, con eventos en memoria."""
+    result = pipeline.compute_weekly_warehouse_client_kpis_flow(
+        _events("standalone"), ("curl_verification",), [WEEK]
+    )
+    assert weekly_kpis.kpis_to_records(result.kpis) == [
+        {
+            "warehouse": "los_angeles",
+            "client_id": "ecowear_usa",
+            "week_start": WEEK,
+            "inbound_units_count": 20,
+            "outbound_orders_count": 0,
+            "stockout_events_count": 0,
+            "discrepancy_events_count": 0,
+            "discrepancy_rate": 0.0,
+        }
+    ]
+    assert result.stats["events_excluded"] == 1
+
+
+def test_extract_and_load_subflows_run_on_their_own(fake_db):
+    extracted = pipeline.extract_warehouse_client_kpi_events_flow(WEEK, date(2026, 11, 23))
+    assert len(extracted["events"]) == 2
+    kpis = weekly_kpis.transform_events(extracted["events"], ("curl_verification",)).kpis
+    counts = pipeline.load_weekly_warehouse_client_performance_flow(
+        UUID("22222222-2222-2222-2222-222222222222"), kpis, [WEEK]
+    )
+    assert counts["rows_inserted"] == 1
