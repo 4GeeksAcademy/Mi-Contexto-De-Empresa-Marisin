@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -42,9 +43,13 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-from scripts import sales_forecast as sf
-
 ROOT = Path(__file__).resolve().parents[1]
+# Al ejecutarlo como `python scripts/sales_model_eval.py`, Python solo añade
+# `scripts/` al path: se añade la raíz del repo para poder importar el paquete.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts import sales_forecast as sf  # noqa: E402
 EVAL_DIR = ROOT / "data" / "eval"
 
 N_SPLITS = 5
