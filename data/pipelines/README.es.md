@@ -6,3 +6,7 @@ Cada subcarpeta o archivo dentro de `data/pipelines/` debe representar **un pipe
 
 - **Propósito principal**: unificar en un único lugar la lógica de movimiento y transformación de datos que soporta las aplicaciones y analíticas de la compañía.
 - **Recomendación**: documenta aquí los pipelines que vayas añadiendo, describiendo su objetivo, orígenes/destinos de datos, dependencias y cómo ejecutarlos en desarrollo, pruebas y producción.
+
+## `rag.py` — recuperación y generación del RAG (Hito 7)
+
+`retrieve()` (top-k con umbral `min_score`), `generate_answer()` (prompt con la voz de vendedor de TrackFlow + `LLM_MODEL`) y `query()` = `retrieve()` + `generate_answer()`, que es lo que llama `POST /knowledge/query`. Diseño: `docs/rag/rag-design.md`.

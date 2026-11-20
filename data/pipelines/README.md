@@ -8,3 +8,7 @@ Each subfolder or file under `data/pipelines/` should represent **one pipeline o
 - **Recommendation**: document pipelines as you add them—their goal, data sources and sinks, dependencies, and how to run them in development, testing, and production.
 
 > _Spanish version: [README.es.md](./README.es.md)._
+
+## `rag.py` — RAG retrieval and generation (Milestone 7)
+
+`retrieve()` (top-k with a `min_score` threshold), `generate_answer()` (TrackFlow salesperson prompt + `LLM_MODEL`) and `query()` = `retrieve()` + `generate_answer()`, called by `POST /knowledge/query`. Design: `docs/rag/rag-design.md`.
