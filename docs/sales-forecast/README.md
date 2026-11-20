@@ -80,16 +80,16 @@ techo de 2023. Por eso predice el **ratio interanual**
 entrenamiento) y la cifra en euros se reconstruye multiplicando por el mismo
 mes del año anterior.
 
-**Features (todas causales: solo usan meses anteriores al que se predice).**
+**Features (todas causales: solo usan meses anteriores al que se predice).** Cubren las tres familias que pide el BRIEFING: lags, estadísticas rodantes y calendario/estacionalidad.
 
-| Feature | Qué captura | Importancia |
-|---|---|---|
-| `yoy_same_month_last_year` | Crecimiento del mismo mes el año pasado → alternancia 9 % / 3 % | 0,52 |
-| `seasonal_index_last_year` | Peso del mismo mes del año pasado sobre su media anual | 0,17 |
-| `trailing_growth` | Crecimiento de los últimos 12 meses frente a los 12 anteriores | 0,12 |
-| `yoy_last_month` | Crecimiento interanual del último mes conocido | 0,11 |
-| `month_sin`, `month_cos` | Posición del mes en el calendario | 0,09 |
-| `is_peak_season`, `is_february` | Pico nov-dic y valle de febrero del BRIEFING | < 0,01 |
+| Feature | Tipo | Qué captura | Importancia |
+|---|---|---|---|
+| `yoy_same_month_last_year` | Lag (t-12, t-24) | Crecimiento del mismo mes el año pasado → alternancia 9 % / 3 % | 0,52 |
+| `seasonal_index_last_year` | Estadística rodante (media móvil de 12 meses hasta t-12) | Peso del mismo mes del año pasado sobre su media anual | 0,17 |
+| `trailing_growth` | Estadística rodante (suma móvil de 12 meses frente a la anterior) | Crecimiento de los últimos 12 meses frente a los 12 anteriores | 0,12 |
+| `yoy_last_month` | Lag (t-1, t-13) | Crecimiento interanual del último mes conocido | 0,11 |
+| `month_sin`, `month_cos` | Calendario | Posición del mes en el calendario | 0,09 |
+| `is_peak_season`, `is_february` | Calendario / estacionalidad | Pico nov-dic y valle de febrero del BRIEFING | < 0,01 |
 
 Las marcas de calendario pesan poco porque el ratio interanual ya cancela la
 estacionalidad: la estacionalidad entra a través de `revenue_{t-12}`.
