@@ -137,14 +137,17 @@ Un test lo comprueba con un Qdrant en memoria: dos ejecuciones dejan 14 puntos.
 
 | | Valor |
 |---|---|
-| **Modelo de embeddings** (`EMBEDDING_MODEL`) | `⟨pendiente: ID del modelo de embeddings de 4Geeks⟩` |
-| **Modelo de generación** (`LLM_MODEL`) | `⟨pendiente: ID del modelo de chat de 4Geeks⟩` |
-| Proveedor | Acceso LLM de estudiante de 4Geeks, API compatible con OpenAI (`LLM_API_URL`, `LLM_API_KEY` en `.env`) |
-| Dimensión del vector | `⟨pendiente⟩` (se toma del modelo en `setup()`; la colección se crea con esa dimensión) |
+| **Modelo de embeddings** (`EMBEDDING_MODEL`) | `madrid-spain/openrouter/perplexity/pplx-embed-v1-0.6b` (Perplexity pplx-embed) |
+| **Modelo de generación** (`LLM_MODEL`) | `madrid-spain/opnerouter/openai/gpt-6-luna` (la errata `opnerouter` es parte del ID real) |
+| Proveedor | Acceso LLM de estudiante de 4Geeks: gateway LiteLLM `https://llm.4geeks.ai`, compatible con OpenAI. La clave se genera en 4geeks.com → Mi perfil → Recursos → Claves API para LLM y va en `LLM_API_KEY` (`.env`) |
+| Dimensión del vector | **1024** (la devuelve el modelo; `setup()` crea la colección con esa dimensión) |
 | Distancia en Qdrant | **Coseno** (`Distance.COSINE`) |
 | `k` | 5 en `query()`; 3 para medir Recall@3 |
-| `min_score` | `⟨pendiente⟩` (`DEFAULT_MIN_SCORE` en `data/pipelines/rag.py`) |
+| `min_score` | **0,46** (`DEFAULT_MIN_SCORE` en `data/pipelines/rag.py`) |
 
+- **IDs de modelo sin el prefijo `litellm/`.** La web de 4Geeks muestra los modelos como
+  `litellm/madrid-spain/…`, pero el gateway los expone sin ese prefijo: con él responde 403.
+  Los IDs correctos se comprobaron con `GET /models` usando la propia clave.
 - **Dos modelos, dos trabajos.** `embed()` solo usa `EMBEDDING_MODEL` y
   `generate_answer()` solo usa `LLM_MODEL`. `check_models()` lanza un error si
   los dos coinciden o falta alguno, y hay un test que lo verifica.
@@ -167,7 +170,23 @@ se fija entre las dos distribuciones: lo bastante alto para que lo fuera de
 alcance devuelva cero chunks (y el modelo diga que no hay información), y lo
 bastante bajo para no perder chunks correctos.
 
-`⟨pendiente: tabla con chunk correcto mín./mediana, fuera de alcance máx. y umbral elegido⟩`
+| Medida (coseno, `pplx-embed-v1-0.6b`) | Valor |
+|---|---|
+| Similitud del chunk correcto, 16 preguntas: mínimo | 0,539 (q03, Rebajas de enero) |
+| Similitud del chunk correcto: mediana | 0,635 |
+| Mejor similitud de las preguntas fuera de alcance: máximo | 0,383 (oos03, "lenguaje de programación del equipo de Zaragoza") |
+| Resto de preguntas fuera de alcance | 0,264 · 0,320 · 0,156 |
+| **`min_score` elegido** | **0,46**, punto medio entre 0,383 y 0,539 |
+
+Las dos distribuciones no se solapan: hay 0,156 de margen entre la mejor pregunta
+fuera de alcance y el peor chunk correcto. Con 0,46, las 16 preguntas de la base
+conservan su chunk correcto (Recall@3 con umbral = 100 %) y las 4 preguntas fuera
+de alcance no recuperan **ningún** chunk, así que el modelo responde que no hay
+información suficiente. Se descartó un umbral más alto (p. ej. 0,55) porque
+dejaría fuera la pregunta de Rebajas de enero (0,539). Uno más bajo (≤ 0,38)
+dejaría pasar contexto irrelevante a las preguntas fuera de alcance. Si cambia el
+modelo de embeddings, hay que repetir `python scripts/rag_eval.py`: las
+similitudes no son comparables entre modelos.
 
 ## 5. Generación: voz, audiencia y restricciones del BRIEFING
 
@@ -201,7 +220,36 @@ generación, con `temperature=0`:
 
 ## 6. Evaluación
 
-`⟨pendiente: Recall@3 global y por documento, fidelidad de cifras y ejemplo de pregunta/respuesta⟩`
+`python scripts/rag_eval.py --answers` sobre `data/eval/test-queries.json` (16
+preguntas que cubren los cuatro documentos, entre ellas dos sobre picos de
+demanda: Black Friday y Rebajas de enero) → `data/eval/rag_eval_results.json`.
+
+| Métrica | Resultado | Umbral del BRIEFING |
+|---|---|---|
+| **Recall@3** | **100 %** (16/16; el chunk correcto sale **1.º** en las 16) | ≥ 80 % |
+| Recall@3 por documento | `sla-delivery` 100 % · `returns-policy` 100 % · `carrier-coverage` 100 % · `storage-pricing` 100 % | — |
+| Recall@3 con `min_score` = 0,46 | 100 % | — |
+| Chunks recuperados en preguntas fuera de alcance | 0 de 4 preguntas recuperan algo | — |
+| Fidelidad de cifras | Todas las cifras de las respuestas están en el contexto recuperado o en la propia pregunta | Ninguna cifra distinta de los chunks |
+| Datos clave en las respuestas | 16/16 incluyen el dato esperado (p. ej. "30 días", "SEUR", "Miguel Torres") | — |
+
+En la primera ejecución, la comprobación de fidelidad marcó la q15 por el "60" de
+"una marca con 60 metros cúbicos al mes". Ese número lo da el account manager en
+la pregunta, no lo inventa el modelo, así que `unsupported_figures()` cuenta
+ahora también los números de la pregunta.
+
+**Ejemplo (q15, restricción de descuentos del BRIEFING §6):**
+
+> **Pregunta:** ¿Podemos ofrecer un descuento en almacenamiento a una marca con 60 metros cúbicos al mes?
+>
+> **Respuesta generada:** La marca, con 60 metros cúbicos al mes, cumple el umbral para negociar una tarifa preferencial, pero no podemos ofrecer el descuento directamente: requiere la aprobación de Miguel Torres.
+> Fuente: Tarifas de Almacenamiento (storage-pricing) · Sección: Tarifas de Almacenamiento
+
+**Ejemplo sin contexto** (`generate_answer(pregunta, [])`): "La base de
+conocimiento no tiene información suficiente para responder con seguridad cuál es
+la ventana de devolución estándar. Te recomiendo consultarlo con el responsable
+del área antes de confirmárselo al cliente. Fuente: ninguna (sin información en
+la base de conocimiento)".
 
 ## 7. Cómo ejecutarlo
 

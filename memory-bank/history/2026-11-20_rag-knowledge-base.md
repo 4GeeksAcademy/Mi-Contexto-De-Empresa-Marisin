@@ -51,3 +51,5 @@
 ## 3. Registro
 
 - 2026-11-20 — Primer parche (acciones 1-11) preparado por Claude. Probado en local con un Qdrant simulado y un embedding léxico de prueba: 14 chunks y Recall@3 del 100 %. La cifra válida es la del modelo real de 4Geeks.
+- 2026-11-20 — Marisin generó la clave `trackflow-rag` en 4geeks.com (Recursos → Claves API para LLM). El gateway `https://llm.4geeks.ai` expone los modelos **sin** el prefijo `litellm/` que muestra la web, que provocaba un 403. Se usan `madrid-spain/openrouter/perplexity/pplx-embed-v1-0.6b` (embeddings, dimensión 1024) y `madrid-spain/opnerouter/openai/gpt-6-luna` (generación).
+- 2026-11-20 — `setup()`: 14 chunks en `trackflow_knowledge`. Eval: **Recall@3 = 100 %** (16/16 en el puesto 1); chunk correcto ≥ 0,539 y fuera de alcance ≤ 0,383 → `min_score = 0,46`. Fidelidad: solo se marcó la q15 por el "60" de la pregunta; se corrige `unsupported_figures()` para contar los números de la pregunta. Qdrant pasa a v1.20.0, la misma versión menor que el cliente.
