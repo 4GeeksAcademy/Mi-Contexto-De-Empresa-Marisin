@@ -51,7 +51,8 @@ services:
   # Colección `trackflow_knowledge`; los vectores persisten en el volumen qdrant_data.
   # Panel web (solo desarrollo): http://localhost:6333/dashboard
   qdrant:
-    image: qdrant/qdrant:v1.15.0
+    # Misma versión menor que qdrant-client (1.20) para evitar el aviso de compatibilidad.
+    image: qdrant/qdrant:v1.20.0
     ports:
       - "6333:6333"
     volumes:
