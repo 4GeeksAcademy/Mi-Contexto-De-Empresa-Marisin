@@ -59,8 +59,8 @@
 | 1 | Este plan | `docs: añade el plan del agente de soporte con LangGraph` |
 | 2 | `.gitignore` + `services/requirements.txt` | `chore: ignora los traces del agente y añade langgraph al contenedor` |
 | 3 | `services/agent/state.py` + `nodes.py` | `feat: define el estado y los nodos del agente de soporte` |
-| 4 | `services/agent/structure.py` + `graph.py` | `feat: compila el grafo del agente con validación estructural` |
-| 5 | `services/agent/tracing.py` + `runner.py` | `feat: traza cada corrida del agente con sus checkpoints` |
+| 4 | `services/agent/structure.py` + `graph.py` + `tracing.py` (`graph.py` importa `traced`) | `feat: compila el grafo del agente con validación estructural` |
+| 5 | `services/agent/runner.py` | `feat: traza cada corrida del agente con sus checkpoints` |
 | 6 | `services/agent/schemas.py` + `router.py`, `main.py`, conteo de rutas | `feat: expone POST /agent/query y GET /agent/traces/{run_id}` |
 | 7 | `tests/pipelines/test_agent_graph.py`, `tests/test_agent_routes.py` | `test: añade pruebas del grafo y del endpoint del agente` |
 | 8 | `data/eval/agent-eval-cases.json`, `scripts/agent_record_traces.py` + READMEs | `feat: añade los casos de eval y el grabador de traces del agente` |
