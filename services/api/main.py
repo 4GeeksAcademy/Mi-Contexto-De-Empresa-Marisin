@@ -22,6 +22,15 @@ from .routes.suppliers import router as suppliers_router
 from .routes.telemetry import router as telemetry_router
 from .routes.users import router as users_router
 
+try:
+    # API arrancada desde la raíz del repo: `uvicorn services.api.main:app`.
+    from services.reporting.router import router as reporting_router
+except ModuleNotFoundError as exc:
+    if exc.name not in {"services", "services.reporting"}:
+        raise
+    # Contenedor de Docker: /app es `services/`, así que el paquete es `reporting`.
+    from reporting.router import router as reporting_router
+
 app = FastAPI(
     title="TrackFlow - Supplier Directory API",
     version="1.0.0",
@@ -108,3 +117,4 @@ app.include_router(profiles_router)
 app.include_router(inventory_router)
 app.include_router(incidents_router)  # NUEVO
 app.include_router(telemetry_router)
+app.include_router(reporting_router)
