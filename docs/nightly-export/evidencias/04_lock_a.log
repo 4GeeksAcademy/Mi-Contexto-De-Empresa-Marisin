@@ -1,0 +1,8 @@
+2026-11-19T15:56:20Z | INFO | job=nightly_export | status=starting | target_date=2026-11-17 | run_id=- | Arranque (pid=25811, fecha de TARGET_DATE).
+2026-11-19T15:56:20Z | INFO | job=nightly_export | status=pending | target_date=2026-11-17 | run_id=3bfc476c-ca75-4c01-a164-9f5dbc46a44b | Ejecución registrada.
+2026-11-19T15:56:21Z | INFO | job=nightly_export | status=processing | target_date=2026-11-17 | run_id=3bfc476c-ca75-4c01-a164-9f5dbc46a44b | Inicio del trabajo (lock tomado).
+2026-11-19T15:56:21Z | INFO | job=nightly_export | status=processing | target_date=2026-11-17 | run_id=3bfc476c-ca75-4c01-a164-9f5dbc46a44b | CSV exportado: data/raw/telemetry_2026-11-17.csv (0 filas).
+2026-11-19T15:56:21Z | INFO | job=nightly_export | status=processing | target_date=2026-11-17 | run_id=3bfc476c-ca75-4c01-a164-9f5dbc46a44b | Lanzando el pipeline: -m data.pipelines.pipeline --week-start 2026-11-16 --trigger backfill
+2026-11-19T15:56:40Z | INFO | job=nightly_export | status=processing | target_date=2026-11-17 | run_id=3bfc476c-ca75-4c01-a164-9f5dbc46a44b | Pipeline terminado: pipeline_run_id=ed4338e2-a86b-43cf-9532-2865c8a423f6 status=completed weeks=2026-11-16 inserted=0 updated=0
+2026-11-19T15:56:40Z | INFO | job=nightly_export | status=completed | target_date=2026-11-17 | run_id=3bfc476c-ca75-4c01-a164-9f5dbc46a44b | Fin del trabajo: ejecución completada.
+2026-11-19T15:56:40Z | INFO | job=nightly_export | status=finished | target_date=2026-11-17 | run_id=3bfc476c-ca75-4c01-a164-9f5dbc46a44b | Salida con código 0 (resultado: completed).

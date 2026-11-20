@@ -1,0 +1,3 @@
+2026-11-19T15:56:23Z | INFO | job=nightly_export | status=starting | target_date=2026-11-17 | run_id=- | Arranque (pid=25855, fecha de TARGET_DATE).
+2026-11-19T15:56:23Z | INFO | job=nightly_export | status=skipped | target_date=2026-11-17 | run_id=- | Otra instancia está en processing (lock tomado): esta se cancela sin hacer nada.
+2026-11-19T15:56:23Z | INFO | job=nightly_export | status=finished | target_date=2026-11-17 | run_id=- | Salida con código 0 (resultado: skipped_locked).

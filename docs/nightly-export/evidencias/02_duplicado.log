@@ -1,0 +1,3 @@
+2026-11-19T15:39:43Z | INFO | job=nightly_export | status=starting | target_date=2026-11-18 | run_id=- | Arranque (pid=18550, fecha por defecto: ayer UTC).
+2026-11-19T15:39:43Z | INFO | job=nightly_export | status=skipped | target_date=2026-11-18 | run_id=- | Ya hay una ejecución completed para este día: omisión por duplicado.
+2026-11-19T15:39:43Z | INFO | job=nightly_export | status=finished | target_date=2026-11-18 | run_id=- | Salida con código 0 (resultado: skipped_duplicate).

@@ -6,3 +6,14 @@ This folder contains **helper scripts** for the monorepo: development automation
 - **Recommendation**: document each script (what it does, parameters, requirements, usage examples) and keep them reproducible (and safe) across environments.
 
 > _Spanish version: [README.es.md](./README.es.md)._
+
+## `nightly_export.py` — nightly telemetry job (Ticket #DEV-53)
+
+Exports yesterday's (UTC) `telemetry_events` rows to `data/raw/telemetry_YYYY-MM-DD.csv` (only if the file does not exist; backup/audit snapshot), runs the business performance pipeline as a subprocess and records every run in `public.job_runs` (`pending → processing → completed | failed`) through `services/job_runner.py`. The `processing` state is the lock: a second instance aborts silently. Idempotent per `(job_name, target_date)`.
+
+```bash
+python scripts/nightly_export.py                         # yesterday (UTC)
+TARGET_DATE=2026-11-18 python scripts/nightly_export.py  # a specific day
+```
+
+Requires `public.job_runs` (`services/sql/001_job_runs.sql`). Triggered by the OS crontab (`15 1 * * *`, see `infra/cron/`), never inside FastAPI. Plan: `memory-bank/history/2026-11-19_nightly-export.md`.

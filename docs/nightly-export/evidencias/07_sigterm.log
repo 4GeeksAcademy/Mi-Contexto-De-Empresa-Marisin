@@ -1,0 +1,30 @@
+2026-11-19T16:14:31Z | INFO | job=nightly_export | status=starting | target_date=2026-11-14 | run_id=- | Arranque (pid=34423, fecha de TARGET_DATE).
+2026-11-19T16:14:32Z | INFO | job=nightly_export | status=pending | target_date=2026-11-14 | run_id=1cf39a00-0127-43da-bc17-e1e96406944f | Ejecución registrada.
+2026-11-19T16:14:32Z | INFO | job=nightly_export | status=processing | target_date=2026-11-14 | run_id=1cf39a00-0127-43da-bc17-e1e96406944f | Inicio del trabajo (lock tomado).
+2026-11-19T16:14:32Z | INFO | job=nightly_export | status=processing | target_date=2026-11-14 | run_id=1cf39a00-0127-43da-bc17-e1e96406944f | CSV exportado: data/raw/telemetry_2026-11-14.csv (0 filas).
+2026-11-19T16:14:32Z | INFO | job=nightly_export | status=processing | target_date=2026-11-14 | run_id=1cf39a00-0127-43da-bc17-e1e96406944f | Lanzando el pipeline: -m data.pipelines.pipeline --week-start 2026-11-09 --trigger backfill
+2026-11-19T16:14:36Z | ERROR | job=nightly_export | status=failed | target_date=2026-11-14 | run_id=1cf39a00-0127-43da-bc17-e1e96406944f | La ejecución falló: SystemExit: 143
+Traceback (most recent call last):
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/services/job_runner.py", line 389, in run_job
+    work(run_id)
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/scripts/nightly_export.py", line 301, in work
+    summary = run_pipeline(command, timeout_seconds)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/scripts/nightly_export.py", line 239, in run_pipeline
+    completed = subprocess.run(
+                ^^^^^^^^^^^^^^^
+  File "/usr/local/python/current/lib/python3.12/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/current/lib/python3.12/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/current/lib/python3.12/subprocess.py", line 2115, in _communicate
+    ready = selector.select(timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/current/lib/python3.12/selectors.py", line 415, in select
+    fd_event_list = self._selector.poll(timeout)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspaces/Mi-Contexto-De-Empresa-Marisin/scripts/nightly_export.py", line 261, in _raise_system_exit_on_sigterm
+    raise SystemExit(128 + signum)
+SystemExit: 143
