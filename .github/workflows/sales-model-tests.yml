@@ -1,7 +1,8 @@
 # CI de los proyectos de predicción y evaluación del modelo de ventas y del RAG.
 # Ejecuta los tests de tests/pipelines/ del split 8/2, de la validación
 # cruzada temporal (orden cronológico de los folds y ausencia de fuga) y del
-# RAG (retrieve/query con mocks; sin Qdrant ni LLM en vivo).
+# RAG (retrieve/query con mocks; sin Qdrant ni LLM en vivo), y del agente
+# LangGraph: grafo con dobles del RAG y evals sobre los traces grabados.
 name: sales-model-tests
 
 on:
@@ -30,3 +31,5 @@ jobs:
           tests/pipelines/test_sales_forecast_split.py
           tests/pipelines/test_sales_model_eval.py
           tests/pipelines/test_rag.py
+          tests/pipelines/test_agent_graph.py
+          tests/pipelines/test_agent_evals.py
