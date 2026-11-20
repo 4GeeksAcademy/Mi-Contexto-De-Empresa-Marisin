@@ -143,3 +143,15 @@ Los tests del RAG (`tests/pipelines/test_rag.py`, `tests/test_knowledge_routes.p
 
 - Una herramienta nueva se añade como **un nodo y una arista condicional** en `AGENT_SPEC`; `validate_structure()` comprueba que el nodo quede conectado y llegue a `END`.
 - La voz de `generate_answer()` sigue siendo la del asistente comercial del Hito 7 (Miguel Torres). Los BRIEFING del Hito 8 describen el agente como el de primera línea de CX de Valentina Cruz: el cambio de identidad se hará en la Parte 2 sin tocar el flujo.
+
+## 9. Evidencias (corrida real)
+
+| Evidencia | Fichero |
+|---|---|
+| Trace completo de una corrida (eval a01) | `docs/agent/trace-example.json` |
+| Resultado de los evals (22 passed) | `docs/agent/eval-results.txt` |
+| `POST /agent/query` respondido y anclado | `docs/agent/evidence-query.json` |
+| `GET /agent/traces/{run_id}` de esa corrida | `docs/agent/evidence-trace.json` |
+| Pregunta vacía → 422 con mensaje claro | `docs/agent/evidence-empty-question.txt` |
+| Captura de la terminal | `docs/agent/endpoint-evidence.png` |
+| Traces de los 6 casos de eval | `tests/pipelines/fixtures/agent_traces/` |
