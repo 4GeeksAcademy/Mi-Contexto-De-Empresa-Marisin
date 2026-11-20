@@ -1,0 +1,30 @@
+# CI de los proyectos de predicción y evaluación del modelo de ventas.
+# Ejecuta los tests de tests/pipelines/ del split 8/2 y de la validación
+# cruzada temporal (orden cronológico de los folds y ausencia de fuga).
+name: sales-model-tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  pipelines-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv y Python 3.12
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias (uv.lock)
+        run: uv sync --frozen
+
+      - name: Tests del modelo de ventas
+        run: >-
+          uv run pytest -q
+          tests/pipelines/test_sales_forecast_split.py
+          tests/pipelines/test_sales_model_eval.py
