@@ -10,3 +10,5 @@ psycopg2-binary>=2.9.10,<3
 pandas
 prefect>=3
 celery[redis]>=5.4
+qdrant-client>=1.12
+openai>=1.40
