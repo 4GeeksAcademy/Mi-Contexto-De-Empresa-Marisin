@@ -17,6 +17,8 @@ dependencies = [
     "celery>=5.7.0",
     "redis>=8.1.0",
     "flower>=2.2.0",
+    "scikit-learn>=1.9.1",
+    "matplotlib>=3.11.2",
 ]
 
 [dependency-groups]

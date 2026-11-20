@@ -1,0 +1,101 @@
+{
+  "dataset": {
+    "csv": "data/raw/trackflow_sales.csv",
+    "market": "consolidated",
+    "cleaning": {
+      "rows_in": 120,
+      "missing_months": 0,
+      "nulls_before": {
+        "revenue_eur": 0,
+        "shipments_processed": 0,
+        "avg_revenue_per_shipment_eur": 0
+      },
+      "rows_out": 120,
+      "nulls_after": 0
+    },
+    "train_period": "2016-01 → 2023-12",
+    "test_period": "2024-01 → 2025-12",
+    "train_rows": 96,
+    "train_rows_with_features": 72,
+    "test_rows": 24,
+    "mean_test_monthly_revenue_eur": 1299073.0533333335
+  },
+  "model": {
+    "algorithm": "RandomForestRegressor",
+    "target": "ratio interanual revenue_t / revenue_{t-12}",
+    "forecast": "recursivo a 24 meses, sin reales de prueba",
+    "n_estimators": 300,
+    "min_samples_leaf": 2,
+    "random_state": 42,
+    "features": [
+      "month_sin",
+      "month_cos",
+      "is_peak_season",
+      "is_february",
+      "yoy_same_month_last_year",
+      "yoy_last_month",
+      "trailing_growth",
+      "seasonal_index_last_year"
+    ],
+    "feature_importance": {
+      "yoy_same_month_last_year": 0.517,
+      "seasonal_index_last_year": 0.1652,
+      "trailing_growth": 0.1193,
+      "yoy_last_month": 0.1058,
+      "month_sin": 0.0486,
+      "month_cos": 0.0396,
+      "is_peak_season": 0.0034,
+      "is_february": 0.0011
+    }
+  },
+  "test": {
+    "mse_eur2": 2728405048.348618,
+    "rmse_eur": 52234.13681060134,
+    "rmse_pct_of_mean_revenue": 4.020877553927555,
+    "mse_pct_of_mean_revenue_squared": 0.16167456303678437,
+    "mae_eur": 44621.01490927307,
+    "mape_pct": 3.4297179791461594,
+    "r2_score": 0.9067881512288264,
+    "normalized_gini": 0.9198807102873847,
+    "k2_score_r2": 0.9067881512288264,
+    "psi": {
+      "revenue_eur": {
+        "value": 5.8945,
+        "reading": "cambio significativo (> 0,25)"
+      },
+      "avg_revenue_per_shipment_eur": {
+        "value": 0.4796,
+        "reading": "cambio significativo (> 0,25)"
+      },
+      "target_yoy_ratio": {
+        "value": 0.125,
+        "reading": "cambio moderado (0,10-0,25)"
+      },
+      "prediction_vs_actual_test": {
+        "value": 0.0365,
+        "reading": "estable (< 0,10)"
+      }
+    },
+    "band_coverage_pct": 66.66666666666666
+  },
+  "baseline_seasonal_naive_test": {
+    "mse_eur2": 15355054004.47933,
+    "rmse_eur": 123915.51155718694,
+    "rmse_pct_of_mean_revenue": 9.538763908559886,
+    "mse_pct_of_mean_revenue_squared": 0.909880169032447,
+    "mae_eur": 103201.42250000003,
+    "mape_pct": 7.677732467853658,
+    "r2_score": 0.4754177087434226,
+    "normalized_gini": 0.7274194585064021
+  },
+  "in_sample_train_one_step": {
+    "mse_eur2": 346408269.3694811,
+    "rmse_eur": 18612.046350938446,
+    "rmse_pct_of_mean_revenue": 1.8116576032507288,
+    "mse_pct_of_mean_revenue_squared": 0.032821032714161744,
+    "mae_eur": 15151.563361780647,
+    "mape_pct": 1.470129185137528,
+    "r2_score": 0.9867973093250995,
+    "normalized_gini": 0.9925616010429295
+  }
+}
