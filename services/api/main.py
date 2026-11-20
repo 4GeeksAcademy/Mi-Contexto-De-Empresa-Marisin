@@ -32,6 +32,14 @@ except ModuleNotFoundError as exc:
     # Contenedor de Docker: /app es `services/`, así que el paquete es `reporting`.
     from reporting.router import router as reporting_router
 
+try:
+    # Asistente comercial RAG (Hito 7). Misma convención de import que reporting.
+    from services.knowledge.router import router as knowledge_router
+except ModuleNotFoundError as exc:
+    if exc.name not in {"services", "services.knowledge"}:
+        raise
+    from knowledge.router import router as knowledge_router
+
 app = FastAPI(
     title="TrackFlow - Supplier Directory API",
     version="1.0.0",
@@ -120,3 +128,4 @@ app.include_router(incidents_router)  # NUEVO
 app.include_router(telemetry_router)
 app.include_router(reporting_router)
 app.include_router(tasks_router)
+app.include_router(knowledge_router)

@@ -1,6 +1,7 @@
-# CI de los proyectos de predicción y evaluación del modelo de ventas.
-# Ejecuta los tests de tests/pipelines/ del split 8/2 y de la validación
-# cruzada temporal (orden cronológico de los folds y ausencia de fuga).
+# CI de los proyectos de predicción y evaluación del modelo de ventas y del RAG.
+# Ejecuta los tests de tests/pipelines/ del split 8/2, de la validación
+# cruzada temporal (orden cronológico de los folds y ausencia de fuga) y del
+# RAG (retrieve/query con mocks; sin Qdrant ni LLM en vivo).
 name: sales-model-tests
 
 on:
@@ -28,3 +29,4 @@ jobs:
           uv run pytest -q
           tests/pipelines/test_sales_forecast_split.py
           tests/pipelines/test_sales_model_eval.py
+          tests/pipelines/test_rag.py

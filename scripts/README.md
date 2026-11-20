@@ -37,3 +37,11 @@ python scripts/sales_model_eval.py
 ```
 
 Outputs in `data/eval/` (report: `data/eval/evaluation_report.md`). Test: `tests/pipelines/test_sales_model_eval.py`.
+
+## `rag_eval.py` — RAG retrieval eval
+
+Measures Recall@3 on `data/eval/test-queries.json`, analyses the `min_score` threshold with out-of-scope questions and, with `--answers`, generates the answers and checks their figures against the retrieved context. Run `python -m data.process.rag` first.
+
+```bash
+python scripts/rag_eval.py --answers
+```

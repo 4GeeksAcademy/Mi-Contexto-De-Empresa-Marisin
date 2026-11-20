@@ -1,0 +1,719 @@
+{
+  "collection": "trackflow_knowledge",
+  "embedding_model": "madrid-spain/openrouter/perplexity/pplx-embed-v1-0.6b",
+  "generation_model": "madrid-spain/opnerouter/openai/gpt-6-luna",
+  "chunks_indexed": 14,
+  "k": 3,
+  "min_score": 0.46,
+  "recall_at_k": 1.0,
+  "recall_at_k_with_min_score": 1.0,
+  "recall_threshold": 0.8,
+  "passes": true,
+  "recall_by_document": {
+    "sla-delivery": 1.0,
+    "returns-policy": 1.0,
+    "carrier-coverage": 1.0,
+    "storage-pricing": 1.0
+  },
+  "threshold_analysis": {
+    "lowest_correct_chunk_score": 0.539,
+    "median_correct_chunk_score": 0.6351,
+    "highest_out_of_scope_score": 0.3828,
+    "separable": true,
+    "suggested_min_score": 0.46
+  },
+  "queries": [
+    {
+      "id": "q01",
+      "question": "¿En cuántos días hábiles llega un envío estándar dentro de España?",
+      "expected": "sla-delivery#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.6157,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.6157,
+          "source_document": "sla-delivery",
+          "chunk_index": 0,
+          "section": "SLA de Entrega"
+        },
+        {
+          "score": 0.4484,
+          "source_document": "returns-policy",
+          "chunk_index": 1,
+          "section": "Política de Devoluciones › Ventana de devolución estándar"
+        },
+        {
+          "score": 0.4069,
+          "source_document": "carrier-coverage",
+          "chunk_index": 1,
+          "section": "Cobertura de Transportistas › España (Zaragoza)"
+        }
+      ]
+    },
+    {
+      "id": "q02",
+      "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+      "expected": "sla-delivery#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.6794,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.6794,
+          "source_document": "sla-delivery",
+          "chunk_index": 2,
+          "section": "SLA de Entrega"
+        },
+        {
+          "score": 0.5459,
+          "source_document": "sla-delivery",
+          "chunk_index": 1,
+          "section": "SLA de Entrega"
+        },
+        {
+          "score": 0.4356,
+          "source_document": "sla-delivery",
+          "chunk_index": 0,
+          "section": "SLA de Entrega"
+        }
+      ]
+    },
+    {
+      "id": "q03",
+      "question": "En las Rebajas de enero, ¿cuánto pueden alargarse los tiempos de entrega?",
+      "expected": "sla-delivery#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.539,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.539,
+          "source_document": "sla-delivery",
+          "chunk_index": 2,
+          "section": "SLA de Entrega"
+        },
+        {
+          "score": 0.4033,
+          "source_document": "sla-delivery",
+          "chunk_index": 0,
+          "section": "SLA de Entrega"
+        },
+        {
+          "score": 0.3752,
+          "source_document": "sla-delivery",
+          "chunk_index": 1,
+          "section": "SLA de Entrega"
+        }
+      ]
+    },
+    {
+      "id": "q04",
+      "question": "¿Qué compensación recibe el cliente si no cumplimos el 90% de entregas a tiempo?",
+      "expected": "sla-delivery#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.6241,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.6241,
+          "source_document": "sla-delivery",
+          "chunk_index": 1,
+          "section": "SLA de Entrega"
+        },
+        {
+          "score": 0.3553,
+          "source_document": "sla-delivery",
+          "chunk_index": 2,
+          "section": "SLA de Entrega"
+        },
+        {
+          "score": 0.3216,
+          "source_document": "sla-delivery",
+          "chunk_index": 0,
+          "section": "SLA de Entrega"
+        }
+      ]
+    },
+    {
+      "id": "q05",
+      "question": "¿Cuál es la ventana de devolución estándar?",
+      "expected": "returns-policy#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.7892,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.7892,
+          "source_document": "returns-policy",
+          "chunk_index": 1,
+          "section": "Política de Devoluciones › Ventana de devolución estándar"
+        },
+        {
+          "score": 0.4371,
+          "source_document": "returns-policy",
+          "chunk_index": 0,
+          "section": "Política de Devoluciones"
+        },
+        {
+          "score": 0.383,
+          "source_document": "returns-policy",
+          "chunk_index": 3,
+          "section": "Política de Devoluciones"
+        }
+      ]
+    },
+    {
+      "id": "q06",
+      "question": "¿Quién paga el envío de vuelta si el producto llegó dañado en tránsito?",
+      "expected": "returns-policy#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.6125,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.6125,
+          "source_document": "returns-policy",
+          "chunk_index": 2,
+          "section": "Política de Devoluciones › Costos de devolución"
+        },
+        {
+          "score": 0.4097,
+          "source_document": "returns-policy",
+          "chunk_index": 0,
+          "section": "Política de Devoluciones"
+        },
+        {
+          "score": 0.3518,
+          "source_document": "returns-policy",
+          "chunk_index": 3,
+          "section": "Política de Devoluciones"
+        }
+      ]
+    },
+    {
+      "id": "q07",
+      "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+      "expected": "returns-policy#3",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.5604,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.5604,
+          "source_document": "returns-policy",
+          "chunk_index": 3,
+          "section": "Política de Devoluciones"
+        },
+        {
+          "score": 0.4501,
+          "source_document": "returns-policy",
+          "chunk_index": 0,
+          "section": "Política de Devoluciones"
+        },
+        {
+          "score": 0.4431,
+          "source_document": "sla-delivery",
+          "chunk_index": 0,
+          "section": "SLA de Entrega"
+        }
+      ]
+    },
+    {
+      "id": "q08",
+      "question": "¿Cómo funciona el proceso de devolución paso a paso?",
+      "expected": "returns-policy#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.5896,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.5896,
+          "source_document": "returns-policy",
+          "chunk_index": 0,
+          "section": "Política de Devoluciones"
+        },
+        {
+          "score": 0.4096,
+          "source_document": "returns-policy",
+          "chunk_index": 3,
+          "section": "Política de Devoluciones"
+        },
+        {
+          "score": 0.3665,
+          "source_document": "returns-policy",
+          "chunk_index": 1,
+          "section": "Política de Devoluciones › Ventana de devolución estándar"
+        }
+      ]
+    },
+    {
+      "id": "q09",
+      "question": "¿TrackFlow revende o reacondiciona los productos devueltos por su cuenta?",
+      "expected": "returns-policy#4",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.8033,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.8033,
+          "source_document": "returns-policy",
+          "chunk_index": 4,
+          "section": "Política de Devoluciones"
+        },
+        {
+          "score": 0.7367,
+          "source_document": "returns-policy",
+          "chunk_index": 0,
+          "section": "Política de Devoluciones"
+        },
+        {
+          "score": 0.5819,
+          "source_document": "returns-policy",
+          "chunk_index": 2,
+          "section": "Política de Devoluciones › Costos de devolución"
+        }
+      ]
+    },
+    {
+      "id": "q10",
+      "question": "¿Qué transportista cubre mejor Aragón rural?",
+      "expected": "carrier-coverage#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.646,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.646,
+          "source_document": "carrier-coverage",
+          "chunk_index": 1,
+          "section": "Cobertura de Transportistas › España (Zaragoza)"
+        },
+        {
+          "score": 0.3576,
+          "source_document": "carrier-coverage",
+          "chunk_index": 0,
+          "section": "Cobertura de Transportistas › Estados Unidos (Los Ángeles)"
+        },
+        {
+          "score": 0.3475,
+          "source_document": "carrier-coverage",
+          "chunk_index": 2,
+          "section": "Cobertura de Transportistas"
+        }
+      ]
+    },
+    {
+      "id": "q11",
+      "question": "¿Con qué transportista enviamos pedidos internacionales desde Los Ángeles?",
+      "expected": "carrier-coverage#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.7382,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.7382,
+          "source_document": "carrier-coverage",
+          "chunk_index": 0,
+          "section": "Cobertura de Transportistas › Estados Unidos (Los Ángeles)"
+        },
+        {
+          "score": 0.527,
+          "source_document": "sla-delivery",
+          "chunk_index": 0,
+          "section": "SLA de Entrega"
+        },
+        {
+          "score": 0.4025,
+          "source_document": "carrier-coverage",
+          "chunk_index": 1,
+          "section": "Cobertura de Transportistas › España (Zaragoza)"
+        }
+      ]
+    },
+    {
+      "id": "q12",
+      "question": "¿Puede el account manager elegir el transportista de un envío concreto?",
+      "expected": "carrier-coverage#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.6985,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.6985,
+          "source_document": "carrier-coverage",
+          "chunk_index": 2,
+          "section": "Cobertura de Transportistas"
+        },
+        {
+          "score": 0.4195,
+          "source_document": "storage-pricing",
+          "chunk_index": 2,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.4017,
+          "source_document": "carrier-coverage",
+          "chunk_index": 0,
+          "section": "Cobertura de Transportistas › Estados Unidos (Los Ángeles)"
+        }
+      ]
+    },
+    {
+      "id": "q13",
+      "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+      "expected": "storage-pricing#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.5971,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.5971,
+          "source_document": "storage-pricing",
+          "chunk_index": 0,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.5067,
+          "source_document": "storage-pricing",
+          "chunk_index": 2,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.423,
+          "source_document": "carrier-coverage",
+          "chunk_index": 1,
+          "section": "Cobertura de Transportistas › España (Zaragoza)"
+        }
+      ]
+    },
+    {
+      "id": "q14",
+      "question": "¿Qué se cobra por el inventario que lleva más de 180 días sin movimiento?",
+      "expected": "storage-pricing#0",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.561,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.561,
+          "source_document": "storage-pricing",
+          "chunk_index": 0,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.4527,
+          "source_document": "storage-pricing",
+          "chunk_index": 1,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.2904,
+          "source_document": "storage-pricing",
+          "chunk_index": 2,
+          "section": "Tarifas de Almacenamiento"
+        }
+      ]
+    },
+    {
+      "id": "q15",
+      "question": "¿Podemos ofrecer un descuento en almacenamiento a una marca con 60 metros cúbicos al mes?",
+      "expected": "storage-pricing#2",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.6533,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.6533,
+          "source_document": "storage-pricing",
+          "chunk_index": 2,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.5678,
+          "source_document": "storage-pricing",
+          "chunk_index": 0,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.34,
+          "source_document": "storage-pricing",
+          "chunk_index": 1,
+          "section": "Tarifas de Almacenamiento"
+        }
+      ]
+    },
+    {
+      "id": "q16",
+      "question": "¿Cómo puede un cliente pedir el reporte de antigüedad de inventario?",
+      "expected": "storage-pricing#1",
+      "rank": 1,
+      "hit_at_k": true,
+      "correct_chunk_score": 0.8003,
+      "survives_min_score": true,
+      "top_k": [
+        {
+          "score": 0.8003,
+          "source_document": "storage-pricing",
+          "chunk_index": 1,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.2747,
+          "source_document": "storage-pricing",
+          "chunk_index": 0,
+          "section": "Tarifas de Almacenamiento"
+        },
+        {
+          "score": 0.2436,
+          "source_document": "storage-pricing",
+          "chunk_index": 2,
+          "section": "Tarifas de Almacenamiento"
+        }
+      ]
+    }
+  ],
+  "out_of_scope": [
+    {
+      "id": "oos01",
+      "question": "¿Cuál es el horario de atención al público del almacén los domingos?",
+      "top_score": 0.2636,
+      "chunks_over_min_score": 0
+    },
+    {
+      "id": "oos02",
+      "question": "¿Ofrecen un seguro de mercancía para productos frágiles?",
+      "top_score": 0.3204,
+      "chunks_over_min_score": 0
+    },
+    {
+      "id": "oos03",
+      "question": "¿Qué lenguaje de programación usa el equipo de tecnología de Zaragoza?",
+      "top_score": 0.3828,
+      "chunks_over_min_score": 0
+    },
+    {
+      "id": "oos04",
+      "question": "¿Cuál es la capital de Francia?",
+      "top_score": 0.1555,
+      "chunks_over_min_score": 0
+    }
+  ],
+  "answers": [
+    {
+      "id": "q01",
+      "question": "¿En cuántos días hábiles llega un envío estándar dentro de España?",
+      "answer": "El envío estándar dentro de España llega en 3 a 5 días hábiles.  \nFuente: SLA de Entrega (sla-delivery) · Sección: SLA de Entrega",
+      "context": [
+        "sla-delivery#0"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q02",
+      "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+      "answer": "No, TrackFlow no garantiza el SLA de entrega durante el Black Friday. En esas fechas, los tiempos pueden extenderse hasta un 40% adicional, así que recomendamos avisar a la marca con antelación.  \nFuente: SLA de Entrega (sla-delivery) · Sección: SLA de Entrega",
+      "context": [
+        "sla-delivery#2",
+        "sla-delivery#1"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q03",
+      "question": "En las Rebajas de enero, ¿cuánto pueden alargarse los tiempos de entrega?",
+      "answer": "En las Rebajas de enero, los tiempos de entrega pueden extenderse hasta un 40% adicional. TrackFlow no garantiza el SLA en esas fechas, así que recomendamos avisar al cliente con antelación.  \nFuente: SLA de Entrega (sla-delivery) · Sección: SLA de Entrega",
+      "context": [
+        "sla-delivery#2"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q04",
+      "question": "¿Qué compensación recibe el cliente si no cumplimos el 90% de entregas a tiempo?",
+      "answer": "Si un país queda por debajo del 90% de entregas a tiempo durante dos meses consecutivos, el cliente tiene derecho a una compensación del 5% sobre la tarifa mensual de ese país, según el contrato estándar.\n\nFuente: SLA de Entrega (sla-delivery) · Sección: SLA de Entrega",
+      "context": [
+        "sla-delivery#1"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q05",
+      "question": "¿Cuál es la ventana de devolución estándar?",
+      "answer": "La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado una ventana distinta en su contrato.  \nFuente: Política de Devoluciones (returns-policy) · Sección: Política de Devoluciones › Ventana de devolución estándar",
+      "context": [
+        "returns-policy#1"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q06",
+      "question": "¿Quién paga el envío de vuelta si el producto llegó dañado en tránsito?",
+      "answer": "Si el producto llegó dañado en tránsito, TrackFlow asume el costo del envío de vuelta.  \nFuente: Política de Devoluciones › Costos de devolución",
+      "context": [
+        "returns-policy#2"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q07",
+      "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+      "answer": "No, al ser una devolución internacional, no está cubierta por el proceso automático estándar. Requiere gestión manual del equipo de Sofía Ramos.  \nFuente: Política de Devoluciones (returns-policy) · Sección: Política de Devoluciones",
+      "context": [
+        "returns-policy#3"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q08",
+      "question": "¿Cómo funciona el proceso de devolución paso a paso?",
+      "answer": "El cliente final solicita la devolución a través del portal de la marca. Si el motivo está dentro de las reglas configuradas por el cliente, TrackFlow genera automáticamente la etiqueta; después, el producto llega al almacén y un operativo lo inspecciona y clasifica como apto para reventa, apto para reacondicionar o no apto para descarte.\n\nFuente: Política de Devoluciones (returns-policy) · Sección: Política de Devoluciones",
+      "context": [
+        "returns-policy#0"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q09",
+      "question": "¿TrackFlow revende o reacondiciona los productos devueltos por su cuenta?",
+      "answer": "No, TrackFlow no reacondiciona ni revende productos por cuenta propia; ejecuta la logística según las reglas que define cada marca cliente.  \nFuente: Documento: Política de Devoluciones (returns-policy) · Sección: Política de Devoluciones",
+      "context": [
+        "returns-policy#4",
+        "returns-policy#0",
+        "returns-policy#2"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q10",
+      "question": "¿Qué transportista cubre mejor Aragón rural?",
+      "answer": "Para Aragón rural, SEUR tiene la mejor cobertura. Fuente: Cobertura de Transportistas (carrier-coverage) · Cobertura de Transportistas › España (Zaragoza)",
+      "context": [
+        "carrier-coverage#1"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q11",
+      "question": "¿Con qué transportista enviamos pedidos internacionales desde Los Ángeles?",
+      "answer": "Para los pedidos internacionales desde Los Ángeles, utilizamos DHL, que es la única opción con cobertura confiable para esos envíos.  \nFuente: Cobertura de Transportistas (carrier-coverage) · Cobertura de Transportistas › Estados Unidos (Los Ángeles)",
+      "context": [
+        "carrier-coverage#0",
+        "sla-delivery#0"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q12",
+      "question": "¿Puede el account manager elegir el transportista de un envío concreto?",
+      "answer": "La selección del transportista la determina el sistema según el destino, el peso, el tipo de producto y la urgencia. El account manager solo puede elegirlo como excepción, y esa excepción requiere la aprobación de Carlos Vega, Head of Carrier Operations.\n\nFuente: Cobertura de Transportistas (carrier-coverage) · Sección: Cobertura de Transportistas",
+      "context": [
+        "carrier-coverage#2"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q13",
+      "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+      "answer": "En Zaragoza, la tarifa estándar es de 16 EUR por metro cúbico al mes. Los primeros 30 días de cualquier producto nuevo en inventario no generan cargo de almacenamiento.\n\nFuente: Tarifas de Almacenamiento (storage-pricing) · Sección: Tarifas de Almacenamiento",
+      "context": [
+        "storage-pricing#0",
+        "storage-pricing#2"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q14",
+      "question": "¿Qué se cobra por el inventario que lleva más de 180 días sin movimiento?",
+      "answer": "A partir del día 181, el inventario sin ventas ni salidas paga una tarifa de larga duración del 150% sobre la tarifa estándar. Se calcula según el volumen ocupado.  \nFuente: Tarifas de Almacenamiento (storage-pricing) · Sección: Tarifas de Almacenamiento",
+      "context": [
+        "storage-pricing#0"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q15",
+      "question": "¿Podemos ofrecer un descuento en almacenamiento a una marca con 60 metros cúbicos al mes?",
+      "answer": "Con 60 metros cúbicos al mes, la marca puede negociar una tarifa preferencial, pero no podemos ofrecer el descuento directamente: requiere la aprobación de Miguel Torres.  \nFuente: Tarifas de Almacenamiento (storage-pricing) · Sección: Tarifas de Almacenamiento",
+      "context": [
+        "storage-pricing#2",
+        "storage-pricing#0"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "q16",
+      "question": "¿Cómo puede un cliente pedir el reporte de antigüedad de inventario?",
+      "answer": "El cliente puede solicitar el reporte de antigüedad de inventario en cualquier momento a través de su account manager. Actualmente no está automatizado para el cliente final; lo gestionamos internamente.  \nFuente: Tarifas de Almacenamiento (storage-pricing) · Sección: Tarifas de Almacenamiento",
+      "context": [
+        "storage-pricing#1"
+      ],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "oos01",
+      "question": "¿Cuál es el horario de atención al público del almacén los domingos?",
+      "answer": "La base de conocimiento no tiene información suficiente para confirmar el horario de atención al público del almacén los domingos. Te recomiendo consultarlo con el responsable del área antes de responder al cliente.\n\nFuente: ninguna (sin información en la base de conocimiento)",
+      "context": [],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "oos02",
+      "question": "¿Ofrecen un seguro de mercancía para productos frágiles?",
+      "answer": "La base de conocimiento no contiene información suficiente para confirmar si ofrecemos un seguro de mercancía para productos frágiles. Te recomiendo consultarlo con el responsable del área antes de responder al cliente.\n\nFuente: ninguna (sin información en la base de conocimiento)",
+      "context": [],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "oos03",
+      "question": "¿Qué lenguaje de programación usa el equipo de tecnología de Zaragoza?",
+      "answer": "La base de conocimiento no tiene información suficiente para responder con seguridad qué lenguaje de programación usa el equipo de tecnología de Zaragoza. Te recomiendo consultarlo con el responsable del área.\n\nFuente: ninguna (sin información en la base de conocimiento)",
+      "context": [],
+      "unsupported_figures": [],
+      "missing_terms": []
+    },
+    {
+      "id": "oos04",
+      "question": "¿Cuál es la capital de Francia?",
+      "answer": "La base de conocimiento de TrackFlow no tiene información suficiente para responder con seguridad a esa pregunta. Te recomiendo consultarlo con el responsable del área.\n\nFuente: ninguna (sin información en la base de conocimiento)",
+      "context": [],
+      "unsupported_figures": [],
+      "missing_terms": []
+    }
+  ],
+  "faithfulness_ok": true,
+  "answers_with_missing_terms": []
+}

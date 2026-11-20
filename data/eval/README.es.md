@@ -12,3 +12,8 @@ Generado por `python scripts/sales_model_eval.py`, solo con el entrenamiento 201
 - `evaluation_report.md`: reporte técnico con el diagnóstico (overfitting moderado), la validación cruzada temporal, la curva de aprendizaje y la acción correctiva.
 - `sales_model_cv_results.json`: métricas por fold, media ± desviación estándar, puntos de la curva de aprendizaje, error irreducible estimado y barrido de regularización.
 - `learning_curve.png`, `cv_folds.png` y `validation_curve_regularization.png`.
+
+## Eval de retrieval del RAG (Hito 7)
+
+- `test-queries.json`: 16 preguntas que cubren los cuatro documentos de `docs/company-knowledge-base/` (incluidas Black Friday y Rebajas de enero), cada una con su chunk esperado (`source_document` + `chunk_index`), y 4 preguntas fuera de alcance para calibrar `min_score`.
+- `rag_eval_results.json`: salida de `python scripts/rag_eval.py --answers` con Recall@3 (umbral del BRIEFING: ≥ 80 %), el análisis del umbral y la fidelidad de las cifras de cada respuesta.
