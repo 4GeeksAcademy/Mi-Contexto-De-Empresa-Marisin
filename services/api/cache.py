@@ -16,6 +16,8 @@ PRODUCTS_LIST_TTL = 30
 INCIDENTS_SUMMARY_KEY = "incidents:summary"
 # Aggregate monitoring tolerates a longer freshness window.
 INCIDENTS_SUMMARY_TTL = 60
+# Technical telemetry report, keyed by its resolved [start, end) window.
+TELEMETRY_REPORT_TTL = 60
 
 CACHE_ENABLED = os.getenv("TRACKFLOW_CACHE_ENABLED", "1") != "0"
 
@@ -113,3 +115,5 @@ class TTLCache:
 
 
 api_cache = TTLCache(default_ttl=INCIDENTS_SUMMARY_TTL)
+# Separate store so report windows never evict the inventory or incident entries.
+telemetry_report_cache = TTLCache(default_ttl=TELEMETRY_REPORT_TTL, maxsize=32)

@@ -1,0 +1,100 @@
+{
+    "period": {
+        "from": "2026-11-12T07:30:00Z",
+        "to": "2026-11-19T07:30:00Z"
+    },
+    "metrics": {
+        "events_per_day": [
+            {
+                "date": "2026-11-19",
+                "event_type": "api_latency_recorded",
+                "events": 23
+            },
+            {
+                "date": "2026-11-19",
+                "event_type": "page_viewed",
+                "events": 13
+            },
+            {
+                "date": "2026-11-19",
+                "event_type": "web_vital_recorded",
+                "events": 4
+            },
+            {
+                "date": "2026-11-19",
+                "event_type": "inbound_order_created",
+                "events": 2
+            },
+            {
+                "date": "2026-11-19",
+                "event_type": "api_request_failed",
+                "events": 1
+            },
+            {
+                "date": "2026-11-19",
+                "event_type": "outbound_order_created",
+                "events": 1
+            },
+            {
+                "date": "2026-11-19",
+                "event_type": "user_login_failed",
+                "events": 1
+            },
+            {
+                "date": "2026-11-19",
+                "event_type": "user_login_succeeded",
+                "events": 1
+            }
+        ],
+        "error_rate_per_day": [
+            {
+                "date": "2026-11-19",
+                "total_events": 46,
+                "error_events": 1,
+                "warning_events": 1,
+                "error_rate": 0.0217,
+                "warning_rate": 0.0217
+            }
+        ],
+        "api_latency_per_day": [
+            {
+                "date": "2026-11-19",
+                "api_endpoint": "/inventory/orders",
+                "http_method": "GET",
+                "observations": 19,
+                "estimated_requests": 23.0,
+                "avg_ms": 1460.1,
+                "p95_ms": 1868.0,
+                "max_ms": 1949.0
+            },
+            {
+                "date": "2026-11-19",
+                "api_endpoint": "/inventory/products",
+                "http_method": "GET",
+                "observations": 3,
+                "estimated_requests": 15.0,
+                "avg_ms": 344.3,
+                "p95_ms": 654.0,
+                "max_ms": 654.0
+            },
+            {
+                "date": "2026-11-19",
+                "api_endpoint": "/auth/login",
+                "http_method": "POST",
+                "observations": 1,
+                "estimated_requests": 1.0,
+                "avg_ms": 98.0,
+                "p95_ms": 98.0,
+                "max_ms": 98.0
+            }
+        ],
+        "auth_failure_rate": [
+            {
+                "date": "2026-11-19",
+                "login_attempts": 2,
+                "login_failures": 1,
+                "failure_rate": 0.5
+            }
+        ]
+    }
+}
