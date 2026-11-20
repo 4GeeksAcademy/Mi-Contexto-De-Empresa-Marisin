@@ -1,0 +1,213 @@
+{
+  "description": "Preguntas de prueba del RAG de TrackFlow (BRIEFING Hito 7 §5). 'queries' miden Recall@3 contra el chunk esperado (source_document + chunk_index); 'out_of_scope' no tienen respuesta en la base de conocimiento y sirven para calibrar min_score.",
+  "collection": "trackflow_knowledge",
+  "k": 3,
+  "recall_threshold": 0.8,
+  "queries": [
+    {
+      "id": "q01",
+      "question": "¿En cuántos días hábiles llega un envío estándar dentro de España?",
+      "expected": {
+        "source_document": "sla-delivery",
+        "chunk_index": 0,
+        "contains": "3 a 5 días hábiles"
+      },
+      "answer_must_include": []
+    },
+    {
+      "id": "q02",
+      "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+      "expected": {
+        "source_document": "sla-delivery",
+        "chunk_index": 2,
+        "contains": "Black Friday"
+      },
+      "answer_must_include": [
+        "40%"
+      ]
+    },
+    {
+      "id": "q03",
+      "question": "En las Rebajas de enero, ¿cuánto pueden alargarse los tiempos de entrega?",
+      "expected": {
+        "source_document": "sla-delivery",
+        "chunk_index": 2,
+        "contains": "Rebajas de enero"
+      },
+      "answer_must_include": [
+        "40%"
+      ]
+    },
+    {
+      "id": "q04",
+      "question": "¿Qué compensación recibe el cliente si no cumplimos el 90% de entregas a tiempo?",
+      "expected": {
+        "source_document": "sla-delivery",
+        "chunk_index": 1,
+        "contains": "compensación del 5%"
+      },
+      "answer_must_include": [
+        "5%"
+      ]
+    },
+    {
+      "id": "q05",
+      "question": "¿Cuál es la ventana de devolución estándar?",
+      "expected": {
+        "source_document": "returns-policy",
+        "chunk_index": 1,
+        "contains": "30 días desde la entrega"
+      },
+      "answer_must_include": [
+        "30 días"
+      ]
+    },
+    {
+      "id": "q06",
+      "question": "¿Quién paga el envío de vuelta si el producto llegó dañado en tránsito?",
+      "expected": {
+        "source_document": "returns-policy",
+        "chunk_index": 2,
+        "contains": "TrackFlow lo asume"
+      },
+      "answer_must_include": [
+        "TrackFlow"
+      ]
+    },
+    {
+      "id": "q07",
+      "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+      "expected": {
+        "source_document": "returns-policy",
+        "chunk_index": 3,
+        "contains": "gestión manual"
+      },
+      "answer_must_include": [
+        "manual",
+        "Sofía Ramos"
+      ]
+    },
+    {
+      "id": "q08",
+      "question": "¿Cómo funciona el proceso de devolución paso a paso?",
+      "expected": {
+        "source_document": "returns-policy",
+        "chunk_index": 0,
+        "contains": "inspecta y clasifica"
+      },
+      "answer_must_include": []
+    },
+    {
+      "id": "q09",
+      "question": "¿TrackFlow revende o reacondiciona los productos devueltos por su cuenta?",
+      "expected": {
+        "source_document": "returns-policy",
+        "chunk_index": 4,
+        "contains": "no reacondiciona ni revende"
+      },
+      "answer_must_include": []
+    },
+    {
+      "id": "q10",
+      "question": "¿Qué transportista cubre mejor Aragón rural?",
+      "expected": {
+        "source_document": "carrier-coverage",
+        "chunk_index": 1,
+        "contains": "SEUR: mejor cobertura en zonas rurales de Aragón"
+      },
+      "answer_must_include": [
+        "SEUR"
+      ]
+    },
+    {
+      "id": "q11",
+      "question": "¿Con qué transportista enviamos pedidos internacionales desde Los Ángeles?",
+      "expected": {
+        "source_document": "carrier-coverage",
+        "chunk_index": 0,
+        "contains": "DHL: única opción"
+      },
+      "answer_must_include": [
+        "DHL"
+      ]
+    },
+    {
+      "id": "q12",
+      "question": "¿Puede el account manager elegir el transportista de un envío concreto?",
+      "expected": {
+        "source_document": "carrier-coverage",
+        "chunk_index": 2,
+        "contains": "Carlos Vega"
+      },
+      "answer_must_include": [
+        "Carlos Vega"
+      ]
+    },
+    {
+      "id": "q13",
+      "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+      "expected": {
+        "source_document": "storage-pricing",
+        "chunk_index": 0,
+        "contains": "16 EUR por metro cúbico"
+      },
+      "answer_must_include": [
+        "16 EUR"
+      ]
+    },
+    {
+      "id": "q14",
+      "question": "¿Qué se cobra por el inventario que lleva más de 180 días sin movimiento?",
+      "expected": {
+        "source_document": "storage-pricing",
+        "chunk_index": 0,
+        "contains": "150%"
+      },
+      "answer_must_include": [
+        "150%"
+      ]
+    },
+    {
+      "id": "q15",
+      "question": "¿Podemos ofrecer un descuento en almacenamiento a una marca con 60 metros cúbicos al mes?",
+      "expected": {
+        "source_document": "storage-pricing",
+        "chunk_index": 2,
+        "contains": "Miguel Torres"
+      },
+      "answer_must_include": [
+        "Miguel Torres"
+      ]
+    },
+    {
+      "id": "q16",
+      "question": "¿Cómo puede un cliente pedir el reporte de antigüedad de inventario?",
+      "expected": {
+        "source_document": "storage-pricing",
+        "chunk_index": 1,
+        "contains": "reporte de antigüedad"
+      },
+      "answer_must_include": [
+        "account manager"
+      ]
+    }
+  ],
+  "out_of_scope": [
+    {
+      "id": "oos01",
+      "question": "¿Cuál es el horario de atención al público del almacén los domingos?"
+    },
+    {
+      "id": "oos02",
+      "question": "¿Ofrecen un seguro de mercancía para productos frágiles?"
+    },
+    {
+      "id": "oos03",
+      "question": "¿Qué lenguaje de programación usa el equipo de tecnología de Zaragoza?"
+    },
+    {
+      "id": "oos04",
+      "question": "¿Cuál es la capital de Francia?"
+    }
+  ]
+}
