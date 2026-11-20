@@ -80,3 +80,6 @@
 ## 6. Registro
 
 - 2026-11-20 — Plan y primer parche (acciones 1-12) preparados por Claude. LangGraph no se puede instalar en el entorno de Claude: la API se verificó leyendo el código fuente de `langgraph` 1.2.24 / `langgraph-checkpoint` 4.3.2. La validación estructural y los nodos se probaron en local; los tests que importan `langgraph` se ejecutan en el Codespace.
+- 2026-11-20 — Verificación de Marisin en el Codespace: `python -m pytest -q --ignore=tests/pipelines/test_agent_evals.py` → **270 passed** a la primera (incluidos `test_rag.py`, `test_knowledge_routes.py` y el contrato de 40 rutas). Traces grabados con Qdrant y los modelos reales (`scripts/agent_record_traces.py`): a01–a04 `answered` (30 días · 40% · gestión manual de Sofía Ramos · 16 EUR por m³), a05 `no_context` y a06 `invalid`. Evals: **22 passed** (`docs/agent/eval-results.txt`).
+- 2026-11-20 — Evidencia del endpoint con la API en marcha: `POST /agent/query` → `answered` con "30 días" y `Fuente: Política de Devoluciones`; `GET /agent/traces/{run_id}` devuelve el recorrido `receive_question → retrieve → generate_answer`; pregunta en blanco → `HTTP 422` con el mensaje de `invalid_question`. Ficheros en `docs/agent/evidence-*` y `endpoint-evidence.png`.
+
