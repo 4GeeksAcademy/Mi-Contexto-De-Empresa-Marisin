@@ -1,0 +1,144 @@
+{
+  "eval_case": "a05",
+  "run_id": "7fa9ab7b-6fa8-474e-8239-540c2056fd2a",
+  "thread_id": "7fa9ab7b-6fa8-474e-8239-540c2056fd2a",
+  "graph": "trackflow_support_agent",
+  "question": "¿Cuál es la capital de Francia?",
+  "started_at": "2026-11-20T21:11:00.897+00:00",
+  "finished_at": "2026-11-20T21:11:01.610+00:00",
+  "status": "no_context",
+  "path": [
+    "receive_question",
+    "retrieve",
+    "no_context"
+  ],
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-20T21:11:00.898+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "received"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "retrieve",
+      "started_at": "2026-11-20T21:11:00.899+00:00",
+      "duration_ms": 708.29,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "received",
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "context": [],
+        "status": "retrieved"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "no_context",
+      "started_at": "2026-11-20T21:11:01.609+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "retrieved",
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "No tengo información sobre eso en la base de conocimiento de TrackFlow, así que prefiero no darte una respuesta que no pueda respaldar. Te recomiendo consultarlo con el responsable del área.\nFuente: ninguna (sin información en la base de conocimiento)",
+        "status": "no_context"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e526e-33a8-6576-bfff-4059cdaee58a",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-33aa-610b-8000-7ce9469548ed",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-33ab-6ecd-8001-5c4637933133",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "retrieve"
+      ],
+      "values": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "received",
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-3a6f-6b9d-8002-66f10bb001eb",
+      "step": 2,
+      "source": "loop",
+      "next": [
+        "no_context"
+      ],
+      "values": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "retrieved",
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-3a72-67c0-8003-c0e7a309bd85",
+      "step": 3,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "no_context",
+        "context_chunks": 0,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "No tengo información sobre eso en la base de conocimiento de TrackFlow, así que prefiero no darte una respuesta que no pueda respaldar. Te recomiendo consultarlo con el responsable del área.\nFuente: ninguna (sin información en la base de conocimiento)",
+  "failed_node": null,
+  "error": null
+}
