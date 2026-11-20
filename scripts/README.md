@@ -45,3 +45,11 @@ Measures Recall@3 on `data/eval/test-queries.json`, analyses the `min_score` thr
 ```bash
 python scripts/rag_eval.py --answers
 ```
+
+## `agent_record_traces.py` — traces for the LangGraph agent evals
+
+Runs every case in `data/eval/agent-eval-cases.json` through the real graph (Qdrant + the models in `.env`) and stores each trace in `tests/pipelines/fixtures/agent_traces/<id>.json`, which `tests/pipelines/test_agent_evals.py` evaluates. The first trace is copied to `docs/agent/trace-example.json`. Requires Qdrant running and the collection indexed.
+
+```bash
+python scripts/agent_record_traces.py
+```

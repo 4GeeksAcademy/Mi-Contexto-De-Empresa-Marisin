@@ -1,0 +1,59 @@
+{
+  "description": "Casos de eval del agente LangGraph de TrackFlow. scripts/agent_record_traces.py ejecuta cada pregunta con Qdrant y el LLM reales y guarda el trace en tests/pipelines/fixtures/agent_traces/<id>.json; tests/pipelines/test_agent_evals.py evalúa esos traces (ruta, orden de nodos, checkpoints y anclaje de la respuesta en la base de conocimiento del Hito 7). Las preguntas de anclaje y sus términos esperados son las de data/eval/test-queries.json.",
+  "cases": [
+    {
+      "id": "a01",
+      "kind": "grounding",
+      "question": "¿Cuál es la ventana de devolución estándar?",
+      "expected_path": ["receive_question", "retrieve", "generate_answer"],
+      "expected_status": "answered",
+      "expected_sources": ["returns-policy"],
+      "answer_must_include": ["30 días"]
+    },
+    {
+      "id": "a02",
+      "kind": "grounding",
+      "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+      "expected_path": ["receive_question", "retrieve", "generate_answer"],
+      "expected_status": "answered",
+      "expected_sources": ["sla-delivery"],
+      "answer_must_include": ["40%"]
+    },
+    {
+      "id": "a03",
+      "kind": "grounding",
+      "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+      "expected_path": ["receive_question", "retrieve", "generate_answer"],
+      "expected_status": "answered",
+      "expected_sources": ["returns-policy"],
+      "answer_must_include": ["manual", "Sofía Ramos"]
+    },
+    {
+      "id": "a04",
+      "kind": "grounding",
+      "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+      "expected_path": ["receive_question", "retrieve", "generate_answer"],
+      "expected_status": "answered",
+      "expected_sources": ["storage-pricing"],
+      "answer_must_include": ["16 EUR"]
+    },
+    {
+      "id": "a05",
+      "kind": "out_of_scope",
+      "question": "¿Cuál es la capital de Francia?",
+      "expected_path": ["receive_question", "retrieve", "no_context"],
+      "expected_status": "no_context",
+      "expected_sources": [],
+      "answer_must_include": ["No tengo información"]
+    },
+    {
+      "id": "a06",
+      "kind": "invalid",
+      "question": "   ",
+      "expected_path": ["receive_question", "invalid_question"],
+      "expected_status": "invalid",
+      "expected_sources": [],
+      "answer_must_include": ["La pregunta está vacía"]
+    }
+  ]
+}
