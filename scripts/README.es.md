@@ -26,3 +26,13 @@ python scripts/sales_forecast.py --output-dir /tmp/sales-forecast   # sin tocar 
 ```
 
 Requiere `scikit-learn` y `matplotlib`. Decisiones y métricas: `docs/sales-forecast/README.md`. Test del split 8/2: `tests/pipelines/test_sales_forecast_split.py`.
+
+## `sales_model_eval.py` — evaluación técnica del modelo de ventas
+
+Validación cruzada temporal (`TimeSeriesSplit`, 5 folds, sin barajar y con las features recalculadas en cada fold para que no haya fuga), curva de aprendizaje, MAE/RMSE de entrenamiento y validación con media ± desviación estándar, error irreducible estimado y barrido de regularización. Solo usa 2016-2023; la prueba 2024-2025 no se toca.
+
+```bash
+python scripts/sales_model_eval.py
+```
+
+Salidas en `data/eval/` (reporte: `data/eval/evaluation_report.md`). Test: `tests/pipelines/test_sales_model_eval.py`.
