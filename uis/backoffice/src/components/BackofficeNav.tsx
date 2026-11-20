@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/inventory/orders/outbound", label: "Registrar salida" },
   { href: "/inventory/counts", label: "Conteo físico" },
   { href: "/reporting", label: "Reporte semanal" },
+  { href: "/knowledge", label: "Asistente comercial" },
 ];
 
 export default function BackofficeNav() {
