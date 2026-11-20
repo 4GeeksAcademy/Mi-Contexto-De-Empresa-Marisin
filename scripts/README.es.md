@@ -15,3 +15,14 @@ TARGET_DATE=2026-11-18 python scripts/nightly_export.py  # un día concreto
 ```
 
 Requiere `public.job_runs` (`services/sql/001_job_runs.sql`). Lo dispara el crontab del sistema (`15 1 * * *`, ver `infra/cron/`), nunca dentro de FastAPI. Plan: `memory-bank/history/2026-11-19_nightly-export.md`.
+
+## `sales_forecast.py` — predicción de ventas con Random Forest
+
+Entrena un Random Forest sobre `data/raw/trackflow_sales.csv` con los primeros 8 años (2016-2023), pronostica de forma recursiva los 2 últimos (2024-2025) sin ver sus reales y calcula MSE, PSI, Gini y K2 Score (R²) sobre la prueba. Genera `docs/sales-forecast/metrics.json`, `test_predictions.csv` y `forecast.png` (predicción con banda P10-P90).
+
+```bash
+python scripts/sales_forecast.py
+python scripts/sales_forecast.py --output-dir /tmp/sales-forecast   # sin tocar los artefactos versionados
+```
+
+Requiere `scikit-learn` y `matplotlib`. Decisiones y métricas: `docs/sales-forecast/README.md`. Test del split 8/2: `tests/pipelines/test_sales_forecast_split.py`.
