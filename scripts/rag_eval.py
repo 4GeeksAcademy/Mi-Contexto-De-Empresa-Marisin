@@ -153,7 +153,7 @@ def evaluate(with_answers: bool = False) -> dict:
                     "question": item["question"],
                     "answer": answer,
                     "context": [f"{c['source_document']}#{c['chunk_index']}" for c in context],
-                    "unsupported_figures": pipeline.unsupported_figures(answer, context),
+                    "unsupported_figures": pipeline.unsupported_figures(answer, context, item["question"]),
                     "missing_terms": missing,
                 }
             )

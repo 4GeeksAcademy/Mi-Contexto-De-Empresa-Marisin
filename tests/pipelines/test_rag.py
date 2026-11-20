@@ -213,6 +213,13 @@ def test_generate_answer_uses_the_generation_model_and_the_briefing_voice(monkey
 def test_unsupported_figures_flags_numbers_not_in_context():
     assert pipeline.unsupported_figures("La ventana es de 30 días [1].", CHUNKS) == []
     assert pipeline.unsupported_figures("La ventana es de 45 días.", CHUNKS) == ["45"]
+    # Un número dado en la propia pregunta no es una cifra inventada.
+    question = "¿Descuento para una marca con 60 metros cúbicos al mes?"
+    assert pipeline.unsupported_figures("Con 60 metros cúbicos al mes…", CHUNKS, question) == []
+
+
+def test_default_min_score_is_the_calibrated_threshold():
+    assert pipeline.DEFAULT_MIN_SCORE == 0.46
 
 
 # --------------------------------------------------------------------------- #

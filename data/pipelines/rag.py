@@ -30,9 +30,11 @@ from data.process.rag import (
 )
 
 DEFAULT_K = 5
-# Umbral de similitud coseno. Elegido con `python scripts/rag_eval.py`
+# Umbral de similitud coseno, calibrado con `python scripts/rag_eval.py` y el
+# modelo pplx-embed-v1-0.6b: chunk correcto ≥ 0,539 en las 16 preguntas de la
+# base y ≤ 0,383 en las preguntas fuera de alcance. 0,46 queda en el punto medio
 # (justificación en docs/rag/rag-design.md §4).
-DEFAULT_MIN_SCORE = 0.5
+DEFAULT_MIN_SCORE = 0.46
 TEMPERATURE = 0.0  # respuestas reproducibles y pegadas al contexto
 
 DOCUMENT_LABELS = {
@@ -171,9 +173,14 @@ def generate_answer(question: str, context: list[dict[str, Any]]) -> str:
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 
 
-def unsupported_figures(answer: str, context: list[dict[str, Any]]) -> list[str]:
-    """Cifras de la respuesta que no aparecen en ningún chunk recuperado."""
-    available = {n.replace(",", ".") for chunk in context for n in NUMBER.findall(chunk.get("text", ""))}
+def unsupported_figures(answer: str, context: list[dict[str, Any]], question: str = "") -> list[str]:
+    """Cifras de la respuesta que no aparecen en ningún chunk recuperado.
+
+    Los números que da la propia pregunta (p. ej. "una marca con 60 m³") no
+    cuentan como inventados: el modelo puede repetirlos al razonar sobre ellos.
+    """
+    sources = [chunk.get("text", "") for chunk in context] + [question]
+    available = {n.replace(",", ".") for text in sources for n in NUMBER.findall(text)}
     answer_without_refs = re.sub(r"\[\d+\]", "", answer)  # referencias [1], [2]… al contexto
     return sorted({n for n in NUMBER.findall(answer_without_refs) if n.replace(",", ".") not in available})
 
@@ -189,7 +196,7 @@ def query(question: str) -> str:
     """
     context = retrieve(question)
     answer = generate_answer(question, context)
-    unsupported = unsupported_figures(answer, context)
+    unsupported = unsupported_figures(answer, context, question)
     if unsupported:
         logger.warning("Respuesta con cifras que no están en el contexto: %s", unsupported)
     return answer
