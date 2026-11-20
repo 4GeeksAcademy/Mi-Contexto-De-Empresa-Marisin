@@ -380,8 +380,8 @@ def plot_forecast(train: pd.DataFrame, test: pd.DataFrame, result: pd.DataFrame,
     ax.plot(test[DATE_COLUMN], test[TARGET], color="#111111", lw=2, marker="o", ms=3.5,
             label="Real 2024-2025 (no visto por el modelo)")
     ax.axvline(test[DATE_COLUMN].min(), color="#d93025", lw=1, ls=":")
-    ax.text(test[DATE_COLUMN].min(), ax.get_ylim()[1], "  inicio de la prueba",
-            color="#d93025", va="top", fontsize=9)
+    ax.text(test[DATE_COLUMN].min(), 0.98, "  inicio de la prueba",
+            transform=ax.get_xaxis_transform(), color="#d93025", va="top", fontsize=9)
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v / 1e6:.1f} M€"))
     ax.set_title("TrackFlow · Ingresos mensuales consolidados: predicción a 24 meses vs. real")
     ax.set_ylabel("revenue_eur")
