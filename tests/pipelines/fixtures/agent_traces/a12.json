@@ -3,12 +3,12 @@
   "eval_vars": {
     "sku": "TF-TEE-001"
   },
-  "run_id": "06da7475-d502-460f-bc3a-baf34cf41caf",
-  "thread_id": "06da7475-d502-460f-bc3a-baf34cf41caf",
+  "run_id": "a162a8fa-28c8-45fb-a62d-83f15dd56283",
+  "thread_id": "a162a8fa-28c8-45fb-a62d-83f15dd56283",
   "graph": "trackflow_support_agent",
   "question": "¿Tenemos stock del SKU TF-TEE-001?",
-  "started_at": "2026-11-21T17:56:43.671+00:00",
-  "finished_at": "2026-11-21T17:56:45.488+00:00",
+  "started_at": "2026-11-21T20:47:30.003+00:00",
+  "finished_at": "2026-11-21T20:47:34.956+00:00",
   "status": "answered",
   "path": [
     "receive_question",
@@ -24,7 +24,7 @@
     "inventory": {
       "sku": "TF-TEE-001"
     },
-    "reason": "Pregunta por el stock de un SKU concreto.",
+    "reason": "Pregunta por el stock en tiempo real de un SKU concreto.",
     "decided_by": "llm",
     "sources": [
       "inventory"
@@ -34,7 +34,7 @@
     {
       "step": 1,
       "node": "receive_question",
-      "started_at": "2026-11-21T17:56:43.677+00:00",
+      "started_at": "2026-11-21T20:47:30.009+00:00",
       "duration_ms": 0.0,
       "status": "ok",
       "input": {
@@ -54,8 +54,8 @@
     {
       "step": 2,
       "node": "route_question",
-      "started_at": "2026-11-21T17:56:43.677+00:00",
-      "duration_ms": 1575.66,
+      "started_at": "2026-11-21T20:47:30.009+00:00",
+      "duration_ms": 2879.68,
       "status": "ok",
       "input": {
         "question": "¿Tenemos stock del SKU TF-TEE-001?",
@@ -71,7 +71,7 @@
           "inventory": {
             "sku": "TF-TEE-001"
           },
-          "reason": "Pregunta por el stock de un SKU concreto.",
+          "reason": "Pregunta por el stock en tiempo real de un SKU concreto.",
           "decided_by": "llm",
           "sources": [
             "inventory"
@@ -84,8 +84,8 @@
     {
       "step": 3,
       "node": "lookup_inventory",
-      "started_at": "2026-11-21T17:56:45.258+00:00",
-      "duration_ms": 220.61,
+      "started_at": "2026-11-21T20:47:32.895+00:00",
+      "duration_ms": 2057.55,
       "status": "ok",
       "input": {
         "question": "¿Tenemos stock del SKU TF-TEE-001?",
@@ -116,8 +116,10 @@
           ],
           "total": 1,
           "error": null,
-          "duration_ms": 220.31,
-          "fallback_message": null
+          "duration_ms": 2057.47,
+          "fallback_message": null,
+          "transport": "mcp",
+          "mcp_tool": "inventory_list_products"
         },
         "status": "tool_done"
       },
@@ -126,7 +128,7 @@
     {
       "step": 4,
       "node": "compose_answer",
-      "started_at": "2026-11-21T17:56:45.480+00:00",
+      "started_at": "2026-11-21T20:47:34.954+00:00",
       "duration_ms": 0.02,
       "status": "ok",
       "input": {
@@ -150,7 +152,7 @@
   ],
   "checkpoints": [
     {
-      "checkpoint_id": "1f1e5d4e-9651-62c0-bfff-fcb46c78067c",
+      "checkpoint_id": "1f1e5ecc-4aef-6b54-bfff-69b051db29f1",
       "step": -1,
       "source": "input",
       "next": [
@@ -166,7 +168,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-9653-64cd-8000-d6db24a53487",
+      "checkpoint_id": "1f1e5ecc-4af5-626e-8000-d277c5e86f7c",
       "step": 0,
       "source": "loop",
       "next": [
@@ -182,7 +184,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-965a-62f1-8001-9c242c62c2e5",
+      "checkpoint_id": "1f1e5ecc-4afd-66b4-8001-00e73bb18f27",
       "step": 1,
       "source": "loop",
       "next": [
@@ -198,7 +200,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-a56b-62db-8002-fa6a94d88444",
+      "checkpoint_id": "1f1e5ecc-667d-6853-8002-306c10e6a082",
       "step": 2,
       "source": "loop",
       "next": [
@@ -216,7 +218,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-a78a-66d9-8003-964a920bcc9f",
+      "checkpoint_id": "1f1e5ecc-7a23-69e7-8003-1c433b9a3890",
       "step": 3,
       "source": "loop",
       "next": [
@@ -236,7 +238,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-a792-6040-8004-815eef8d0edf",
+      "checkpoint_id": "1f1e5ecc-7a25-6fce-8004-74e4143e4d82",
       "step": 4,
       "source": "loop",
       "next": [],

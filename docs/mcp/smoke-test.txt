@@ -1,0 +1,157 @@
+# Prueba de humo · servidor MCP de TrackFlow
+Servidor: http://localhost:8001/mcp
+
+## Autenticación
+[sin token] HTTP 401 · WWW-Authenticate: Bearer error="missing_auth_header", error_description="Missing `Authorization` header. Please provide a valid bearer token.", resource_metadata="https://legendary-fishstick-x5grq4r9xw5qcvxrw-8001.app.github.dev/.well-known/oauth-protected-resource/mcp"
+[token inventado] HTTP 401 · WWW-Authenticate: Bearer error="invalid_token", error_description="The provided token is invalid or malformed.", resource_metadata="https://legendary-fishstick-x5grq4r9xw5qcvxrw-8001.app.github.dev/.well-known/oauth-protected-resource/mcp"
+
+## Discovery (tools publicadas)
+- incidents_list: Lista incidencias del Incidents Manager de TrackFlow, de la actualizada más recientemente a la más antigua, co…
+- incidents_get: Devuelve una incidencia por su id, con su estado actual y los estados a los que puede pasar (allowed_next_stat…
+- incidents_create: Crea una incidencia en el Incidents Manager (POST /api/incidents). Siempre nace en estado 'open'. Requiere el …
+- incidents_update_status: Cambia el estado de una incidencia por el endpoint de ciclo de vida del Incidents Manager (PATCH /api/incident…
+- inventory_list_products: Consulta productos del inventario con su stock total entre almacenes. Filtra por código SKU exacto o por parte…
+- inventory_get_product: Devuelve un producto del inventario por su id, con su stock actual. Solo lectura. Requiere el scope inventory:…
+- inventory_update_stock: NO PERMITIDO. El inventario es de solo lectura a través de este servidor: esta tool existe solo para que cualq…
+
+## Incidencias (token admin)
+
+### Crear → incidents_create [OK]
+{
+  "id": "4",
+  "title": "Prueba MCP: etiqueta ilegible",
+  "description": "Creada desde el smoke test del servidor MCP.",
+  "category": "WRONG_ADDRESS",
+  "status": "open",
+  "origin": "internal",
+  "branch": "Los Angeles",
+  "created_at": "2026-11-21T19:57:59.851999+00:00",
+  "updated_at": "2026-11-21T19:57:59.851999+00:00",
+  "allowed_next_statuses": [
+    "in_progress",
+    "discarded"
+  ]
+}
+
+### Consultar → incidents_get [OK]
+{
+  "id": "4",
+  "title": "Prueba MCP: etiqueta ilegible",
+  "description": "Creada desde el smoke test del servidor MCP.",
+  "category": "WRONG_ADDRESS",
+  "status": "open",
+  "origin": "internal",
+  "branch": "Los Angeles",
+  "created_at": "2026-11-21T19:57:59.851999+00:00",
+  "updated_at": "2026-11-21T19:57:59.851999+00:00",
+  "allowed_next_statuses": [
+    "in_progress",
+    "discarded"
+  ]
+}
+
+### Actualizar estado → incidents_update_status [OK]
+{
+  "id": "4",
+  "title": "Prueba MCP: etiqueta ilegible",
+  "description": "Creada desde el smoke test del servidor MCP.",
+  "category": "WRONG_ADDRESS",
+  "status": "in_progress",
+  "origin": "internal",
+  "branch": "Los Angeles",
+  "created_at": "2026-11-21T19:57:59.851999+00:00",
+  "updated_at": "2026-11-21T19:58:01.213307+00:00",
+  "allowed_next_statuses": [
+    "resolved",
+    "discarded"
+  ]
+}
+
+### Transición no válida → incidents_update_status [ERROR]
+{"error": {"code": "INVALID_TRANSITION", "status": 409, "message": "No se puede cambiar de in_progress a open"}}
+
+### Listar en curso → incidents_list [OK]
+{
+  "total": 2,
+  "items": [
+    {
+      "id": "4",
+      "title": "Prueba MCP: etiqueta ilegible",
+      "description": "Creada desde el smoke test del servidor MCP.",
+      "category": "WRONG_ADDRESS",
+      "status": "in_progress",
+      "origin": "internal",
+      "branch": "Los Angeles",
+      "created_at": "2026-11-21T19:57:59.851999+00:00",
+      "updated_at": "2026-11-21T19:58:01.213307+00:00",
+      "allowed_next_statuses": [
+        "resolved",
+        "discarded"
+      ]
+    },
+    {
+      "id": "1",
+      "title": "Caja aplastada al llegar al destinatario",
+      "description": "El cliente final recibe la caja con un lateral hundido y el producto rayado.",
+      "category": "DAMAGE",
+      "status": "in_progress",
+      "origin": "customer",
+      "branch": "Zaragoza",
+      "created_at": "2026-11-21T17:52:08.769318+00:00",
+      "updated_at": "2026-11-21T17:53:35.491971+00:00",
+      "allowed_next_statuses": [
+        "resolved",
+        "discarded"
+      ]
+    }
+  ]
+}
+
+## Inventario (solo lectura)
+
+### Listar productos → inventory_list_products [OK]
+{
+  "total": 302,
+  "items": [
+    {
+      "id": 2,
+      "sku": "TF-TEE-001",
+      "name": "Camiseta de algodón",
+      "client_name": "EcoWear USA",
+      "category": "Apparel",
+      "reference": "REF-TEE-001",
+      "current_stock": 174
+    },
+    {
+      "id": 3,
+      "sku": "TF-BOTTLE-001",
+      "name": "Botella reutilizable",
+      "client_name": "HydroLife",
+      "category": "Accessories",
+      "reference": "REF-BOT-001",
+      "current_stock": 97
+    }
+  ]
+}
+
+### Consultar producto → inventory_get_product [OK]
+{
+  "id": 2,
+  "sku": "TF-TEE-001",
+  "name": "Camiseta de algodón",
+  "client_name": "EcoWear USA",
+  "category": "Apparel",
+  "reference": "REF-TEE-001",
+  "current_stock": 174
+}
+
+### Intento de escritura → inventory_update_stock [ERROR]
+{"error": {"code": "READ_ONLY_RESOURCE", "status": 403, "message": "El inventario es de solo lectura a través de este servidor MCP. Para cambiar el stock hay que registrar una orden de entrada o salida en el sistema de inventario; ningún token puede hacerlo aquí.", "tool": "inventory_update_stock"}}
+
+## Mínimo privilegio y validación
+
+### Agente (solo lectura) intenta crear → incidents_create [ERROR]
+{"error": {"code": "INSUFFICIENT_SCOPE", "status": 403, "message": "El access token no tiene el scope 'incidents:write' que exige la tool incidents_create.", "required_scope": "incidents:write", "granted_scopes": ["incidents:read", "inventory:read"]}}
+
+### Argumento inválido → incidents_list [ERROR]
+{"error": {"code": "VALIDATION_ERROR", "status": 422, "message": "Argumentos no válidos para incidents_list.", "errors": [{"field": "status", "message": "Input should be 'open', 'in_progress', 'resolved' or 'discarded'"}]}}

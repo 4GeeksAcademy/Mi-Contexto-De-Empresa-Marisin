@@ -1,0 +1,74 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.16, pytest-9.2.0, pluggy-1.7.0 -- /workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspaces/Mi-Contexto-De-Empresa-Marisin
+configfile: pyproject.toml
+plugins: cov-7.1.0, langsmith-0.15.1, anyio-4.14.2
+collecting ... collected 55 items
+
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a01] PASSED [  1%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a02] PASSED [  3%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a03] PASSED [  5%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a04] PASSED [  7%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a05] PASSED [  9%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a06] PASSED [ 10%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a07] PASSED [ 12%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a08] PASSED [ 14%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a09] PASSED [ 16%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a10] PASSED [ 18%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a11] PASSED [ 20%]
+tests/pipelines/test_agent_evals.py::test_e1_the_graph_takes_the_expected_route[a12] PASSED [ 21%]
+tests/pipelines/test_agent_evals.py::test_e2_retrieve_runs_once_and_before_generation[a01] PASSED [ 23%]
+tests/pipelines/test_agent_evals.py::test_e2_retrieve_runs_once_and_before_generation[a02] PASSED [ 25%]
+tests/pipelines/test_agent_evals.py::test_e2_retrieve_runs_once_and_before_generation[a03] PASSED [ 27%]
+tests/pipelines/test_agent_evals.py::test_e2_retrieve_runs_once_and_before_generation[a04] PASSED [ 29%]
+tests/pipelines/test_agent_evals.py::test_e2_retrieve_runs_once_and_before_generation[a08] PASSED [ 30%]
+tests/pipelines/test_agent_evals.py::test_e2_retrieve_runs_once_and_before_generation[a09] PASSED [ 32%]
+tests/pipelines/test_agent_evals.py::test_e3_out_of_scope_answers_honestly_without_the_llm[a05] PASSED [ 34%]
+tests/pipelines/test_agent_evals.py::test_e4_empty_question_never_routes_nor_retrieves[a06] PASSED [ 36%]
+tests/pipelines/test_agent_evals.py::test_e5_answer_is_grounded_in_the_briefing_knowledge_base[a01] PASSED [ 38%]
+tests/pipelines/test_agent_evals.py::test_e5_answer_is_grounded_in_the_briefing_knowledge_base[a02] PASSED [ 40%]
+tests/pipelines/test_agent_evals.py::test_e5_answer_is_grounded_in_the_briefing_knowledge_base[a03] PASSED [ 41%]
+tests/pipelines/test_agent_evals.py::test_e5_answer_is_grounded_in_the_briefing_knowledge_base[a04] PASSED [ 43%]
+tests/pipelines/test_agent_evals.py::test_e5_answer_is_grounded_in_the_briefing_knowledge_base[a08] PASSED [ 45%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a01] PASSED [ 47%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a02] PASSED [ 49%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a03] PASSED [ 50%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a04] PASSED [ 52%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a05] PASSED [ 54%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a06] PASSED [ 56%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a07] PASSED [ 58%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a08] PASSED [ 60%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a09] PASSED [ 61%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a10] PASSED [ 63%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a11] PASSED [ 65%]
+tests/pipelines/test_agent_evals.py::test_e6_every_transition_was_checkpointed[a12] PASSED [ 67%]
+tests/pipelines/test_agent_evals.py::test_e7_ticket_question_uses_the_tool_not_the_rag[a07] PASSED [ 69%]
+tests/pipelines/test_agent_evals.py::test_e8_policy_question_uses_the_rag_not_a_tool[a01] PASSED [ 70%]
+tests/pipelines/test_agent_evals.py::test_e8_policy_question_uses_the_rag_not_a_tool[a02] PASSED [ 72%]
+tests/pipelines/test_agent_evals.py::test_e8_policy_question_uses_the_rag_not_a_tool[a03] PASSED [ 74%]
+tests/pipelines/test_agent_evals.py::test_e8_policy_question_uses_the_rag_not_a_tool[a04] PASSED [ 76%]
+tests/pipelines/test_agent_evals.py::test_e8_policy_question_uses_the_rag_not_a_tool[a05] PASSED [ 78%]
+tests/pipelines/test_agent_evals.py::test_e8_policy_question_uses_the_rag_not_a_tool[a08] PASSED [ 80%]
+tests/pipelines/test_agent_evals.py::test_e9_mixed_question_uses_the_tool_then_the_rag[a09] PASSED [ 81%]
+tests/pipelines/test_agent_evals.py::test_e10_tool_failure_goes_through_an_honest_fallback[a10] PASSED [ 83%]
+tests/pipelines/test_agent_evals.py::test_e10_tool_failure_goes_through_an_honest_fallback[a11] PASSED [ 85%]
+tests/pipelines/test_agent_evals.py::test_e11_stock_question_uses_the_inventory_tool_with_the_real_figure[a12] PASSED [ 87%]
+tests/pipelines/test_agent_evals.py::test_e12_eval_data_comes_from_the_real_api[a07] PASSED [ 89%]
+tests/pipelines/test_agent_evals.py::test_e12_eval_data_comes_from_the_real_api[a09] PASSED [ 90%]
+tests/pipelines/test_agent_evals.py::test_e13_every_tool_call_went_through_the_mcp_server[a07] PASSED [ 92%]
+tests/pipelines/test_agent_evals.py::test_e13_every_tool_call_went_through_the_mcp_server[a09] PASSED [ 94%]
+tests/pipelines/test_agent_evals.py::test_e13_every_tool_call_went_through_the_mcp_server[a10] PASSED [ 96%]
+tests/pipelines/test_agent_evals.py::test_e13_every_tool_call_went_through_the_mcp_server[a11] PASSED [ 98%]
+tests/pipelines/test_agent_evals.py::test_e13_every_tool_call_went_through_the_mcp_server[a12] PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/anyio/pytest_plugin.py:14
+  /workspaces/Mi-Contexto-De-Empresa-Marisin/.venv/lib/python3.12/site-packages/anyio/pytest_plugin.py:14: PytestRemovedIn10Warning: _pytest.python.CallSpec2 has been renamed to CallSpec.
+  The CallSpec2 alias will be removed in pytest 10.
+  Update imports to use CallSpec instead.
+  See https://docs.pytest.org/en/stable/deprecations.html#callspec2-renamed
+    from _pytest.python import CallSpec2
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 55 passed, 1 warning in 0.21s =========================
