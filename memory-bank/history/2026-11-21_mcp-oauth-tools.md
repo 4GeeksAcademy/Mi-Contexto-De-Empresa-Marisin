@@ -70,3 +70,9 @@
 
 ## 5. Registro
 - 2026-11-21 — Plan y parche preparados por Claude. La API de `mcp` 1.30.0, `mcpauth` 0.2.0b1 y `langchain-mcp-adapters` 0.3.2 se verificó leyendo su código fuente (no se pueden instalar en el entorno de Claude). La lógica de las tools, los permisos y el cliente del agente se probaron en local con dobles; los tests con `mcp`/`mcpauth`/`httpx` se ejecutan en el Codespace.
+- 2026-11-21 — Verificación de Marisin en el Codespace: `python -m pytest -q --ignore=tests/pipelines/test_agent_evals.py` → **342 passed** a la primera con `mcp` 1.30 y `mcpauth` 0.2.0b1 reales.
+- 2026-11-21 — Logto Cloud (tenant `o96itf`): API resource `TrackFlow MCP` (identifier = URL pública del puerto 8001), roles M2M `mcp-full-access` y `agent-readonly`, apps `trackflow-mcp-admin` y `trackflow-agent`. Tokens con `aud` = recurso. Mínimo privilegio comprobado en el proveedor: el agente pidió `incidents:write` y Logto solo concedió `incidents:read`.
+- 2026-11-21 — `scripts/mcp_smoke_test.py` (`docs/mcp/smoke-test.txt`): 401 sin token y con token inventado, discovery de las 7 tools, crear → consultar → `in_progress` por `PATCH …/status` → transición no válida (`INVALID_TRANSITION`), inventario, `READ_ONLY_RESOURCE`, `INSUFFICIENT_SCOPE` (token del agente) y `VALIDATION_ERROR`. Log de auditoría con `client_id`, tool y resultado de cada invocación.
+- 2026-11-21 — **MCP Playground** con la URL pública de Codespaces (`…-8001.app.github.dev/mcp`): sin token no conecta; con el token admin, 7 tools descubiertas y un flujo por tool (capturas en `docs/mcp/`). Hallazgo: Playground envía `""` en los filtros vacíos y `incidents_list` daba `VALIDATION_ERROR`; corregido (`fix: trata los filtros vacíos…`) y verificado.
+- 2026-11-21 — Traces del agente regrabados a través del servidor MCP (ticket 5, SKU `TF-TEE-001`; los 12 casos enrutados por el LLM): evals **55 passed** (E1–E13), incluido E13 (todas las tools pasan por MCP). `docs/mcp/agent-eval-results.txt`.
+
