@@ -1,8 +1,15 @@
-"""Grafo de LangGraph del agente de soporte de TrackFlow.
+"""Grafo de LangGraph del agente de soporte de TrackFlow (Parte 2: RAG + tools).
 
-    START → receive_question ─valid──→ retrieve ─with_context────→ generate_answer → END
-                             └empty──→ invalid_question → END
-                                                 └without_context─→ no_context → END
+    START → receive_question ─empty─→ invalid_question → END
+                             └valid─→ route_question ─┬ticket────→ lookup_ticket ──┐
+                                                      ├inventory─→ lookup_inventory┤ (fallo/404 → tool_fallback)
+                                                      └rag───────→ retrieve ─with_context────→ generate_answer ─┐
+                                                                            └without_context─→ no_context ──────┤
+                                                      compose_answer ←───────────────────────────────────────────┘ → END
+
+`route_question` decide las fuentes (LLM + reglas). Después de cada tool,
+`route_after_tool` envía a `tool_fallback` si la tool falló o el recurso no
+existe, y si no, a la siguiente fuente pendiente (tools → RAG → composición).
 
 El grafo se declara como datos (`AGENT_SPEC`), se valida con
 `validate_structure()` y se compila con `compile_graph()`. `AGENT_GRAPH` se
@@ -25,30 +32,57 @@ from .tracing import traced
 GRAPH_NAME = "trackflow_support_agent"
 
 NODE_RECEIVE = "receive_question"
+NODE_INVALID = "invalid_question"
+NODE_ROUTE = "route_question"
+NODE_TICKET = "lookup_ticket"
+NODE_INVENTORY = "lookup_inventory"
+NODE_TOOL_FALLBACK = "tool_fallback"
 NODE_RETRIEVE = "retrieve"
 NODE_GENERATE = "generate_answer"
 NODE_NO_CONTEXT = "no_context"
-NODE_INVALID = "invalid_question"
+NODE_COMPOSE = "compose_answer"
 
 AGENT_SPEC = GraphSpec(
     state_schema=AgentState,
     nodes={
         NODE_RECEIVE: nodes.receive_question,
+        NODE_INVALID: nodes.reject_invalid_question,
+        NODE_ROUTE: nodes.route_question,
+        NODE_TICKET: nodes.lookup_ticket,
+        NODE_INVENTORY: nodes.lookup_inventory,
+        NODE_TOOL_FALLBACK: nodes.tool_fallback,
         NODE_RETRIEVE: nodes.retrieve_context,
         NODE_GENERATE: nodes.generate_answer,
         NODE_NO_CONTEXT: nodes.answer_without_context,
-        NODE_INVALID: nodes.reject_invalid_question,
+        NODE_COMPOSE: nodes.compose_answer,
     },
     edges=(
         (START, NODE_RECEIVE),
-        (NODE_GENERATE, END),
-        (NODE_NO_CONTEXT, END),
         (NODE_INVALID, END),
+        (NODE_GENERATE, NODE_COMPOSE),
+        (NODE_NO_CONTEXT, NODE_COMPOSE),
+        (NODE_COMPOSE, END),
     ),
     conditional={
         NODE_RECEIVE: ConditionalEdge(
             router=nodes.route_after_receive,
-            targets={"valid": NODE_RETRIEVE, "empty": NODE_INVALID},
+            targets={"valid": NODE_ROUTE, "empty": NODE_INVALID},
+        ),
+        NODE_ROUTE: ConditionalEdge(
+            router=nodes.next_source,
+            targets={"ticket": NODE_TICKET, "inventory": NODE_INVENTORY, "rag": NODE_RETRIEVE, "compose": NODE_COMPOSE},
+        ),
+        NODE_TICKET: ConditionalEdge(
+            router=nodes.route_after_tool,
+            targets={"fallback": NODE_TOOL_FALLBACK, "inventory": NODE_INVENTORY, "rag": NODE_RETRIEVE, "compose": NODE_COMPOSE},
+        ),
+        NODE_INVENTORY: ConditionalEdge(
+            router=nodes.route_after_tool,
+            targets={"fallback": NODE_TOOL_FALLBACK, "rag": NODE_RETRIEVE, "compose": NODE_COMPOSE},
+        ),
+        NODE_TOOL_FALLBACK: ConditionalEdge(
+            router=nodes.next_source,
+            targets={"inventory": NODE_INVENTORY, "rag": NODE_RETRIEVE, "compose": NODE_COMPOSE},
         ),
         NODE_RETRIEVE: ConditionalEdge(
             router=nodes.route_after_retrieve,
