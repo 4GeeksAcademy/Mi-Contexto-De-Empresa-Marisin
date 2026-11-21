@@ -29,7 +29,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
-from pydantic import Field, ValidationError
+from pydantic import BeforeValidator, Field, ValidationError
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
@@ -72,6 +72,14 @@ WRITE = ToolAnnotations(readOnlyHint=False, destructiveHint=False, idempotentHin
 REJECTED = ToolAnnotations(readOnlyHint=False, destructiveHint=True, idempotentHint=True, openWorldHint=False)
 
 IncidentId = Annotated[int, Field(ge=1, description="Id de la incidencia en el Incidents Manager (p. ej. 3).")]
+
+
+def _blank_to_none(value: Any) -> Any:
+    """Los clientes de formulario (MCP Playground) envían "" en los filtros que se dejan vacíos."""
+    return None if isinstance(value, str) and not value.strip() else value
+
+
+Blank = BeforeValidator(_blank_to_none)
 Limit = Annotated[int, Field(ge=1, le=100, description="Número máximo de resultados (1-100).")]
 
 
@@ -151,10 +159,10 @@ def build_mcp(tools: TrackFlowTools, audit: AuditLog, caller: Callable[[], Calle
         ),
     )
     def incidents_list(
-        status: Annotated[Optional[IncidentStatus], Field(description="Filtra por estado.")] = None,
-        category: Annotated[Optional[IncidentCategory], Field(description="Filtra por categoría.")] = None,
-        origin: Annotated[Optional[IncidentOrigin], Field(description="Filtra por origen.")] = None,
-        branch: Annotated[Optional[IncidentBranch], Field(description="Filtra por sucursal.")] = None,
+        status: Annotated[Optional[IncidentStatus], Blank, Field(description="Filtra por estado (vacío = todos).")] = None,
+        category: Annotated[Optional[IncidentCategory], Blank, Field(description="Filtra por categoría (vacío = todas).")] = None,
+        origin: Annotated[Optional[IncidentOrigin], Blank, Field(description="Filtra por origen (vacío = todos).")] = None,
+        branch: Annotated[Optional[IncidentBranch], Blank, Field(description="Filtra por sucursal (vacío = todas).")] = None,
         limit: Limit = 20,
     ) -> IncidentList:
         return tools.incidents_list(caller(), status=status, category=category, origin=origin, branch=branch, limit=limit)
@@ -214,8 +222,8 @@ def build_mcp(tools: TrackFlowTools, audit: AuditLog, caller: Callable[[], Calle
         ),
     )
     def inventory_list_products(
-        sku: Annotated[Optional[str], Field(max_length=64, description="Código SKU exacto (sin distinguir mayúsculas).")] = None,
-        name_contains: Annotated[Optional[str], Field(max_length=80, description="Texto contenido en el nombre del producto.")] = None,
+        sku: Annotated[Optional[str], Blank, Field(max_length=64, description="Código SKU exacto (sin distinguir mayúsculas).")] = None,
+        name_contains: Annotated[Optional[str], Blank, Field(max_length=80, description="Texto contenido en el nombre del producto.")] = None,
         limit: Limit = 20,
     ) -> ProductList:
         return tools.inventory_list_products(caller(), sku=sku, name_contains=name_contains, limit=limit)

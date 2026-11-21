@@ -205,6 +205,14 @@ def test_successful_call_returns_structured_output_and_is_logged(server):
     assert entry["argument_names"] == ["incident_id"]
 
 
+def test_empty_optional_filters_from_form_clients_mean_no_filter(server):
+    # MCP Playground envía "" en los campos que se dejan vacíos.
+    result = call(server, "incidents_list", {"status": "open", "category": "", "origin": "", "branch": "", "limit": 20})
+    assert "VALIDATION_ERROR" not in json.dumps(result, default=str)
+    entry = json.loads(server["log"].read_text(encoding="utf-8").splitlines()[-1])
+    assert (entry["tool"], entry["result"]) == ("incidents_list", "ok")
+
+
 def test_auth_validation_and_read_only_errors_have_distinct_codes(server):
     server["caller"]["value"] = READ_ONLY
     scope = error_of(server, "incidents_create", {"title": "x", "description": "y", "category": "DAMAGE", "origin": "customer", "branch": "Zaragoza"})
