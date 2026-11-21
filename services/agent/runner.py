@@ -17,6 +17,13 @@ from .tracing import TraceRecorder, jsonable, recording, save_trace, summarize_s
 
 logger = logging.getLogger("agent.runner")
 
+# Qué fuente de datos consulta cada nodo: el trace lista las usadas, en orden.
+SOURCE_BY_NODE = {"lookup_ticket": "incidents", "lookup_inventory": "inventory", "retrieve": "rag"}
+
+
+def sources_used(path: list[str]) -> list[str]:
+    return [SOURCE_BY_NODE[node] for node in path if node in SOURCE_BY_NODE]
+
 
 @dataclass(frozen=True)
 class AgentResult:
@@ -24,6 +31,7 @@ class AgentResult:
     status: str
     answer: str
     trace_path: Path
+    sources: tuple[str, ...] = ()
 
 
 class AgentRunError(RuntimeError):
@@ -79,6 +87,8 @@ def build_trace(
         "finished_at": utc_now(),
         "status": "error" if error else final_state.get("status", "unknown"),
         "path": recorder.path,
+        "sources": sources_used(recorder.path),
+        "route": final_state.get("route"),
         "events": recorder.events,
         "checkpoints": checkpoints,
         "answer": final_state.get("answer"),
@@ -122,4 +132,10 @@ def run_agent(question: str, *, graph=None, trace_directory: str | Path | None =
     if error is not None:
         logger.error("agent run_id=%s falló en %s: %r", run_id, trace["failed_node"], error)
         raise AgentRunError(run_id, trace["failed_node"]) from error
-    return AgentResult(run_id=run_id, status=trace["status"], answer=trace["answer"] or "", trace_path=path)
+    return AgentResult(
+        run_id=run_id,
+        status=trace["status"],
+        answer=trace["answer"] or "",
+        trace_path=path,
+        sources=tuple(trace["sources"]),
+    )

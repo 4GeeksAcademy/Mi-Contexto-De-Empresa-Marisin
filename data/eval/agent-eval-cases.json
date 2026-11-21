@@ -1,59 +1,257 @@
 {
-  "description": "Casos de eval del agente LangGraph de TrackFlow. scripts/agent_record_traces.py ejecuta cada pregunta con Qdrant y el LLM reales y guarda el trace en tests/pipelines/fixtures/agent_traces/<id>.json; tests/pipelines/test_agent_evals.py evalúa esos traces (ruta, orden de nodos, checkpoints y anclaje de la respuesta en la base de conocimiento del Hito 7). Las preguntas de anclaje y sus términos esperados son las de data/eval/test-queries.json.",
+  "description": "Casos de eval del agente LangGraph de TrackFlow (Partes 1 y 2). scripts/agent_record_traces.py ejecuta cada pregunta con Qdrant, el LLM y la API de TrackFlow reales y guarda el trace en tests/pipelines/fixtures/agent_traces/<id>.json; tests/pipelines/test_agent_evals.py evalúa esos traces. {ticket_id} y {sku} se sustituyen al grabar por un ticket y un SKU que existen en la API (nunca inventados); backend_url fuerza un servicio caído para el fallback. expected_route son las fuentes que debe usar el agente, en orden; expected_sources, los documentos del RAG que deben aparecer en el contexto. Las preguntas de anclaje y sus términos son las de data/eval/test-queries.json.",
   "cases": [
     {
       "id": "a01",
       "kind": "grounding",
       "question": "¿Cuál es la ventana de devolución estándar?",
-      "expected_path": ["receive_question", "retrieve", "generate_answer"],
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "retrieve",
+        "generate_answer",
+        "compose_answer"
+      ],
       "expected_status": "answered",
-      "expected_sources": ["returns-policy"],
-      "answer_must_include": ["30 días"]
+      "expected_sources": [
+        "returns-policy"
+      ],
+      "answer_must_include": [
+        "30 días"
+      ],
+      "expected_route": [
+        "rag"
+      ]
     },
     {
       "id": "a02",
       "kind": "grounding",
       "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
-      "expected_path": ["receive_question", "retrieve", "generate_answer"],
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "retrieve",
+        "generate_answer",
+        "compose_answer"
+      ],
       "expected_status": "answered",
-      "expected_sources": ["sla-delivery"],
-      "answer_must_include": ["40%"]
+      "expected_sources": [
+        "sla-delivery"
+      ],
+      "answer_must_include": [
+        "40%"
+      ],
+      "expected_route": [
+        "rag"
+      ]
     },
     {
       "id": "a03",
       "kind": "grounding",
       "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
-      "expected_path": ["receive_question", "retrieve", "generate_answer"],
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "retrieve",
+        "generate_answer",
+        "compose_answer"
+      ],
       "expected_status": "answered",
-      "expected_sources": ["returns-policy"],
-      "answer_must_include": ["manual", "Sofía Ramos"]
+      "expected_sources": [
+        "returns-policy"
+      ],
+      "answer_must_include": [
+        "manual",
+        "Sofía Ramos"
+      ],
+      "expected_route": [
+        "rag"
+      ]
     },
     {
       "id": "a04",
       "kind": "grounding",
       "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
-      "expected_path": ["receive_question", "retrieve", "generate_answer"],
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "retrieve",
+        "generate_answer",
+        "compose_answer"
+      ],
       "expected_status": "answered",
-      "expected_sources": ["storage-pricing"],
-      "answer_must_include": ["16 EUR"]
+      "expected_sources": [
+        "storage-pricing"
+      ],
+      "answer_must_include": [
+        "16 EUR"
+      ],
+      "expected_route": [
+        "rag"
+      ]
     },
     {
       "id": "a05",
       "kind": "out_of_scope",
       "question": "¿Cuál es la capital de Francia?",
-      "expected_path": ["receive_question", "retrieve", "no_context"],
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "retrieve",
+        "no_context",
+        "compose_answer"
+      ],
       "expected_status": "no_context",
       "expected_sources": [],
-      "answer_must_include": ["No tengo información"]
+      "answer_must_include": [
+        "No tengo información"
+      ],
+      "expected_route": [
+        "rag"
+      ]
     },
     {
       "id": "a06",
       "kind": "invalid",
       "question": "   ",
-      "expected_path": ["receive_question", "invalid_question"],
+      "expected_path": [
+        "receive_question",
+        "invalid_question"
+      ],
       "expected_status": "invalid",
       "expected_sources": [],
-      "answer_must_include": ["La pregunta está vacía"]
+      "answer_must_include": [
+        "La pregunta está vacía"
+      ],
+      "expected_route": []
+    },
+    {
+      "id": "a07",
+      "kind": "ticket",
+      "question": "¿En qué estado está el ticket {ticket_id}?",
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "lookup_ticket",
+        "compose_answer"
+      ],
+      "expected_status": "answered",
+      "expected_route": [
+        "incidents"
+      ],
+      "expected_sources": [],
+      "answer_must_include": [
+        "El ticket {ticket_id}"
+      ]
+    },
+    {
+      "id": "a08",
+      "kind": "rag_routing",
+      "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "retrieve",
+        "generate_answer",
+        "compose_answer"
+      ],
+      "expected_status": "answered",
+      "expected_route": [
+        "rag"
+      ],
+      "expected_sources": [
+        "storage-pricing"
+      ],
+      "answer_must_include": [
+        "18 USD"
+      ]
+    },
+    {
+      "id": "a09",
+      "kind": "both",
+      "question": "¿En qué estado está el ticket {ticket_id} y cuál es la ventana de devolución estándar?",
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "lookup_ticket",
+        "retrieve",
+        "generate_answer",
+        "compose_answer"
+      ],
+      "expected_status": "answered",
+      "expected_route": [
+        "incidents",
+        "rag"
+      ],
+      "expected_sources": [
+        "returns-policy"
+      ],
+      "answer_must_include": [
+        "El ticket {ticket_id}",
+        "30 días"
+      ]
+    },
+    {
+      "id": "a10",
+      "kind": "fallback",
+      "question": "¿En qué estado está el ticket 999999?",
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "lookup_ticket",
+        "tool_fallback",
+        "compose_answer"
+      ],
+      "expected_status": "tool_fallback",
+      "expected_route": [
+        "incidents"
+      ],
+      "expected_sources": [],
+      "expected_tool_status": "not_found",
+      "answer_must_include": [
+        "No encuentro el ticket 999999"
+      ]
+    },
+    {
+      "id": "a11",
+      "kind": "fallback",
+      "question": "¿En qué estado está el ticket {ticket_id}?",
+      "backend_url": "http://127.0.0.1:9",
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "lookup_ticket",
+        "tool_fallback",
+        "compose_answer"
+      ],
+      "expected_status": "tool_fallback",
+      "expected_route": [
+        "incidents"
+      ],
+      "expected_sources": [],
+      "expected_tool_status": "unavailable",
+      "answer_must_include": [
+        "No he podido confirmar el estado del ticket {ticket_id}"
+      ]
+    },
+    {
+      "id": "a12",
+      "kind": "inventory",
+      "question": "¿Tenemos stock del SKU {sku}?",
+      "expected_path": [
+        "receive_question",
+        "route_question",
+        "lookup_inventory",
+        "compose_answer"
+      ],
+      "expected_status": "answered",
+      "expected_route": [
+        "inventory"
+      ],
+      "expected_sources": [],
+      "answer_must_include": [
+        "SKU {sku}"
+      ]
     }
   ]
 }

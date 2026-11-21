@@ -1,0 +1,307 @@
+{
+  "eval_case": "a11",
+  "eval_vars": {
+    "ticket_id": "1"
+  },
+  "run_id": "b54b4594-af41-4231-9c83-d5ada0966b35",
+  "thread_id": "b54b4594-af41-4231-9c83-d5ada0966b35",
+  "graph": "trackflow_support_agent",
+  "question": "¿En qué estado está el ticket 1?",
+  "started_at": "2026-11-21T17:56:42.060+00:00",
+  "finished_at": "2026-11-21T17:56:43.666+00:00",
+  "status": "tool_fallback",
+  "path": [
+    "receive_question",
+    "route_question",
+    "lookup_ticket",
+    "tool_fallback",
+    "compose_answer"
+  ],
+  "sources": [
+    "incidents"
+  ],
+  "route": {
+    "needs_rag": false,
+    "ticket": {
+      "ticket_id": 1
+    },
+    "reason": "Pregunta por el estado de un ticket concreto.",
+    "decided_by": "llm",
+    "sources": [
+      "incidents"
+    ]
+  },
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-21T17:56:42.062+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "received"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "route_question",
+      "started_at": "2026-11-21T17:56:42.062+00:00",
+      "duration_ms": 1518.67,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "route": {
+          "needs_rag": false,
+          "ticket": {
+            "ticket_id": 1
+          },
+          "reason": "Pregunta por el estado de un ticket concreto.",
+          "decided_by": "llm",
+          "sources": [
+            "incidents"
+          ]
+        },
+        "status": "routed"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "lookup_ticket",
+      "started_at": "2026-11-21T17:56:43.583+00:00",
+      "duration_ms": 75.31,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "routed",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "ticket_result": {
+          "tool": "incidents",
+          "status": "unavailable",
+          "query": {
+            "ticket_id": 1
+          },
+          "records": [],
+          "total": 0,
+          "error": "error de conexión: ConnectError",
+          "duration_ms": 75.23,
+          "fallback_message": null
+        },
+        "status": "tool_done"
+      },
+      "error": null
+    },
+    {
+      "step": 4,
+      "node": "tool_fallback",
+      "started_at": "2026-11-21T17:56:43.659+00:00",
+      "duration_ms": 0.01,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "tool_done",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "unavailable"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "status": "tool_fallback",
+        "ticket_result": {
+          "tool": "incidents",
+          "status": "unavailable",
+          "query": {
+            "ticket_id": 1
+          },
+          "records": [],
+          "total": 0,
+          "error": "error de conexión: ConnectError",
+          "duration_ms": 75.23,
+          "fallback_message": "No he podido confirmar el estado del ticket 1 ahora mismo: el gestor de incidentes no responde. Inténtalo de nuevo en unos minutos."
+        }
+      },
+      "error": null
+    },
+    {
+      "step": 5,
+      "node": "compose_answer",
+      "started_at": "2026-11-21T17:56:43.661+00:00",
+      "duration_ms": 0.01,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "tool_fallback",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "unavailable"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "No he podido confirmar el estado del ticket 1 ahora mismo: el gestor de incidentes no responde. Inténtalo de nuevo en unos minutos.",
+        "status": "tool_fallback"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e5d4e-86ef-64da-bfff-a6db320327a8",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-86f0-6d96-8000-c5ff7457fcdb",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-86f3-6029-8001-66ae13e6c972",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "route_question"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-9572-667b-8002-c4290255877e",
+      "step": 2,
+      "source": "loop",
+      "next": [
+        "lookup_ticket"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "routed",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-962d-6bd0-8003-bb50ea6b21ad",
+      "step": 3,
+      "source": "loop",
+      "next": [
+        "tool_fallback"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "tool_done",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "unavailable"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-9631-6e4c-8004-f9cefe265998",
+      "step": 4,
+      "source": "loop",
+      "next": [
+        "compose_answer"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "tool_fallback",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "unavailable"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-9633-657a-8005-28dd88ca734f",
+      "step": 5,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "¿En qué estado está el ticket 1?",
+        "status": "tool_fallback",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "unavailable"
+        },
+        "context_chunks": 0,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "No he podido confirmar el estado del ticket 1 ahora mismo: el gestor de incidentes no responde. Inténtalo de nuevo en unos minutos.",
+  "failed_node": null,
+  "error": null
+}

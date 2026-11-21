@@ -2,8 +2,9 @@
 
 `AgentQueryRequest` no exige longitud mínima a propósito: decidir qué hacer con
 una pregunta vacía es responsabilidad del grafo (`invalid_question`), no del
-endpoint. La respuesta nunca incluye chunks ni puntuaciones; el trace completo
-solo lo ven `admin` y `manager`.
+endpoint. La respuesta nunca incluye chunks ni puntuaciones, pero sí las
+fuentes usadas (`incidents`, `inventory`, `rag`); el trace completo solo lo ven
+`admin` y `manager`.
 """
 
 from typing import Any, Literal
@@ -21,8 +22,11 @@ class AgentQueryResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     run_id: str = Field(description="Id de la corrida; sirve para consultar su trace.")
-    status: Literal["answered", "no_context"]
+    status: Literal["answered", "no_context", "tool_fallback"]
     answer: str
+    sources: list[Literal["incidents", "inventory", "rag"]] = Field(
+        description="Fuentes consultadas, en orden (tools en vivo y/o RAG)."
+    )
 
 
 class AgentTraceEvent(BaseModel):
@@ -53,6 +57,8 @@ class AgentTraceResponse(BaseModel):
     finished_at: str
     status: str
     path: list[str]
+    sources: list[str] = []
+    route: dict[str, Any] | None = None
     events: list[AgentTraceEvent]
     checkpoints: list[AgentCheckpoint]
     answer: str | None = None

@@ -1,7 +1,7 @@
 """Endpoints del agente de soporte (LangGraph).
 
 * `POST /agent/query` — invoca el grafo compilado mediante `run_agent()` y
-  devuelve `{run_id, status, answer}`. No contiene lógica de recuperación ni de
+  devuelve `{run_id, status, answer, sources}`. No contiene lógica de recuperación ni de
   generación. Convive con `POST /knowledge/query` (Hito 7), que no cambia.
 * `GET /agent/traces/{run_id}` — el trace guardado de una corrida (solo
   `admin` o `manager`: incluye los chunks recuperados).
@@ -56,7 +56,9 @@ def agent_query(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=AGENT_UNAVAILABLE)
     if result.status == "invalid":
         raise HTTPException(status_code=422, detail=result.answer)
-    return AgentQueryResponse(run_id=result.run_id, status=result.status, answer=result.answer)
+    return AgentQueryResponse(
+        run_id=result.run_id, status=result.status, answer=result.answer, sources=list(result.sources)
+    )
 
 
 @router.get("/traces/{run_id}", response_model=AgentTraceResponse)
