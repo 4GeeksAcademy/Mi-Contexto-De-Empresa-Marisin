@@ -113,3 +113,18 @@ E1–E6 (Parte 1) siguen vigentes con las rutas nuevas (`route_question` y `comp
 - La API se llama a sí misma por HTTP (el agente vive en la misma API). Funciona porque `POST /agent/query` es síncrono y FastAPI lo ejecuta en su pool de hilos; con varios workers el comportamiento es el mismo.
 - La búsqueda de productos por nombre es por subcadena (sin tildes ni mayúsculas); no hay búsqueda difusa.
 - El enrutador LLM añade una llamada al modelo por pregunta (hasta 15 s); si no responde, deciden las reglas.
+
+## 9. Resultados reales (2026-11-21)
+
+- `python -m pytest -q --ignore=tests/pipelines/test_agent_evals.py` → **322 passed**.
+- Evals → **50 passed** (`docs/agent/tools-eval-results.txt`).
+- Los 12 casos los enrutó el **LLM** (`decided_by = llm`); las reglas de respaldo no hicieron falta.
+- Datos: las 3 incidencias del gestor se dieron de alta con su propio `POST /api/incidents` (la tool del agente solo hace `GET`); el SKU es uno real del inventario (`TF-TEE-001`).
+
+| Evidencia | Fichero |
+|---|---|
+| Trace con la tool de tickets (a07) | `docs/agent/trace-ticket-tool.json` |
+| Trace con el RAG, sin tools (a08) | `docs/agent/trace-rag-routing.json` |
+| Resultado de los evals | `docs/agent/tools-eval-results.txt` |
+| Capturas | `docs/agent/tools-tests-passed.png`, `tools-traces-recorded.png`, `tools-evals-passed.png` |
+
