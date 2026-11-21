@@ -48,7 +48,7 @@ python scripts/rag_eval.py --answers
 
 ## `agent_record_traces.py` — traces for the LangGraph agent evals
 
-Runs every case in `data/eval/agent-eval-cases.json` through the real graph (Qdrant + the models in `.env`) and stores each trace in `tests/pipelines/fixtures/agent_traces/<id>.json`, which `tests/pipelines/test_agent_evals.py` evaluates. The first trace is copied to `docs/agent/trace-example.json`. Requires Qdrant running and the collection indexed.
+Runs every case in `data/eval/agent-eval-cases.json` through the real graph (Qdrant + the models in `.env` + the TrackFlow API) and stores each trace in `tests/pipelines/fixtures/agent_traces/<id>.json`, which `tests/pipelines/test_agent_evals.py` evaluates. `{ticket_id}` and `{sku}` are replaced with a real ticket and SKU from the API, and the evidence traces are copied to `docs/agent/`. Requires Qdrant running, the collection indexed and the API running (`uvicorn`) with at least one incident and one product.
 
 ```bash
 python scripts/agent_record_traces.py
