@@ -110,3 +110,19 @@ python -m pytest tests/mcps                          # pruebas del servidor
 ## 6. Cliente: el agente LangGraph
 
 `services/agent/mcp_client.py` obtiene el token del agente (`client_credentials`, solo lectura, cacheado), carga las tools con `MultiServerMCPClient` (`streamable_http`) y las invoca. Los nodos `lookup_ticket` y `lookup_inventory` del grafo usan ese cliente. La llamada HTTP directa de la Parte 2 se eliminó: el agente tiene un único camino hacia el Incidents Manager.
+
+## 7. Verificación real (2026-11-21)
+
+| Evidencia | Fichero |
+|---|---|
+| Tests (342 passed) | `docs/mcp/mcp-tests-passed.png` |
+| Tokens de Logto (`iss`, `aud`, `scope`) y mínimo privilegio en el proveedor | `docs/mcp/mcp-oauth-tokens.png`, `docs/mcp/mcp-least-privilege.png` |
+| Smoke test (401, discovery, flujos, errores) | `docs/mcp/smoke-test.txt`, `docs/mcp/mcp-smoke-test.png` |
+| Log de auditoría por invocación | `docs/mcp/mcp-audit-log.png` |
+| Puerto 8001 público en Codespaces | `docs/mcp/mcp-port-public.png` |
+| MCP Playground sin token (no conecta) | `docs/mcp/playground-sin-token.png` |
+| MCP Playground: discovery y las 7 tools | `docs/mcp/playground-discovery.png`, `playground-tools-list.png`, `playground-<tool>.png` |
+| Escritura de inventario rechazada en Playground | `docs/mcp/playground-inventory_update_stock.png` |
+| Validación (`VALIDATION_ERROR`) | `docs/mcp/playground-validation-error.png` |
+| Agente vía MCP: traces y evals (55 passed, E13) | `docs/mcp/agent-eval-results.txt`, `docs/mcp/mcp-agent-traces.png`, `docs/mcp/mcp-agent-evals.png` |
+
