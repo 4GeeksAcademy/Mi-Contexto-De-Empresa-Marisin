@@ -20,3 +20,6 @@ data/raw/telemetry_*.csv.tmp
 
 # Logs de los jobs en segundo plano (cron)
 logs/
+
+# Traces de las corridas del agente LangGraph (runtime; los de los evals viven en tests/pipelines/fixtures/)
+data/agent_traces/

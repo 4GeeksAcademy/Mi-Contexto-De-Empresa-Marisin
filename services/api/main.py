@@ -40,6 +40,14 @@ except ModuleNotFoundError as exc:
         raise
     from knowledge.router import router as knowledge_router
 
+try:
+    # Agente de soporte LangGraph: importar el router compila el grafo al arrancar.
+    from services.agent.router import router as agent_router
+except ModuleNotFoundError as exc:
+    if exc.name not in {"services", "services.agent"}:
+        raise
+    from agent.router import router as agent_router
+
 app = FastAPI(
     title="TrackFlow - Supplier Directory API",
     version="1.0.0",
@@ -129,3 +137,4 @@ app.include_router(telemetry_router)
 app.include_router(reporting_router)
 app.include_router(tasks_router)
 app.include_router(knowledge_router)
+app.include_router(agent_router)

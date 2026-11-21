@@ -21,6 +21,7 @@ dependencies = [
     "matplotlib>=3.11.2",
     "qdrant-client>=1.20.0",
     "openai>=3.57.0",
+    "langgraph>=1.2.24",
 ]
 
 [dependency-groups]

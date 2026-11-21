@@ -1,0 +1,161 @@
+{
+  "eval_case": "a02",
+  "run_id": "01bc5908-33e1-4fbf-9012-af85b124d1e8",
+  "thread_id": "01bc5908-33e1-4fbf-9012-af85b124d1e8",
+  "graph": "trackflow_support_agent",
+  "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+  "started_at": "2026-11-20T21:10:55.165+00:00",
+  "finished_at": "2026-11-20T21:10:57.085+00:00",
+  "status": "answered",
+  "path": [
+    "receive_question",
+    "retrieve",
+    "generate_answer"
+  ],
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-20T21:10:55.167+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+        "status": "received"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "retrieve",
+      "started_at": "2026-11-20T21:10:55.167+00:00",
+      "duration_ms": 531.87,
+      "status": "ok",
+      "input": {
+        "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+        "status": "received",
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "context": [
+          {
+            "company": "trackflow",
+            "source_document": "sla-delivery",
+            "section": "SLA de Entrega",
+            "language": "es",
+            "chunk_index": 2,
+            "text": "SLA de Entrega\nTrackFlow no garantiza SLA de entrega los días de alta demanda declarados (Black Friday, Navidad, Rebajas de enero en España) — durante esas fechas los tiempos pueden extenderse hasta un 40% adicional, y esto debe comunicarse proactivamente a los clientes con anticipación."
+          },
+          {
+            "company": "trackflow",
+            "source_document": "sla-delivery",
+            "section": "SLA de Entrega",
+            "language": "es",
+            "chunk_index": 1,
+            "text": "SLA de Entrega\nEl SLA comprometido contractualmente es un 90% de entregas a tiempo por mes, medido por país. Si un país cae por debajo del 90% durante dos meses consecutivos, el cliente tiene derecho a una compensación del 5% sobre la tarifa mensual de ese país, según el contrato estándar."
+          }
+        ],
+        "status": "retrieved"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "generate_answer",
+      "started_at": "2026-11-20T21:10:55.701+00:00",
+      "duration_ms": 1382.35,
+      "status": "ok",
+      "input": {
+        "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+        "status": "retrieved",
+        "context_chunks": 2,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "No, TrackFlow no garantiza el SLA de entrega durante el Black Friday; los tiempos pueden extenderse hasta un 40% adicional. Recomiendo avisar a la marca con antelación.  \nFuente: SLA de Entrega (sla-delivery) · Sección: SLA de Entrega",
+        "status": "answered"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e526d-fcfe-6a11-bfff-f712dbbf4cc3",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526d-fd00-66bd-8000-32b51af844f5",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526d-fd02-66d0-8001-b6243d28f250",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "retrieve"
+      ],
+      "values": {
+        "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+        "status": "received",
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-0217-6819-8002-80069943e6f4",
+      "step": 2,
+      "source": "loop",
+      "next": [
+        "generate_answer"
+      ],
+      "values": {
+        "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+        "status": "retrieved",
+        "context_chunks": 2,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-0f49-63b1-8003-ce7f4d3ce040",
+      "step": 3,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "¿Podemos garantizarle a una marca el SLA de entrega durante el Black Friday?",
+        "status": "answered",
+        "context_chunks": 2,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "No, TrackFlow no garantiza el SLA de entrega durante el Black Friday; los tiempos pueden extenderse hasta un 40% adicional. Recomiendo avisar a la marca con antelación.  \nFuente: SLA de Entrega (sla-delivery) · Sección: SLA de Entrega",
+  "failed_node": null,
+  "error": null
+}

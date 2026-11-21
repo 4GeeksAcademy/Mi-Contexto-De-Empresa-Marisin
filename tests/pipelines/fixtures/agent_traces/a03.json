@@ -1,0 +1,153 @@
+{
+  "eval_case": "a03",
+  "run_id": "b96f374b-dcf1-4315-93b9-8c69479a2e75",
+  "thread_id": "b96f374b-dcf1-4315-93b9-8c69479a2e75",
+  "graph": "trackflow_support_agent",
+  "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+  "started_at": "2026-11-20T21:10:57.086+00:00",
+  "finished_at": "2026-11-20T21:10:58.844+00:00",
+  "status": "answered",
+  "path": [
+    "receive_question",
+    "retrieve",
+    "generate_answer"
+  ],
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-20T21:10:57.088+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+        "status": "received"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "retrieve",
+      "started_at": "2026-11-20T21:10:57.089+00:00",
+      "duration_ms": 507.4,
+      "status": "ok",
+      "input": {
+        "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+        "status": "received",
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "context": [
+          {
+            "company": "trackflow",
+            "source_document": "returns-policy",
+            "section": "Política de Devoluciones",
+            "language": "es",
+            "chunk_index": 3,
+            "text": "Política de Devoluciones\nLas devoluciones internacionales (compradas en un país, devueltas en otro) no están cubiertas por el proceso automático estándar y requieren gestión manual del equipo de Sofía Ramos (Gerente de Devoluciones)."
+          }
+        ],
+        "status": "retrieved"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "generate_answer",
+      "started_at": "2026-11-20T21:10:57.598+00:00",
+      "duration_ms": 1243.61,
+      "status": "ok",
+      "input": {
+        "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+        "status": "retrieved",
+        "context_chunks": 1,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "No, las devoluciones internacionales no están cubiertas por el proceso automático estándar; en este caso, el equipo de Sofía Ramos debe gestionarla manualmente.  \nFuente: Política de Devoluciones (returns-policy) · Sección: Política de Devoluciones",
+        "status": "answered"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e526e-0f52-62b3-bfff-86b1891d252f",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-0f53-6b0e-8000-4e45c9a52d22",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-0f55-681e-8001-ba6780857b8f",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "retrieve"
+      ],
+      "values": {
+        "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+        "status": "received",
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-142e-6dcf-8002-2ceda0d72ae3",
+      "step": 2,
+      "source": "loop",
+      "next": [
+        "generate_answer"
+      ],
+      "values": {
+        "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+        "status": "retrieved",
+        "context_chunks": 1,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-200e-62af-8003-0fce8f275ef9",
+      "step": 3,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "Un comprador de Estados Unidos quiere devolver el pedido en España, ¿se gestiona automáticamente?",
+        "status": "answered",
+        "context_chunks": 1,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "No, las devoluciones internacionales no están cubiertas por el proceso automático estándar; en este caso, el equipo de Sofía Ramos debe gestionarla manualmente.  \nFuente: Política de Devoluciones (returns-policy) · Sección: Política de Devoluciones",
+  "failed_node": null,
+  "error": null
+}

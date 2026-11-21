@@ -1,0 +1,111 @@
+{
+  "eval_case": "a06",
+  "run_id": "3a05e7d4-5c5b-4d0d-89b1-c4d76c67f5bd",
+  "thread_id": "3a05e7d4-5c5b-4d0d-89b1-c4d76c67f5bd",
+  "graph": "trackflow_support_agent",
+  "question": "   ",
+  "started_at": "2026-11-20T21:11:01.612+00:00",
+  "finished_at": "2026-11-20T21:11:01.615+00:00",
+  "status": "invalid",
+  "path": [
+    "receive_question",
+    "invalid_question"
+  ],
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-20T21:11:01.613+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "   ",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "",
+        "status": "invalid"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "invalid_question",
+      "started_at": "2026-11-20T21:11:01.614+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "",
+        "status": "invalid",
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "La pregunta está vacía. Escribe qué necesitas saber sobre las políticas de TrackFlow (entregas, devoluciones, transportistas o almacenaje).",
+        "status": "invalid"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e526e-3a7a-61d9-bfff-1b9545db43f0",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-3a7b-6a57-8000-bdbb6236a8a8",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "   ",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-3a7d-6598-8001-98588ef9cf71",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "invalid_question"
+      ],
+      "values": {
+        "question": "",
+        "status": "invalid",
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-3a7e-6ece-8002-a7e08b0880df",
+      "step": 2,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "",
+        "status": "invalid",
+        "context_chunks": 0,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "La pregunta está vacía. Escribe qué necesitas saber sobre las políticas de TrackFlow (entregas, devoluciones, transportistas o almacenaje).",
+  "failed_node": null,
+  "error": null
+}

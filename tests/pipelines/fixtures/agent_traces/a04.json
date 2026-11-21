@@ -1,0 +1,161 @@
+{
+  "eval_case": "a04",
+  "run_id": "7e81570d-74ee-4661-84fd-b0608efeba55",
+  "thread_id": "7e81570d-74ee-4661-84fd-b0608efeba55",
+  "graph": "trackflow_support_agent",
+  "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+  "started_at": "2026-11-20T21:10:58.846+00:00",
+  "finished_at": "2026-11-20T21:11:00.895+00:00",
+  "status": "answered",
+  "path": [
+    "receive_question",
+    "retrieve",
+    "generate_answer"
+  ],
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-20T21:10:58.848+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+        "status": "received"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "retrieve",
+      "started_at": "2026-11-20T21:10:58.848+00:00",
+      "duration_ms": 531.08,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+        "status": "received",
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "context": [
+          {
+            "company": "trackflow",
+            "source_document": "storage-pricing",
+            "section": "Tarifas de Almacenamiento",
+            "language": "es",
+            "chunk_index": 0,
+            "text": "Tarifas de Almacenamiento\nTrackFlow cobra almacenamiento a las marcas cliente según volumen ocupado, no según número de unidades:\n- Tarifa estándar: 18 USD por metro cúbico al mes (Los Ángeles) o 16 EUR por metro cúbico al mes (Zaragoza).\n- Los primeros 30 días de cualquier producto nuevo en inventario no generan cargo de almacenamiento (periodo de gracia).\n- Inventario con más de 180 días sin movimiento (sin ventas ni salidas) paga una tarifa de \"inventario de larga duración\" del 150% sobre la tarifa estándar, a partir del día 181."
+          },
+          {
+            "company": "trackflow",
+            "source_document": "storage-pricing",
+            "section": "Tarifas de Almacenamiento",
+            "language": "es",
+            "chunk_index": 2,
+            "text": "Tarifas de Almacenamiento\nClientes con más de 50 metros cúbicos de volumen promedio mensual pueden negociar una tarifa preferencial, pero esa negociación siempre debe pasar por Miguel Torres — un account manager no puede ofrecer descuentos de almacenamiento por su cuenta."
+          }
+        ],
+        "status": "retrieved"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "generate_answer",
+      "started_at": "2026-11-20T21:10:59.381+00:00",
+      "duration_ms": 1512.43,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+        "status": "retrieved",
+        "context_chunks": 2,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "En Zaragoza, la tarifa estándar de almacenamiento es de 16 EUR por metro cúbico al mes.  \nFuente: Tarifas de Almacenamiento (storage-pricing) · Sección: Tarifas de Almacenamiento",
+        "status": "answered"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e526e-2019-6680-bfff-c196734ed7c2",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-201b-61c1-8000-9db08c9f0031",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+        "status": null,
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-201d-6042-8001-4ba3dbfd5237",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "retrieve"
+      ],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+        "status": "received",
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-2530-6333-8002-d3f014d20ec9",
+      "step": 2,
+      "source": "loop",
+      "next": [
+        "generate_answer"
+      ],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+        "status": "retrieved",
+        "context_chunks": 2,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e526e-339f-687e-8003-3f0d6d8b6b16",
+      "step": 3,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Zaragoza?",
+        "status": "answered",
+        "context_chunks": 2,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "En Zaragoza, la tarifa estándar de almacenamiento es de 16 EUR por metro cúbico al mes.  \nFuente: Tarifas de Almacenamiento (storage-pricing) · Sección: Tarifas de Almacenamiento",
+  "failed_node": null,
+  "error": null
+}
