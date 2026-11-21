@@ -101,6 +101,8 @@ def path_of(graph, config):
 def test_state_is_minimal_and_has_no_conversation_history():
     assert set(get_type_hints(AgentState)) == {
         "question", "route", "ticket_result", "inventory_result", "context", "rag_answer", "answer", "status",
+        # Memoria (Hito 8): ids de la corrida, la propuesta pendiente y su resolución; nunca los mensajes.
+        "conversation_id", "run_id", "actor", "pending_memory", "memory_decision", "memory_notes", "memory_proposal",
     }
 
 
@@ -112,7 +114,8 @@ def test_module_compiles_the_graph_with_single_responsibility_nodes():
     drawn = agent_graph.AGENT_GRAPH.get_graph()
     assert set(drawn.nodes) == {
         START, "receive_question", "invalid_question", "route_question", "lookup_ticket", "lookup_inventory",
-        "tool_fallback", "retrieve", "generate_answer", "no_context", "compose_answer", END,
+        "tool_fallback", "retrieve", "generate_answer", "no_context", "compose_answer",
+        "resolve_memory_decision", "propose_memory", END,
     }
     assert agent_graph.AGENT_GRAPH.checkpointer is not None
 
@@ -123,7 +126,12 @@ def test_trace_source_names_match_graph_nodes():
 
 def test_edges_are_conditional_not_a_fixed_sequence():
     conditional = agent_graph.AGENT_SPEC.conditional
-    assert set(conditional) == {"receive_question", "route_question", "lookup_ticket", "lookup_inventory", "tool_fallback", "retrieve"}
+    assert set(conditional) == {
+        "receive_question", "route_question", "lookup_ticket", "lookup_inventory", "tool_fallback", "retrieve",
+        "resolve_memory_decision", "compose_answer",
+    }
+    assert conditional["receive_question"].targets["memory_decision"] == "resolve_memory_decision"
+    assert conditional["compose_answer"].targets == {"propose": "propose_memory", "end": END}
     assert conditional["route_question"].targets == {
         "ticket": "lookup_ticket", "inventory": "lookup_inventory", "rag": "retrieve", "compose": "compose_answer",
     }

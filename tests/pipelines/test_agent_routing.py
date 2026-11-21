@@ -131,3 +131,36 @@ def test_fallback_messages_are_honest_and_never_state_a_status_or_stock(result):
     assert text.startswith(("No he podido confirmar", "No encuentro"))
     assert not any(label in text for label in answers.STATUS_LABELS.values())
     assert "unidades" not in text
+
+
+# --------------------------------------------------------------------------- #
+# Auto-evaluación de memoria en la misma salida estructurada (Hito 8 · Parte 1)
+# --------------------------------------------------------------------------- #
+def test_the_same_structured_output_carries_the_memory_proposal():
+    question = "En realidad SEUR ya no cubre esa zona rural de Zaragoza, hay que usar el carrier local."
+    text = (
+        '{"needs_rag": true, "ticket": null, "inventory": null, "reason": "corrección", "memory_proposal": '
+        '{"category": "carrier_rule", "fact": "SEUR ya no cubre la zona rural de Zaragoza.", "carrier": "seur", '
+        '"country": "España", "zone": "zona rural de Zaragoza", "client": null, "reason": "regla corregida"}}'
+    )
+    decision = routing.parse_llm_decision(text, question)
+    assert decision.sources == ["rag"]
+    assert decision.memory_proposal.carrier == "SEUR"
+    assert decision.memory_proposal.country.value == "ES"
+
+
+@pytest.mark.parametrize(
+    "proposal",
+    ["null", '{"category": "otra_cosa", "fact": "algo que recordar"}', '{"category": "carrier_rule", "fact": "corto"}'],
+)
+def test_no_or_invalid_memory_proposal_does_not_break_the_route(proposal):
+    decision = routing.parse_llm_decision(
+        f'{{"needs_rag": true, "reason": "política", "memory_proposal": {proposal}}}', "¿Cuál es el SLA de entrega?"
+    )
+    assert decision.sources == ["rag"]
+    assert decision.memory_proposal is None
+    assert "memory_proposal" not in decision.model_dump(mode="json", exclude_none=True)
+
+
+def test_rules_never_propose_memory():
+    assert routing.classify_with_rules("SEUR ya no cubre la zona rural de Zaragoza").memory_proposal is None
