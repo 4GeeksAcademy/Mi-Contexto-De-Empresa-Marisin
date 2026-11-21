@@ -55,7 +55,22 @@ def summarize_state(state: dict[str, Any] | None) -> dict[str, Any]:
         },
         "context_chunks": len(state.get("context") or []),
         "has_answer": bool(state.get("answer")),
+        **_memory_summary(state),
     }
+
+
+def _memory_summary(state: dict[str, Any]) -> dict[str, Any]:
+    """Solo si la corrida usa memoria: así los traces sin memoria no cambian."""
+    summary: dict[str, Any] = {}
+    if isinstance(state.get("pending_memory"), dict):
+        summary["memory_pending"] = state["pending_memory"].get("proposal_id")
+    if isinstance(state.get("memory_decision"), dict):
+        summary["memory_decision"] = state["memory_decision"].get("outcome")
+    if isinstance(state.get("memory_proposal"), dict):
+        summary["memory_proposal"] = state["memory_proposal"].get("status")
+    if state.get("memory_notes"):
+        summary["memory_notes"] = len(state["memory_notes"])
+    return summary
 
 
 @dataclass

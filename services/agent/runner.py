@@ -3,16 +3,21 @@
 `run_agent()` es lo único que usa el endpoint. Cada corrida tiene un `run_id`
 (UUID) que también es el `thread_id` del checkpointer, de modo que el trace,
 los checkpoints y la respuesta de la API se relacionan con el mismo id.
+
+Memoria (Hito 8 · Parte 1): con `user`, la corrida pertenece a una conversación
+(`conversation_id`, que se crea si no llega) y activa la memoria del agente. Sin
+`user` (scripts de evals) la memoria no actúa y el grafo se comporta como antes.
 """
 
 from __future__ import annotations
 
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .memory.models import Actor
 from .tracing import TraceRecorder, jsonable, recording, save_trace, summarize_state, utc_now
 
 logger = logging.getLogger("agent.runner")
@@ -32,6 +37,19 @@ class AgentResult:
     answer: str
     trace_path: Path
     sources: tuple[str, ...] = ()
+    conversation_id: str | None = None
+    memory: dict[str, Any] = field(default_factory=dict)
+
+
+def memory_summary(final_state: dict[str, Any] | None) -> dict[str, Any]:
+    """Qué hizo la memoria en la corrida: decisión, propuesta y notas recordadas."""
+    final_state = final_state or {}
+    summary = {
+        "decision": final_state.get("memory_decision"),
+        "proposal": final_state.get("memory_proposal"),
+        "notes": final_state.get("memory_notes"),
+    }
+    return {key: value for key, value in summary.items() if value}
 
 
 class AgentRunError(RuntimeError):
@@ -76,9 +94,10 @@ def build_trace(
     final_state: dict[str, Any] | None,
     checkpoints: list[dict[str, Any]],
     error: BaseException | None,
+    conversation_id: str | None = None,
 ) -> dict[str, Any]:
     final_state = final_state or {}
-    return {
+    trace = {
         "run_id": recorder.run_id,
         "thread_id": recorder.run_id,
         "graph": graph_name,
@@ -95,9 +114,20 @@ def build_trace(
         "failed_node": recorder.failed_node if error else None,
         "error": jsonable({"type": type(error).__name__, "message": str(error)[:500]}) if error else None,
     }
+    if conversation_id:
+        trace["conversation_id"] = conversation_id
+        trace["memory"] = jsonable(memory_summary(final_state))
+    return trace
 
 
-def run_agent(question: str, *, graph=None, trace_directory: str | Path | None = None) -> AgentResult:
+def run_agent(
+    question: str,
+    *,
+    conversation_id: str | None = None,
+    user: dict[str, Any] | None = None,
+    graph=None,
+    trace_directory: str | Path | None = None,
+) -> AgentResult:
     """Invoca el grafo para `question`, guarda el trace y devuelve el resultado.
 
     Si un nodo falla, el trace se guarda igualmente (con `status = "error"` y el
@@ -113,9 +143,17 @@ def run_agent(question: str, *, graph=None, trace_directory: str | Path | None =
     final_state: dict[str, Any] | None = None
     error: BaseException | None = None
 
+    initial: dict[str, Any] = {"question": question}
+    actor = Actor.from_user(user)
+    if actor is not None:
+        conversation_id = conversation_id or str(uuid.uuid4())
+        initial.update({"conversation_id": conversation_id, "run_id": run_id, "actor": actor.model_dump()})
+    else:
+        conversation_id = None
+
     with recording(recorder):
         try:
-            final_state = graph.invoke({"question": question}, config)
+            final_state = graph.invoke(initial, config)
         except Exception as exc:
             error = exc
 
@@ -125,6 +163,7 @@ def run_agent(question: str, *, graph=None, trace_directory: str | Path | None =
         final_state=final_state,
         checkpoints=checkpoint_summary(graph, config),
         error=error,
+        conversation_id=conversation_id,
     )
     path = save_trace(trace, trace_directory)
     logger.info("agent run_id=%s status=%s path=%s", run_id, trace["status"], " → ".join(trace["path"]))
@@ -138,4 +177,6 @@ def run_agent(question: str, *, graph=None, trace_directory: str | Path | None =
         answer=trace["answer"] or "",
         trace_path=path,
         sources=tuple(trace["sources"]),
+        conversation_id=conversation_id,
+        memory=trace.get("memory") or {},
     )

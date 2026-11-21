@@ -16,8 +16,20 @@ Mínimo y explícito: solo lo que un nodo necesita para decidir el siguiente pas
 * `answer` — la respuesta final que compone `compose_answer`.
 * `status` — en qué punto del flujo está la corrida; el endpoint lo devuelve.
 
+Memoria del agente (Hito 8 · Parte 1), solo si la corrida tiene `conversation_id`
+y `actor` (las peticiones autenticadas de `POST /agent/query`):
+
+* `conversation_id` / `run_id` / `actor` — a qué conversación pertenece la corrida,
+  su id y quién pregunta (`user_id` y `role`, sin nombre ni email).
+* `pending_memory` — la propuesta pendiente de esa conversación, si la había al
+  empezar el turno (se clasifica antes de enrutar).
+* `memory_decision` — cómo se resolvió (aprobada, rechazada, descartada, caducada).
+* `memory_notes` — los hechos aprobados que se recordaron para esta pregunta.
+* `memory_proposal` — qué pasó con la `memory_proposal` del modelo en este turno.
+
 No incluye el historial de la conversación: cada consulta es independiente y
-ningún nodo lo necesita para decidir. Arrastrarlo inflaría cada checkpoint y
+ningún nodo lo necesita para decidir. La memoria no es historial: guarda hechos
+aprobados y, como mucho, una propuesta pendiente; nunca los mensajes. Arrastrarlo inflaría cada checkpoint y
 cada trace sin cambiar ninguna decisión.
 
 Este módulo no usa `from __future__ import annotations` a propósito: LangGraph
@@ -35,6 +47,7 @@ AgentStatus = Literal[
     "answered",
     "no_context",
     "tool_fallback",
+    "memory_resolved",
 ]
 
 
@@ -47,3 +60,10 @@ class AgentState(TypedDict, total=False):
     rag_answer: str
     answer: str
     status: AgentStatus
+    conversation_id: str
+    run_id: str
+    actor: dict[str, Any]
+    pending_memory: dict[str, Any]
+    memory_decision: dict[str, Any]
+    memory_notes: list[dict[str, Any]]
+    memory_proposal: dict[str, Any]
