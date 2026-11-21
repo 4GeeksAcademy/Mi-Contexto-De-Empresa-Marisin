@@ -3,7 +3,8 @@
 # cruzada temporal (orden cronológico de los folds y ausencia de fuga) y del
 # RAG (retrieve/query con mocks; sin Qdrant ni LLM en vivo), y del agente
 # LangGraph: grafo con dobles del RAG, tools con transporte HTTP simulado,
-# enrutador y evals sobre los traces grabados.
+# enrutador y evals sobre los traces grabados; y del servidor MCP con OAuth
+# (MCP Auth con un verificador de token simulado).
 name: sales-model-tests
 
 on:
@@ -36,3 +37,4 @@ jobs:
           tests/pipelines/test_agent_tools.py
           tests/pipelines/test_agent_routing.py
           tests/pipelines/test_agent_evals.py
+          tests/mcps/test_trackflow_mcp.py
