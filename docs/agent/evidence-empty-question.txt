@@ -1,0 +1,2 @@
+{"detail":"La pregunta está vacía. Escribe qué necesitas saber sobre las políticas de TrackFlow (entregas, devoluciones, transportistas o almacenaje)."}
+HTTP 422
