@@ -47,6 +47,12 @@ def summarize_state(state: dict[str, Any] | None) -> dict[str, Any]:
     return {
         "question": state.get("question"),
         "status": state.get("status"),
+        "planned_sources": (state.get("route") or {}).get("sources"),
+        "tool_status": {
+            key.removesuffix("_result"): state[key]["status"]
+            for key in ("ticket_result", "inventory_result")
+            if isinstance(state.get(key), dict)
+        },
         "context_chunks": len(state.get("context") or []),
         "has_answer": bool(state.get("answer")),
     }
