@@ -1,5 +1,5 @@
 {
-  "description": "Casos de eval del agente LangGraph de TrackFlow (Partes 1 y 2). scripts/agent_record_traces.py ejecuta cada pregunta con Qdrant, el LLM y la API de TrackFlow reales y guarda el trace en tests/pipelines/fixtures/agent_traces/<id>.json; tests/pipelines/test_agent_evals.py evalúa esos traces. {ticket_id} y {sku} se sustituyen al grabar por un ticket y un SKU que existen en la API (nunca inventados); backend_url fuerza un servicio caído para el fallback. expected_route son las fuentes que debe usar el agente, en orden; expected_sources, los documentos del RAG que deben aparecer en el contexto. Las preguntas de anclaje y sus términos son las de data/eval/test-queries.json.",
+  "description": "Casos de eval del agente LangGraph de TrackFlow (Partes 1 y 2, tools vía servidor MCP). scripts/agent_record_traces.py ejecuta cada pregunta con Qdrant, el LLM, el servidor MCP (con OAuth) y la API de TrackFlow reales y guarda el trace en tests/pipelines/fixtures/agent_traces/<id>.json; tests/pipelines/test_agent_evals.py evalúa esos traces. {ticket_id} y {sku} se sustituyen al grabar por un ticket y un SKU que existen en la API (nunca inventados); mcp_url apunta el cliente MCP del agente a un puerto cerrado para grabar el fallback de servicio caído. expected_route son las fuentes que debe usar el agente, en orden; expected_sources, los documentos del RAG que deben aparecer en el contexto. Las preguntas de anclaje y sus términos son las de data/eval/test-queries.json.",
   "cases": [
     {
       "id": "a01",
@@ -216,7 +216,6 @@
       "id": "a11",
       "kind": "fallback",
       "question": "¿En qué estado está el ticket {ticket_id}?",
-      "backend_url": "http://127.0.0.1:9",
       "expected_path": [
         "receive_question",
         "route_question",
@@ -232,7 +231,8 @@
       "expected_tool_status": "unavailable",
       "answer_must_include": [
         "No he podido confirmar el estado del ticket {ticket_id}"
-      ]
+      ],
+      "mcp_url": "http://127.0.0.1:9/mcp"
     },
     {
       "id": "a12",

@@ -128,3 +128,15 @@ E1–E6 (Parte 1) siguen vigentes con las rutas nuevas (`route_question` y `comp
 | Resultado de los evals | `docs/agent/tools-eval-results.txt` |
 | Capturas | `docs/agent/tools-tests-passed.png`, `tools-traces-recorded.png`, `tools-evals-passed.png` |
 
+## 10. Migración al servidor MCP (proyecto "Servidor MCP")
+
+Desde la rama `feature/mcp-oauth-tools`, las dos tools ya no usan HTTP directo: `services/agent/tools.py` llama a las tools del servidor MCP de TrackFlow (`mcps/trackflow_mcp`) mediante `services/agent/mcp_client.py`, con `langchain-mcp-adapters` y un token OAuth de solo lectura. La tabla de transporte de §3 queda sustituida por esta:
+
+| Tool del agente | Tool MCP | Scope del token del agente |
+|---|---|---|
+| `lookup_tickets` (por id) | `incidents_get` | `incidents:read` |
+| `lookup_tickets` (filtros) | `incidents_list` | `incidents:read` |
+| `lookup_inventory` | `inventory_list_products` | `inventory:read` |
+
+Los contratos, el enrutamiento, el fallback (`not_found` / `unavailable`) y las plantillas no cambian; `ToolResult` añade `transport = "mcp"` y `mcp_tool`. Detalles: `mcps/trackflow_mcp/README.md`.
+

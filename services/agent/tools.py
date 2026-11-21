@@ -2,27 +2,28 @@
 
 Dos tools, una responsabilidad cada una, ambas de **solo lectura**:
 
-* `lookup_tickets(TicketQuery)` → gestor de incidentes
-  (`GET /api/incidents/{id}` o `GET /api/incidents?status=…&branch=…`).
-* `lookup_inventory(InventoryQuery)` → gestor de inventario
-  (`GET /inventory/products`).
+* `lookup_tickets(TicketQuery)` → Incidents Manager, a través de las tools MCP
+  `incidents_get` / `incidents_list`.
+* `lookup_inventory(InventoryQuery)` → inventario, a través de la tool MCP
+  `inventory_list_products`.
 
-Transporte: HTTP contra la API de TrackFlow que ya está construida
-(`AGENT_BACKEND_URL`, por defecto `http://localhost:8000`). Así el agente
-siempre lee el dato actual y nunca toca el almacenamiento de los servicios.
-Esos endpoints de lectura no exigen autenticación hoy. Si se protegen, basta
-con definir `AGENT_BACKEND_TOKEN` en el entorno y se envía como `Bearer`;
-nunca hay un token escrito en el código.
+**Transporte: el servidor MCP de TrackFlow** (`mcps/trackflow_mcp`), como cliente
+con `langchain-mcp-adapters` y OAuth (`services/agent/mcp_client.py`). El agente
+ya **no** llama a la API de TrackFlow directamente: la implementación HTTP de la
+Parte 2 (`http_get_json`, `AGENT_BACKEND_URL`) se eliminó para que no existan dos
+caminos hacia el Incidents Manager.
 
-Cada llamada tiene un timeout explícito de `TOOL_TIMEOUT_SECONDS` (4 s). Ante
-timeout, error de red, 5xx o respuesta inválida, la tool **no lanza**: devuelve
-un resultado `unavailable`; ante 404 o sin coincidencias, `not_found`. El grafo
-enruta esos resultados al nodo `tool_fallback`, que responde con honestidad.
+Cada llamada tiene un timeout explícito de `TOOL_TIMEOUT_SECONDS` (4 s: sesión
+MCP + tool). Ante timeout, servidor caído, token rechazado o error de la tool,
+la tool **no lanza**: devuelve `unavailable`; ante `NOT_FOUND` o sin
+coincidencias, `not_found`. El grafo enruta esos resultados al nodo
+`tool_fallback`, que responde con honestidad. Los contratos (`TicketQuery`,
+`TicketRecord`, `InventoryQuery`, `ProductStock`, `ToolResult`) no cambian, así
+que el enrutamiento y la composición de la Parte 2 siguen igual.
 """
 
 from __future__ import annotations
 
-import os
 import time
 import unicodedata
 from typing import Any, Literal
@@ -36,10 +37,9 @@ from packages.shared.incident_validation import (
     IncidentStatus,
 )
 
-TOOL_TIMEOUT_SECONDS = 4.0
-DEFAULT_BACKEND_URL = "http://localhost:8000"
-BACKEND_URL_ENV = "AGENT_BACKEND_URL"
-BACKEND_TOKEN_ENV = "AGENT_BACKEND_TOKEN"
+from . import mcp_client
+
+TOOL_TIMEOUT_SECONDS = mcp_client.MCP_CALL_TIMEOUT_SECONDS  # 4 s
 MAX_RESULTS = 5  # tickets o productos que se muestran como máximo en la respuesta
 
 ToolStatus = Literal["ok", "not_found", "unavailable"]
@@ -111,65 +111,40 @@ class ToolResult(BaseModel):
     error: str | None = None
     duration_ms: float = 0.0
     fallback_message: str | None = None
+    transport: Literal["mcp"] = "mcp"
+    mcp_tool: str | None = None
 
 
 # --------------------------------------------------------------------------- #
-# Transporte HTTP (solo GET)
+# Transporte: servidor MCP
 # --------------------------------------------------------------------------- #
 class ToolNotFound(Exception):
-    """El recurso no existe (HTTP 404)."""
+    """El recurso no existe (`NOT_FOUND` del servidor MCP)."""
 
 
 class ToolUnavailable(Exception):
-    """El servicio no respondió a tiempo, falló o devolvió algo inválido."""
+    """El servidor MCP no respondió a tiempo, rechazó el token o la tool falló."""
 
 
-def backend_url() -> str:
-    return (os.environ.get(BACKEND_URL_ENV) or DEFAULT_BACKEND_URL).rstrip("/")
-
-
-def auth_headers() -> dict[str, str]:
-    token = (os.environ.get(BACKEND_TOKEN_ENV) or "").strip()
-    return {"Authorization": f"Bearer {token}"} if token else {}
-
-
-# Los tests sustituyen el transporte de httpx (httpx.MockTransport) aquí.
-HTTP_TRANSPORT = None
-
-
-def http_get_json(path: str, params: dict[str, Any] | None = None) -> Any:
-    """Único punto de salida HTTP de las tools: **GET** con timeout de 4 s."""
-    import httpx
-
+def call_mcp(tool_name: str, arguments: dict[str, Any]) -> Any:
+    """Único punto de salida de las tools del agente: una tool de lectura del servidor MCP."""
     try:
-        with httpx.Client(
-            base_url=backend_url(),
-            timeout=httpx.Timeout(TOOL_TIMEOUT_SECONDS),
-            headers=auth_headers(),
-            transport=HTTP_TRANSPORT,
-        ) as client:
-            response = client.get(path, params=params or None)
-    except httpx.TimeoutException as exc:
-        raise ToolUnavailable(f"timeout: sin respuesta en {TOOL_TIMEOUT_SECONDS:g} s") from exc
-    except httpx.HTTPError as exc:
-        raise ToolUnavailable(f"error de conexión: {type(exc).__name__}") from exc
-
-    if response.status_code == 404:
-        raise ToolNotFound(path)
-    if response.status_code >= 400:
-        raise ToolUnavailable(f"HTTP {response.status_code} en GET {path}")
-    try:
-        return response.json()
-    except ValueError as exc:
-        raise ToolUnavailable(f"respuesta no JSON en GET {path}") from exc
+        return mcp_client.call_tool(tool_name, arguments)
+    except mcp_client.McpCallError as exc:
+        if exc.code == "NOT_FOUND":
+            raise ToolNotFound(tool_name) from exc
+        raise ToolUnavailable(f"{exc.code}: {exc.message}") from exc
+    except mcp_client.McpUnavailable as exc:
+        raise ToolUnavailable(str(exc)) from exc
 
 
 # --------------------------------------------------------------------------- #
 # Tools
 # --------------------------------------------------------------------------- #
-def _result(tool, status, query, *, records=(), total=0, error=None, started=0.0) -> ToolResult:
+def _result(tool, status, query, *, records=(), total=0, error=None, started=0.0, mcp_tool=None) -> ToolResult:
     return ToolResult(
         tool=tool,
+        mcp_tool=mcp_tool,
         status=status,
         query=query.model_dump(mode="json", exclude_none=True),
         records=[record.model_dump(mode="json") for record in records],
@@ -180,29 +155,31 @@ def _result(tool, status, query, *, records=(), total=0, error=None, started=0.0
 
 
 def lookup_tickets(query: TicketQuery) -> ToolResult:
-    """Consulta el gestor de incidentes. Solo lectura; nunca lanza."""
+    """Consulta el Incidents Manager a través del servidor MCP. Solo lectura; nunca lanza."""
     started = time.perf_counter()
+    if query.ticket_id is not None:
+        mcp_tool, arguments = "incidents_get", {"incident_id": query.ticket_id}
+    else:
+        mcp_tool = "incidents_list"
+        arguments = {**query.model_dump(mode="json", exclude_none=True), "limit": MAX_RESULTS}
     try:
-        if query.ticket_id is not None:
-            payload = http_get_json(f"/api/incidents/{query.ticket_id}")
-            tickets = [TicketRecord.model_validate(payload)]
+        payload = call_mcp(mcp_tool, arguments)
+        if mcp_tool == "incidents_get":
+            tickets, total = [TicketRecord.model_validate(payload)], 1
         else:
-            filters = query.model_dump(mode="json", exclude_none=True)
-            payload = http_get_json("/api/incidents", params=filters)
-            if not isinstance(payload, list):
-                raise ToolUnavailable("GET /api/incidents no devolvió una lista")
-            tickets = [TicketRecord.model_validate(item) for item in payload]
+            tickets = [TicketRecord.model_validate(item) for item in payload["items"]]
+            total = int(payload["total"])
     except ToolNotFound:
-        return _result("incidents", "not_found", query, error="el ticket no existe", started=started)
+        return _result("incidents", "not_found", query, error="el ticket no existe", started=started, mcp_tool=mcp_tool)
     except ToolUnavailable as exc:
-        return _result("incidents", "unavailable", query, error=str(exc), started=started)
-    except ValidationError as exc:
-        return _result("incidents", "unavailable", query, error=f"contrato no válido: {exc.error_count()} errores", started=started)
+        return _result("incidents", "unavailable", query, error=str(exc), started=started, mcp_tool=mcp_tool)
+    except (ValidationError, KeyError, TypeError, ValueError):
+        return _result("incidents", "unavailable", query, error="contrato no válido en la respuesta MCP", started=started, mcp_tool=mcp_tool)
 
     if not tickets:
-        return _result("incidents", "not_found", query, error="sin tickets con esos filtros", started=started)
+        return _result("incidents", "not_found", query, error="sin tickets con esos filtros", started=started, mcp_tool=mcp_tool)
     tickets.sort(key=lambda ticket: ticket.updated_at, reverse=True)
-    return _result("incidents", "ok", query, records=tickets[:MAX_RESULTS], total=len(tickets), started=started)
+    return _result("incidents", "ok", query, records=tickets, total=total, started=started, mcp_tool=mcp_tool)
 
 
 def fold(text: str) -> str:
@@ -210,26 +187,20 @@ def fold(text: str) -> str:
     return "".join(c for c in unicodedata.normalize("NFD", text.lower()) if unicodedata.category(c) != "Mn")
 
 
-def _matches(product: ProductStock, query: InventoryQuery) -> bool:
-    if query.sku:
-        return product.sku.strip().lower() == query.sku.strip().lower()
-    return fold(query.product_name.strip()) in fold(product.name)
-
-
 def lookup_inventory(query: InventoryQuery) -> ToolResult:
-    """Consulta el stock en el gestor de inventario. Solo lectura; nunca lanza."""
+    """Consulta el stock a través del servidor MCP. Solo lectura; nunca lanza."""
     started = time.perf_counter()
+    mcp_tool = "inventory_list_products"
+    arguments = {"sku": query.sku} if query.sku else {"name_contains": query.product_name}
     try:
-        payload = http_get_json("/inventory/products")
-        if not isinstance(payload, list):
-            raise ToolUnavailable("GET /inventory/products no devolvió una lista")
-        products = [ProductStock.model_validate(item) for item in payload]
+        payload = call_mcp(mcp_tool, {**arguments, "limit": MAX_RESULTS})
+        products = [ProductStock.model_validate(item) for item in payload["items"]]
+        total = int(payload["total"])
     except (ToolUnavailable, ToolNotFound) as exc:
-        return _result("inventory", "unavailable", query, error=str(exc) or "no disponible", started=started)
-    except ValidationError as exc:
-        return _result("inventory", "unavailable", query, error=f"contrato no válido: {exc.error_count()} errores", started=started)
+        return _result("inventory", "unavailable", query, error=str(exc) or "no disponible", started=started, mcp_tool=mcp_tool)
+    except (ValidationError, KeyError, TypeError, ValueError):
+        return _result("inventory", "unavailable", query, error="contrato no válido en la respuesta MCP", started=started, mcp_tool=mcp_tool)
 
-    found = [product for product in products if _matches(product, query)]
-    if not found:
-        return _result("inventory", "not_found", query, error="sin productos que coincidan", started=started)
-    return _result("inventory", "ok", query, records=found[:MAX_RESULTS], total=len(found), started=started)
+    if not products:
+        return _result("inventory", "not_found", query, error="sin productos que coincidan", started=started, mcp_tool=mcp_tool)
+    return _result("inventory", "ok", query, records=products, total=total, started=started, mcp_tool=mcp_tool)

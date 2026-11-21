@@ -1,14 +1,14 @@
 {
   "eval_case": "a09",
   "eval_vars": {
-    "ticket_id": "1"
+    "ticket_id": "5"
   },
-  "run_id": "7061a8bd-6694-4a75-b747-1eaeac6379de",
-  "thread_id": "7061a8bd-6694-4a75-b747-1eaeac6379de",
+  "run_id": "4aa0ffe5-3b77-47db-a3e1-64e067646d45",
+  "thread_id": "4aa0ffe5-3b77-47db-a3e1-64e067646d45",
   "graph": "trackflow_support_agent",
-  "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
-  "started_at": "2026-11-21T17:56:34.274+00:00",
-  "finished_at": "2026-11-21T17:56:40.617+00:00",
+  "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
+  "started_at": "2026-11-21T20:47:18.951+00:00",
+  "finished_at": "2026-11-21T20:47:25.598+00:00",
   "status": "answered",
   "path": [
     "receive_question",
@@ -25,9 +25,9 @@
   "route": {
     "needs_rag": true,
     "ticket": {
-      "ticket_id": 1
+      "ticket_id": 5
     },
-    "reason": "Pide el estado de un ticket concreto y la ventana estándar de devolución.",
+    "reason": "Pregunta por el estado de un ticket concreto y por la ventana estándar de devolución.",
     "decided_by": "llm",
     "sources": [
       "incidents",
@@ -38,11 +38,11 @@
     {
       "step": 1,
       "node": "receive_question",
-      "started_at": "2026-11-21T17:56:34.276+00:00",
+      "started_at": "2026-11-21T20:47:18.956+00:00",
       "duration_ms": 0.0,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": null,
         "planned_sources": null,
         "tool_status": {},
@@ -50,7 +50,7 @@
         "has_answer": false
       },
       "output": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "received"
       },
       "error": null
@@ -58,11 +58,11 @@
     {
       "step": 2,
       "node": "route_question",
-      "started_at": "2026-11-21T17:56:34.277+00:00",
-      "duration_ms": 1586.62,
+      "started_at": "2026-11-21T20:47:18.958+00:00",
+      "duration_ms": 1878.18,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "received",
         "planned_sources": null,
         "tool_status": {},
@@ -73,9 +73,9 @@
         "route": {
           "needs_rag": true,
           "ticket": {
-            "ticket_id": 1
+            "ticket_id": 5
           },
-          "reason": "Pide el estado de un ticket concreto y la ventana estándar de devolución.",
+          "reason": "Pregunta por el estado de un ticket concreto y por la ventana estándar de devolución.",
           "decided_by": "llm",
           "sources": [
             "incidents",
@@ -89,11 +89,11 @@
     {
       "step": 3,
       "node": "lookup_ticket",
-      "started_at": "2026-11-21T17:56:35.865+00:00",
-      "duration_ms": 41.68,
+      "started_at": "2026-11-21T20:47:20.838+00:00",
+      "duration_ms": 1212.62,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "routed",
         "planned_sources": [
           "incidents",
@@ -108,25 +108,27 @@
           "tool": "incidents",
           "status": "ok",
           "query": {
-            "ticket_id": 1
+            "ticket_id": 5
           },
           "records": [
             {
-              "id": "1",
-              "title": "Caja aplastada al llegar al destinatario",
-              "description": "El cliente final recibe la caja con un lateral hundido y el producto rayado.",
+              "id": "5",
+              "title": "Incident proof MCP",
+              "description": "Incident proof MCP",
               "category": "DAMAGE",
               "status": "in_progress",
               "origin": "customer",
               "branch": "Zaragoza",
-              "created_at": "2026-11-21T17:52:08.769318+00:00",
-              "updated_at": "2026-11-21T17:53:35.491971+00:00"
+              "created_at": "2026-11-21T20:27:11.438688+00:00",
+              "updated_at": "2026-11-21T20:29:09.166677+00:00"
             }
           ],
           "total": 1,
           "error": null,
-          "duration_ms": 41.61,
-          "fallback_message": null
+          "duration_ms": 1212.55,
+          "fallback_message": null,
+          "transport": "mcp",
+          "mcp_tool": "incidents_get"
         },
         "status": "tool_done"
       },
@@ -135,11 +137,11 @@
     {
       "step": 4,
       "node": "retrieve",
-      "started_at": "2026-11-21T17:56:35.908+00:00",
-      "duration_ms": 524.59,
+      "started_at": "2026-11-21T20:47:22.053+00:00",
+      "duration_ms": 692.29,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "tool_done",
         "planned_sources": [
           "incidents",
@@ -169,11 +171,11 @@
     {
       "step": 5,
       "node": "generate_answer",
-      "started_at": "2026-11-21T17:56:36.436+00:00",
-      "duration_ms": 4172.93,
+      "started_at": "2026-11-21T20:47:22.748+00:00",
+      "duration_ms": 2830.92,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "retrieved",
         "planned_sources": [
           "incidents",
@@ -186,7 +188,7 @@
         "has_answer": false
       },
       "output": {
-        "rag_answer": "No tengo información suficiente en la base de conocimiento para confirmar el estado del ticket 1; habría que consultarlo con el responsable del área. La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado otra en su contrato.  \nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
+        "rag_answer": "La base de conocimiento no tiene información suficiente para confirmar en qué estado está el ticket 5; habría que consultarlo con el responsable del área. La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca cliente haya configurado una ventana distinta en su contrato.\n\nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
         "status": "answered"
       },
       "error": null
@@ -194,11 +196,11 @@
     {
       "step": 6,
       "node": "compose_answer",
-      "started_at": "2026-11-21T17:56:40.610+00:00",
+      "started_at": "2026-11-21T20:47:25.588+00:00",
       "duration_ms": 0.02,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "answered",
         "planned_sources": [
           "incidents",
@@ -211,7 +213,7 @@
         "has_answer": false
       },
       "output": {
-        "answer": "El ticket 1 «Caja aplastada al llegar al destinatario» está en curso (categoría: daño; origen: cliente; sucursal: Zaragoza). Se creó el 2026-11-21 y se actualizó por última vez el 2026-11-21.\nFuente: gestor de incidentes de TrackFlow (consulta en tiempo real)\n\nNo tengo información suficiente en la base de conocimiento para confirmar el estado del ticket 1; habría que consultarlo con el responsable del área. La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado otra en su contrato.  \nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
+        "answer": "El ticket 5 «Incident proof MCP» está en curso (categoría: daño; origen: cliente; sucursal: Zaragoza). Se creó el 2026-11-21 y se actualizó por última vez el 2026-11-21.\nFuente: gestor de incidentes de TrackFlow (consulta en tiempo real)\n\nLa base de conocimiento no tiene información suficiente para confirmar en qué estado está el ticket 5; habría que consultarlo con el responsable del área. La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca cliente haya configurado una ventana distinta en su contrato.\n\nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
         "status": "answered"
       },
       "error": null
@@ -219,7 +221,7 @@
   ],
   "checkpoints": [
     {
-      "checkpoint_id": "1f1e5d4e-3cae-60f6-bfff-7f8183b854ab",
+      "checkpoint_id": "1f1e5ecb-e188-693f-bfff-17b91e617b2f",
       "step": -1,
       "source": "input",
       "next": [
@@ -235,14 +237,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-3cb0-6c9b-8000-65c9f3b72ab1",
+      "checkpoint_id": "1f1e5ecb-e193-62f8-8000-6d2637d1dd06",
       "step": 0,
       "source": "loop",
       "next": [
         "receive_question"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": null,
         "planned_sources": null,
         "tool_status": {},
@@ -251,14 +253,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-3cb2-6fef-8001-b7736343c50e",
+      "checkpoint_id": "1f1e5ecb-e197-6906-8001-3fb4bccf6fc9",
       "step": 1,
       "source": "loop",
       "next": [
         "route_question"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "received",
         "planned_sources": null,
         "tool_status": {},
@@ -267,14 +269,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-4bd6-6e4f-8002-0ce3d1e898c2",
+      "checkpoint_id": "1f1e5ecb-f384-6c1c-8002-ed3266ef8f4a",
       "step": 2,
       "source": "loop",
       "next": [
         "lookup_ticket"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "routed",
         "planned_sources": [
           "incidents",
@@ -286,14 +288,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-4c40-69a0-8003-62dd328a1838",
+      "checkpoint_id": "1f1e5ecb-ff19-63d7-8003-2d0119fd130d",
       "step": 3,
       "source": "loop",
       "next": [
         "retrieve"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "tool_done",
         "planned_sources": [
           "incidents",
@@ -307,14 +309,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-5146-6409-8004-a5a84c87faf4",
+      "checkpoint_id": "1f1e5ecc-05b9-6a32-8004-97c422e5bfe0",
       "step": 4,
       "source": "loop",
       "next": [
         "generate_answer"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "retrieved",
         "planned_sources": [
           "incidents",
@@ -328,14 +330,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-7919-6bc5-8005-69936357014e",
+      "checkpoint_id": "1f1e5ecc-20d2-6631-8005-d88ce697d2e0",
       "step": 5,
       "source": "loop",
       "next": [
         "compose_answer"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "answered",
         "planned_sources": [
           "incidents",
@@ -349,12 +351,12 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-791c-64fe-8006-3ba07b1da735",
+      "checkpoint_id": "1f1e5ecc-20de-6a6c-8006-9caa30c2ebae",
       "step": 6,
       "source": "loop",
       "next": [],
       "values": {
-        "question": "¿En qué estado está el ticket 1 y cuál es la ventana de devolución estándar?",
+        "question": "¿En qué estado está el ticket 5 y cuál es la ventana de devolución estándar?",
         "status": "answered",
         "planned_sources": [
           "incidents",
@@ -368,7 +370,7 @@
       }
     }
   ],
-  "answer": "El ticket 1 «Caja aplastada al llegar al destinatario» está en curso (categoría: daño; origen: cliente; sucursal: Zaragoza). Se creó el 2026-11-21 y se actualizó por última vez el 2026-11-21.\nFuente: gestor de incidentes de TrackFlow (consulta en tiempo real)\n\nNo tengo información suficiente en la base de conocimiento para confirmar el estado del ticket 1; habría que consultarlo con el responsable del área. La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado otra en su contrato.  \nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
+  "answer": "El ticket 5 «Incident proof MCP» está en curso (categoría: daño; origen: cliente; sucursal: Zaragoza). Se creó el 2026-11-21 y se actualizó por última vez el 2026-11-21.\nFuente: gestor de incidentes de TrackFlow (consulta en tiempo real)\n\nLa base de conocimiento no tiene información suficiente para confirmar en qué estado está el ticket 5; habría que consultarlo con el responsable del área. La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca cliente haya configurado una ventana distinta en su contrato.\n\nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
   "failed_node": null,
   "error": null
 }

@@ -1,12 +1,12 @@
 {
   "eval_case": "a01",
   "eval_vars": {},
-  "run_id": "ef7d658a-64ed-41f1-98f7-8297915eb408",
-  "thread_id": "ef7d658a-64ed-41f1-98f7-8297915eb408",
+  "run_id": "670f1413-478b-4822-8b2f-b441be3e3ee0",
+  "thread_id": "670f1413-478b-4822-8b2f-b441be3e3ee0",
   "graph": "trackflow_support_agent",
   "question": "¿Cuál es la ventana de devolución estándar?",
-  "started_at": "2026-11-21T17:56:09.586+00:00",
-  "finished_at": "2026-11-21T17:56:16.096+00:00",
+  "started_at": "2026-11-21T20:46:51.935+00:00",
+  "finished_at": "2026-11-21T20:46:59.837+00:00",
   "status": "answered",
   "path": [
     "receive_question",
@@ -30,7 +30,7 @@
     {
       "step": 1,
       "node": "receive_question",
-      "started_at": "2026-11-21T17:56:09.590+00:00",
+      "started_at": "2026-11-21T20:46:51.938+00:00",
       "duration_ms": 0.0,
       "status": "ok",
       "input": {
@@ -50,8 +50,8 @@
     {
       "step": 2,
       "node": "route_question",
-      "started_at": "2026-11-21T17:56:09.591+00:00",
-      "duration_ms": 2897.54,
+      "started_at": "2026-11-21T20:46:51.939+00:00",
+      "duration_ms": 2803.29,
       "status": "ok",
       "input": {
         "question": "¿Cuál es la ventana de devolución estándar?",
@@ -77,8 +77,8 @@
     {
       "step": 3,
       "node": "retrieve",
-      "started_at": "2026-11-21T17:56:12.491+00:00",
-      "duration_ms": 1859.75,
+      "started_at": "2026-11-21T20:46:54.744+00:00",
+      "duration_ms": 3653.6,
       "status": "ok",
       "input": {
         "question": "¿Cuál es la ventana de devolución estándar?",
@@ -108,8 +108,8 @@
     {
       "step": 4,
       "node": "generate_answer",
-      "started_at": "2026-11-21T17:56:14.352+00:00",
-      "duration_ms": 1740.85,
+      "started_at": "2026-11-21T20:46:58.399+00:00",
+      "duration_ms": 1433.22,
       "status": "ok",
       "input": {
         "question": "¿Cuál es la ventana de devolución estándar?",
@@ -122,7 +122,7 @@
         "has_answer": false
       },
       "output": {
-        "rag_answer": "La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado una ventana distinta en su contrato.\n\nFuente: Política de Devoluciones › Ventana de devolución estándar",
+        "rag_answer": "La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado otra en su contrato.\n\nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
         "status": "answered"
       },
       "error": null
@@ -130,7 +130,7 @@
     {
       "step": 5,
       "node": "compose_answer",
-      "started_at": "2026-11-21T17:56:16.094+00:00",
+      "started_at": "2026-11-21T20:46:59.834+00:00",
       "duration_ms": 0.01,
       "status": "ok",
       "input": {
@@ -144,7 +144,7 @@
         "has_answer": false
       },
       "output": {
-        "answer": "La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado una ventana distinta en su contrato.\n\nFuente: Política de Devoluciones › Ventana de devolución estándar",
+        "answer": "La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado otra en su contrato.\n\nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
         "status": "answered"
       },
       "error": null
@@ -152,7 +152,7 @@
   ],
   "checkpoints": [
     {
-      "checkpoint_id": "1f1e5d4d-5140-696f-bfff-0d2e9035fb41",
+      "checkpoint_id": "1f1e5eca-dfe4-6afe-bfff-3c6e08294fa7",
       "step": -1,
       "source": "input",
       "next": [
@@ -168,7 +168,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4d-5144-6fe9-8000-e82638c4d9e4",
+      "checkpoint_id": "1f1e5eca-dfe8-6326-8000-62376caf72df",
       "step": 0,
       "source": "loop",
       "next": [
@@ -184,7 +184,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4d-5148-6462-8001-dc0c7ed2f5c5",
+      "checkpoint_id": "1f1e5eca-dfeb-6463-8001-75bc488b2f1f",
       "step": 1,
       "source": "loop",
       "next": [
@@ -200,7 +200,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4d-6ced-62fa-8002-661b3ce1b436",
+      "checkpoint_id": "1f1e5eca-faaa-6c09-8002-9bea3b6ec406",
       "step": 2,
       "source": "loop",
       "next": [
@@ -218,7 +218,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4d-7ead-6df3-8003-e94c5c05054e",
+      "checkpoint_id": "1f1e5ecb-1d85-6d3e-8003-279aca6111f9",
       "step": 3,
       "source": "loop",
       "next": [
@@ -236,7 +236,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4d-8f4a-6ac0-8004-8427660716cd",
+      "checkpoint_id": "1f1e5ecb-2b34-6ff6-8004-013aae4a7a6d",
       "step": 4,
       "source": "loop",
       "next": [
@@ -254,7 +254,7 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4d-8f4c-6f45-8005-b156b68c4096",
+      "checkpoint_id": "1f1e5ecb-2b37-6e26-8005-0ce190cacb2f",
       "step": 5,
       "source": "loop",
       "next": [],
@@ -270,7 +270,7 @@
       }
     }
   ],
-  "answer": "La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado una ventana distinta en su contrato.\n\nFuente: Política de Devoluciones › Ventana de devolución estándar",
+  "answer": "La ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado otra en su contrato.\n\nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
   "failed_node": null,
   "error": null
 }

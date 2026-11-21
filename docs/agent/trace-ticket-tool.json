@@ -1,14 +1,14 @@
 {
   "eval_case": "a07",
   "eval_vars": {
-    "ticket_id": "1"
+    "ticket_id": "5"
   },
-  "run_id": "32065732-a1db-476d-9412-a6a6b6583d05",
-  "thread_id": "32065732-a1db-476d-9412-a6a6b6583d05",
+  "run_id": "ed27236d-e52d-44a2-844c-7a8b260ca408",
+  "thread_id": "ed27236d-e52d-44a2-844c-7a8b260ca408",
   "graph": "trackflow_support_agent",
-  "question": "¿En qué estado está el ticket 1?",
-  "started_at": "2026-11-21T17:56:29.240+00:00",
-  "finished_at": "2026-11-21T17:56:30.686+00:00",
+  "question": "¿En qué estado está el ticket 5?",
+  "started_at": "2026-11-21T20:47:12.774+00:00",
+  "finished_at": "2026-11-21T20:47:15.316+00:00",
   "status": "answered",
   "path": [
     "receive_question",
@@ -22,7 +22,7 @@
   "route": {
     "needs_rag": false,
     "ticket": {
-      "ticket_id": 1
+      "ticket_id": 5
     },
     "reason": "Pregunta por el estado de un ticket concreto.",
     "decided_by": "llm",
@@ -34,11 +34,11 @@
     {
       "step": 1,
       "node": "receive_question",
-      "started_at": "2026-11-21T17:56:29.242+00:00",
+      "started_at": "2026-11-21T20:47:12.776+00:00",
       "duration_ms": 0.0,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": null,
         "planned_sources": null,
         "tool_status": {},
@@ -46,7 +46,7 @@
         "has_answer": false
       },
       "output": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": "received"
       },
       "error": null
@@ -54,11 +54,11 @@
     {
       "step": 2,
       "node": "route_question",
-      "started_at": "2026-11-21T17:56:29.243+00:00",
-      "duration_ms": 1389.78,
+      "started_at": "2026-11-21T20:47:12.777+00:00",
+      "duration_ms": 1311.0,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": "received",
         "planned_sources": null,
         "tool_status": {},
@@ -69,7 +69,7 @@
         "route": {
           "needs_rag": false,
           "ticket": {
-            "ticket_id": 1
+            "ticket_id": 5
           },
           "reason": "Pregunta por el estado de un ticket concreto.",
           "decided_by": "llm",
@@ -84,11 +84,11 @@
     {
       "step": 3,
       "node": "lookup_ticket",
-      "started_at": "2026-11-21T17:56:30.634+00:00",
-      "duration_ms": 46.64,
+      "started_at": "2026-11-21T20:47:14.091+00:00",
+      "duration_ms": 1215.01,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": "routed",
         "planned_sources": [
           "incidents"
@@ -102,25 +102,27 @@
           "tool": "incidents",
           "status": "ok",
           "query": {
-            "ticket_id": 1
+            "ticket_id": 5
           },
           "records": [
             {
-              "id": "1",
-              "title": "Caja aplastada al llegar al destinatario",
-              "description": "El cliente final recibe la caja con un lateral hundido y el producto rayado.",
+              "id": "5",
+              "title": "Incident proof MCP",
+              "description": "Incident proof MCP",
               "category": "DAMAGE",
               "status": "in_progress",
               "origin": "customer",
               "branch": "Zaragoza",
-              "created_at": "2026-11-21T17:52:08.769318+00:00",
-              "updated_at": "2026-11-21T17:53:35.491971+00:00"
+              "created_at": "2026-11-21T20:27:11.438688+00:00",
+              "updated_at": "2026-11-21T20:29:09.166677+00:00"
             }
           ],
           "total": 1,
           "error": null,
-          "duration_ms": 46.56,
-          "fallback_message": null
+          "duration_ms": 1214.92,
+          "fallback_message": null,
+          "transport": "mcp",
+          "mcp_tool": "incidents_get"
         },
         "status": "tool_done"
       },
@@ -129,11 +131,11 @@
     {
       "step": 4,
       "node": "compose_answer",
-      "started_at": "2026-11-21T17:56:30.682+00:00",
+      "started_at": "2026-11-21T20:47:15.309+00:00",
       "duration_ms": 0.02,
       "status": "ok",
       "input": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": "tool_done",
         "planned_sources": [
           "incidents"
@@ -145,7 +147,7 @@
         "has_answer": false
       },
       "output": {
-        "answer": "El ticket 1 «Caja aplastada al llegar al destinatario» está en curso (categoría: daño; origen: cliente; sucursal: Zaragoza). Se creó el 2026-11-21 y se actualizó por última vez el 2026-11-21.\nFuente: gestor de incidentes de TrackFlow (consulta en tiempo real)",
+        "answer": "El ticket 5 «Incident proof MCP» está en curso (categoría: daño; origen: cliente; sucursal: Zaragoza). Se creó el 2026-11-21 y se actualizó por última vez el 2026-11-21.\nFuente: gestor de incidentes de TrackFlow (consulta en tiempo real)",
         "status": "answered"
       },
       "error": null
@@ -153,7 +155,7 @@
   ],
   "checkpoints": [
     {
-      "checkpoint_id": "1f1e5d4e-0cac-617a-bfff-9e9dbb76b74e",
+      "checkpoint_id": "1f1e5ecb-a6a1-6cd9-bfff-994a7d8565be",
       "step": -1,
       "source": "input",
       "next": [
@@ -169,14 +171,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-0caf-63a8-8000-f995e3c70214",
+      "checkpoint_id": "1f1e5ecb-a6a3-6569-8000-c55140c34291",
       "step": 0,
       "source": "loop",
       "next": [
         "receive_question"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": null,
         "planned_sources": null,
         "tool_status": {},
@@ -185,14 +187,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-0cb1-6c54-8001-332af20d3cf0",
+      "checkpoint_id": "1f1e5ecb-a6a5-6668-8001-406d1f3ec4d3",
       "step": 1,
       "source": "loop",
       "next": [
         "route_question"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": "received",
         "planned_sources": null,
         "tool_status": {},
@@ -201,14 +203,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-19f5-6052-8002-6fb9c1534a1f",
+      "checkpoint_id": "1f1e5ecb-b32d-6330-8002-de780466a9f4",
       "step": 2,
       "source": "loop",
       "next": [
         "lookup_ticket"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": "routed",
         "planned_sources": [
           "incidents"
@@ -219,14 +221,14 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-1a6a-6b86-8003-e041d8c06d74",
+      "checkpoint_id": "1f1e5ecb-beca-6eac-8003-0891d1594c5d",
       "step": 3,
       "source": "loop",
       "next": [
         "compose_answer"
       ],
       "values": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": "tool_done",
         "planned_sources": [
           "incidents"
@@ -239,12 +241,12 @@
       }
     },
     {
-      "checkpoint_id": "1f1e5d4e-1a6d-65b0-8004-58986c65885c",
+      "checkpoint_id": "1f1e5ecb-bed1-6633-8004-29b6d29a47e0",
       "step": 4,
       "source": "loop",
       "next": [],
       "values": {
-        "question": "¿En qué estado está el ticket 1?",
+        "question": "¿En qué estado está el ticket 5?",
         "status": "answered",
         "planned_sources": [
           "incidents"
@@ -257,7 +259,7 @@
       }
     }
   ],
-  "answer": "El ticket 1 «Caja aplastada al llegar al destinatario» está en curso (categoría: daño; origen: cliente; sucursal: Zaragoza). Se creó el 2026-11-21 y se actualizó por última vez el 2026-11-21.\nFuente: gestor de incidentes de TrackFlow (consulta en tiempo real)",
+  "answer": "El ticket 5 «Incident proof MCP» está en curso (categoría: daño; origen: cliente; sucursal: Zaragoza). Se creó el 2026-11-21 y se actualizó por última vez el 2026-11-21.\nFuente: gestor de incidentes de TrackFlow (consulta en tiempo real)",
   "failed_node": null,
   "error": null
 }

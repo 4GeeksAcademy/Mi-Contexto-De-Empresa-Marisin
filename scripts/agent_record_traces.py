@@ -1,18 +1,18 @@
 """Graba los traces del agente LangGraph que usan los evals (Partes 1 y 2).
 
 Ejecuta cada caso de `data/eval/agent-eval-cases.json` con el grafo real
-(Qdrant + modelos de 4Geeks del `.env` + API de TrackFlow) y guarda el trace en
+(Qdrant + modelos de 4Geeks del `.env` + servidor MCP con OAuth + API de TrackFlow) y guarda el trace en
 `tests/pipelines/fixtures/agent_traces/<id>.json`. Los evals de
 `tests/pipelines/test_agent_evals.py` leen esos ficheros: no vuelven a llamar
 al LLM ni a la API cada vez que se ejecutan.
 
 Datos reales, nunca inventados:
 
-* `{ticket_id}` se sustituye por el ticket actualizado más recientemente en
-  `GET /api/incidents`, y `{sku}` por el primer producto de
-  `GET /inventory/products` que no sea de carga sintética (`LOAD-…`).
-* Un caso con `backend_url` apunta las tools a ese URL (un puerto cerrado) para
-  grabar el fallback de "servicio caído".
+* `{ticket_id}` se sustituye por el ticket actualizado más recientemente
+  (tool MCP `incidents_list`), y `{sku}` por el primer producto que no sea de
+  carga sintética (`LOAD-…`) de la tool MCP `inventory_list_products`.
+* Un caso con `mcp_url` apunta el cliente MCP del agente a ese URL (un puerto
+  cerrado) para grabar el fallback de "servicio caído".
 
 Evidencias para el PR:
 
@@ -20,9 +20,9 @@ Evidencias para el PR:
 * `docs/agent/trace-ticket-tool.json` — trace del caso a07 (tool de tickets).
 * `docs/agent/trace-rag-routing.json` — trace del caso a08 (RAG, sin tools).
 
-Requiere: Qdrant arriba con la colección indexada, el `.env` del Hito 7 y la
+Requiere: Qdrant arriba con la colección indexada, el `.env` (Hito 7 + MCP), la
 API en marcha (`uvicorn services.api.main:app --port 8000`) con al menos un
-incidente y un producto.
+incidente y un producto, y el servidor MCP (`python -m mcps.trackflow_mcp`).
 
     python scripts/agent_record_traces.py
 """
@@ -38,7 +38,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from services.agent import tools  # noqa: E402
+from services.agent import mcp_client, tools  # noqa: E402
 from services.agent.runner import AgentRunError, run_agent  # noqa: E402
 from services.agent.tracing import load_trace  # noqa: E402
 
@@ -52,17 +52,18 @@ EVIDENCE = {
 
 
 def real_eval_vars() -> dict[str, str]:
-    """Un ticket y un SKU que existen de verdad en la API (lectura con las propias tools)."""
+    """Un ticket y un SKU que existen de verdad (leídos con las tools MCP, como el agente)."""
     tickets = tools.lookup_tickets(tools.TicketQuery())
     if tickets.status != "ok":
         raise SystemExit(
-            f"No hay tickets que usar ({tickets.status}: {tickets.error}). "
-            f"Arranca la API en {tools.backend_url()} y crea al menos un incidente."
+            f"No hay tickets que usar ({tickets.status}: {tickets.error}). Arranca la API y el servidor MCP "
+            f"({mcp_client.server_url()}) y crea al menos un incidente."
         )
     try:
-        products = [tools.ProductStock.model_validate(item) for item in tools.http_get_json("/inventory/products")]
+        payload = tools.call_mcp("inventory_list_products", {"limit": 100})
+        products = [tools.ProductStock.model_validate(item) for item in payload["items"]]
     except (tools.ToolUnavailable, tools.ToolNotFound) as exc:
-        raise SystemExit(f"No se pudo leer el inventario: {exc}") from exc
+        raise SystemExit(f"No se pudo leer el inventario por MCP: {exc}") from exc
     real = [product for product in products if not product.sku.upper().startswith("LOAD-")] or products
     if not real:
         raise SystemExit("El inventario está vacío: crea al menos un producto.")
@@ -71,9 +72,9 @@ def real_eval_vars() -> dict[str, str]:
 
 def record(case: dict, eval_vars: dict[str, str]) -> tuple[dict, bool]:
     question = case["question"].format(**eval_vars)
-    previous_url = os.environ.get(tools.BACKEND_URL_ENV)
-    if case.get("backend_url"):
-        os.environ[tools.BACKEND_URL_ENV] = case["backend_url"]
+    previous_url = os.environ.get("MCP_SERVER_URL")
+    if case.get("mcp_url"):
+        os.environ["MCP_SERVER_URL"] = case["mcp_url"]
     try:
         result = run_agent(question)
         trace, ok = load_trace(result.run_id), True
@@ -82,9 +83,9 @@ def record(case: dict, eval_vars: dict[str, str]) -> tuple[dict, bool]:
         print(f"{case['id']}: ERROR en {exc.failed_node} (run_id {exc.run_id})")
     finally:
         if previous_url is None:
-            os.environ.pop(tools.BACKEND_URL_ENV, None)
+            os.environ.pop("MCP_SERVER_URL", None)
         else:
-            os.environ[tools.BACKEND_URL_ENV] = previous_url
+            os.environ["MCP_SERVER_URL"] = previous_url
     used = {key: value for key, value in eval_vars.items() if "{" + key + "}" in case["question"]}
     return {"eval_case": case["id"], "eval_vars": used, **trace}, ok
 

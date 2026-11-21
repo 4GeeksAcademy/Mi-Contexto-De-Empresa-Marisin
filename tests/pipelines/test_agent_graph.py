@@ -1,6 +1,6 @@
 """Pruebas del grafo LangGraph del agente de soporte (sin Qdrant, LLM ni API en vivo).
 
-`retrieve()` y `generate_answer()` del RAG, el enrutador LLM y la capa HTTP de
+`retrieve()` y `generate_answer()` del RAG, el enrutador LLM y el cliente MCP de
 las tools se sustituyen por dobles; `query()` se sustituye por una función que
 falla, para demostrar que ningún nodo usa el pipeline monolítico.
 
@@ -17,7 +17,7 @@ from langgraph.graph import START as LG_START
 
 from data.pipelines import rag as rag_pipeline
 from services.agent import graph as agent_graph
-from services.agent import nodes, routing, runner, tools
+from services.agent import mcp_client, nodes, routing, runner
 from services.agent.state import AgentState
 from services.agent.structure import END, START, GraphStructureError
 
@@ -55,17 +55,17 @@ def rag(monkeypatch):
         calls["generate"].append((question, context))
         return ANSWER
 
-    def fake_http(path, params=None):
-        calls["http"].append(path)
+    def fake_mcp(tool_name, arguments):
+        calls["http"].append(tool_name)  # cada llamada al servidor MCP
         if backend["down"]:
-            raise tools.ToolUnavailable("timeout: sin respuesta en 4 s")
-        if path == "/api/incidents/3":
-            return TICKET
-        if path.startswith("/api/incidents/"):
-            raise tools.ToolNotFound(path)
-        if path == "/inventory/products":
-            return [PRODUCT]
-        raise AssertionError(path)
+            raise mcp_client.McpUnavailable("timeout: el servidor MCP no respondió en 4 s")
+        if tool_name == "incidents_get":
+            if arguments["incident_id"] == 3:
+                return TICKET
+            raise mcp_client.McpCallError("NOT_FOUND", "El recurso no existe en TrackFlow.", 404)
+        if tool_name == "inventory_list_products":
+            return {"total": 1, "items": [PRODUCT]}
+        raise AssertionError(tool_name)
 
     def no_llm(question):
         raise RuntimeError("sin LLM en los tests")
@@ -73,7 +73,7 @@ def rag(monkeypatch):
     monkeypatch.setattr(rag_pipeline, "retrieve", fake_retrieve)
     monkeypatch.setattr(rag_pipeline, "generate_answer", fake_generate)
     monkeypatch.setattr(rag_pipeline, "query", lambda *_: pytest.fail("ningún nodo debe llamar a query()"))
-    monkeypatch.setattr(tools, "http_get_json", fake_http)
+    monkeypatch.setattr(mcp_client, "call_tool", fake_mcp)
     monkeypatch.setattr(routing, "classify_with_llm", no_llm)
     calls["backend"] = backend
     return calls
@@ -178,7 +178,7 @@ def test_policy_question_uses_only_the_rag(graph, rag):
     assert final["route"]["sources"] == ["rag"]
     assert rag["retrieve"] == ["¿Cuál es la ventana de devolución estándar?"]
     assert rag["generate"] == [("¿Cuál es la ventana de devolución estándar?", CONTEXT)]
-    assert rag["http"] == []  # ninguna tool
+    assert rag["http"] == []  # ninguna tool MCP
     assert path_of(graph, config) == ["receive_question", "route_question", "retrieve", "generate_answer", "compose_answer"]
 
 
@@ -187,7 +187,7 @@ def test_ticket_question_uses_the_tool_and_not_the_rag(graph, rag):
 
     assert final["status"] == "answered"
     assert "El ticket 3 «Caja aplastada» está en curso" in final["answer"]
-    assert rag["http"] == ["/api/incidents/3"]
+    assert rag["http"] == ["incidents_get"]
     assert rag["retrieve"] == [] and rag["generate"] == []
     assert path_of(graph, config) == ["receive_question", "route_question", "lookup_ticket", "compose_answer"]
 
@@ -206,7 +206,7 @@ def test_inventory_question_uses_the_inventory_tool(graph, rag):
     final, config = run(graph, "¿Tenemos stock del SKU TF-BOX-001?")
 
     assert "120 unidades" in final["answer"]
-    assert rag["http"] == ["/inventory/products"]
+    assert rag["http"] == ["inventory_list_products"]
     assert path_of(graph, config) == ["receive_question", "route_question", "lookup_inventory", "compose_answer"]
 
 
@@ -229,12 +229,12 @@ def test_missing_ticket_goes_through_the_fallback(graph, rag):
 
 
 def test_the_llm_router_decides_when_it_answers(graph, rag, monkeypatch):
-    decision = routing.RouteDecision(needs_rag=False, ticket=tools.TicketQuery(ticket_id=3), decided_by="llm", reason="estado")
+    decision = routing.RouteDecision(needs_rag=False, ticket=routing.TicketQuery(ticket_id=3), decided_by="llm", reason="estado")
     monkeypatch.setattr(routing, "classify_with_llm", lambda question: decision)
 
     final, _ = run(graph, "Necesito saber cómo va el 3 de los tickets")
     assert final["route"]["decided_by"] == "llm"
-    assert rag["http"] == ["/api/incidents/3"]
+    assert rag["http"] == ["incidents_get"]
 
 
 def test_without_context_answers_honestly_without_calling_the_llm(graph, rag):
@@ -309,6 +309,8 @@ def test_each_run_saves_a_queryable_trace_with_its_sources(graph, rag, tmp_path)
     ]
     assert [event["step"] for event in trace["events"]] == [1, 2, 3, 4, 5, 6]
     assert trace["events"][2]["output"]["ticket_result"]["records"][0]["id"] == "3"
+    assert trace["events"][2]["output"]["ticket_result"]["transport"] == "mcp"
+    assert trace["events"][2]["output"]["ticket_result"]["mcp_tool"] == "incidents_get"
     assert trace["events"][3]["output"]["context"] == CONTEXT
     assert [checkpoint["step"] for checkpoint in trace["checkpoints"]] == [-1, 0, 1, 2, 3, 4, 5, 6]
 

@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from data.pipelines import rag as rag_pipeline
-from services.agent import nodes, routing, tools
+from services.agent import mcp_client, nodes, routing
 from services.api.main import app
 from services.api.security import get_current_user
 
@@ -16,10 +16,10 @@ TICKET = {
 }
 
 
-def fake_backend(path, params=None):
-    if path == "/api/incidents/3":
+def fake_mcp(tool_name, arguments):
+    if tool_name == "incidents_get" and arguments == {"incident_id": 3}:
         return TICKET
-    raise tools.ToolUnavailable("timeout: sin respuesta en 4 s")
+    raise mcp_client.McpUnavailable("timeout: el servidor MCP no respondió en 4 s")
 
 
 def no_llm(question):
@@ -37,7 +37,7 @@ def client(monkeypatch, tmp_path):
     monkeypatch.setattr(rag_pipeline, "generate_answer", lambda q, c: "De 3 a 5 días hábiles.")
     monkeypatch.setattr(rag_pipeline, "query", lambda *_: pytest.fail("el agente no debe usar query()"))
     monkeypatch.setattr(routing, "classify_with_llm", no_llm)
-    monkeypatch.setattr(tools, "http_get_json", fake_backend)
+    monkeypatch.setattr(mcp_client, "call_tool", fake_mcp)
     as_user("user")
     yield TestClient(app)
     app.dependency_overrides.pop(get_current_user, None)

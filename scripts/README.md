@@ -53,3 +53,14 @@ Runs every case in `data/eval/agent-eval-cases.json` through the real graph (Qdr
 ```bash
 python scripts/agent_record_traces.py
 ```
+
+## `mcp_get_token.py` and `mcp_smoke_test.py` — OAuth-protected MCP server
+
+`mcp_get_token.py` requests an access token (`client_credentials`) from Logto for the MCP server (`--app admin|agent`, `--scopes`, `--claims`); paste it into MCP Playground. `mcp_smoke_test.py` runs every flow as an external client (no token, discovery, incidents, inventory, rejected write, insufficient scope, validation) and saves the output to `docs/mcp/smoke-test.txt`. Both need the API, the MCP server and the `.env` credentials.
+
+```bash
+python scripts/mcp_get_token.py
+```
+```bash
+python scripts/mcp_smoke_test.py
+```

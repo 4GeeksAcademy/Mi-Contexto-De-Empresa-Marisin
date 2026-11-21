@@ -31,6 +31,12 @@ Parte 2 — enrutamiento entre RAG y tools:
 * E11 — (extra) el stock se responde con la tool de inventario y con el número real.
 * E12 — los datos de los evals son reales: el ticket y el SKU usados existen en
   la API (los devolvió la propia tool al grabar).
+
+Servidor MCP — migración del agente:
+
+* E13 — toda consulta a incidencias o inventario pasó por el servidor MCP
+  (`transport = "mcp"` y la tool MCP usada), también en los fallbacks; el
+  enrutamiento RAG / tools de E1–E12 sigue igual con el nuevo cliente MCP.
 """
 
 import json
@@ -213,3 +219,25 @@ def test_e12_eval_data_comes_from_the_real_api(case):
     result = tool_result(trace, "lookup_ticket", "ticket_result")
     assert result["records"][0]["id"] == trace["eval_vars"]["ticket_id"]
     assert result["query"] == {"ticket_id": int(trace["eval_vars"]["ticket_id"])}
+
+
+# --------------------------------------------------------------------------- #
+# Servidor MCP — el agente ya no llama al Incidents Manager directamente
+# --------------------------------------------------------------------------- #
+MCP_TOOL_BY_NODE = {
+    "lookup_ticket": ("ticket_result", {"incidents_get", "incidents_list"}),
+    "lookup_inventory": ("inventory_result", {"inventory_list_products"}),
+}
+
+
+@pytest.mark.parametrize("case", by_kind("ticket", "both", "fallback", "inventory"))
+def test_e13_every_tool_call_went_through_the_mcp_server(case):
+    trace = load_recorded_trace(case)
+    used = [node for node in trace["path"] if node in MCP_TOOL_BY_NODE]
+    assert used, "el caso debería usar una tool"
+    for node in used:
+        key, mcp_tools = MCP_TOOL_BY_NODE[node]
+        result = tool_result(trace, node, key)
+        assert result["transport"] == "mcp"
+        assert result["mcp_tool"] in mcp_tools
+
