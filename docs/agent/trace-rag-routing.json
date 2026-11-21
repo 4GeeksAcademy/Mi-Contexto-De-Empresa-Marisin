@@ -1,0 +1,284 @@
+{
+  "eval_case": "a08",
+  "eval_vars": {},
+  "run_id": "0ffa5efc-4eed-4e59-9f2c-c3d506ff8c32",
+  "thread_id": "0ffa5efc-4eed-4e59-9f2c-c3d506ff8c32",
+  "graph": "trackflow_support_agent",
+  "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+  "started_at": "2026-11-21T17:56:30.690+00:00",
+  "finished_at": "2026-11-21T17:56:34.272+00:00",
+  "status": "answered",
+  "path": [
+    "receive_question",
+    "route_question",
+    "retrieve",
+    "generate_answer",
+    "compose_answer"
+  ],
+  "sources": [
+    "rag"
+  ],
+  "route": {
+    "needs_rag": true,
+    "reason": "Pregunta por una tarifa de almacenamiento, que es información estable de la base de conocimiento.",
+    "decided_by": "llm",
+    "sources": [
+      "rag"
+    ]
+  },
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-21T17:56:30.692+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "received"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "route_question",
+      "started_at": "2026-11-21T17:56:30.692+00:00",
+      "duration_ms": 1544.33,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "route": {
+          "needs_rag": true,
+          "reason": "Pregunta por una tarifa de almacenamiento, que es información estable de la base de conocimiento.",
+          "decided_by": "llm",
+          "sources": [
+            "rag"
+          ]
+        },
+        "status": "routed"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "retrieve",
+      "started_at": "2026-11-21T17:56:32.238+00:00",
+      "duration_ms": 565.85,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "routed",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "context": [
+          {
+            "company": "trackflow",
+            "source_document": "storage-pricing",
+            "section": "Tarifas de Almacenamiento",
+            "language": "es",
+            "chunk_index": 0,
+            "text": "Tarifas de Almacenamiento\nTrackFlow cobra almacenamiento a las marcas cliente según volumen ocupado, no según número de unidades:\n- Tarifa estándar: 18 USD por metro cúbico al mes (Los Ángeles) o 16 EUR por metro cúbico al mes (Zaragoza).\n- Los primeros 30 días de cualquier producto nuevo en inventario no generan cargo de almacenamiento (periodo de gracia).\n- Inventario con más de 180 días sin movimiento (sin ventas ni salidas) paga una tarifa de \"inventario de larga duración\" del 150% sobre la tarifa estándar, a partir del día 181."
+          },
+          {
+            "company": "trackflow",
+            "source_document": "storage-pricing",
+            "section": "Tarifas de Almacenamiento",
+            "language": "es",
+            "chunk_index": 2,
+            "text": "Tarifas de Almacenamiento\nClientes con más de 50 metros cúbicos de volumen promedio mensual pueden negociar una tarifa preferencial, pero esa negociación siempre debe pasar por Miguel Torres — un account manager no puede ofrecer descuentos de almacenamiento por su cuenta."
+          }
+        ],
+        "status": "retrieved"
+      },
+      "error": null
+    },
+    {
+      "step": 4,
+      "node": "generate_answer",
+      "started_at": "2026-11-21T17:56:32.807+00:00",
+      "duration_ms": 1460.77,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "retrieved",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 2,
+        "has_answer": false
+      },
+      "output": {
+        "rag_answer": "En Los Ángeles, el almacenamiento cuesta 18 USD por metro cúbico al mes.  \nFuente: Tarifas de Almacenamiento (storage-pricing) · Tarifas de Almacenamiento",
+        "status": "answered"
+      },
+      "error": null
+    },
+    {
+      "step": 5,
+      "node": "compose_answer",
+      "started_at": "2026-11-21T17:56:34.269+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "answered",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 2,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "En Los Ángeles, el almacenamiento cuesta 18 USD por metro cúbico al mes.  \nFuente: Tarifas de Almacenamiento (storage-pricing) · Tarifas de Almacenamiento",
+        "status": "answered"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e5d4e-1a80-68a2-bfff-50663d9e5465",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-1a82-62ec-8000-b652e8b66e9a",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-1a84-69c6-8001-3e8f8d031e28",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "route_question"
+      ],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-2941-6560-8002-02678e3b4f79",
+      "step": 2,
+      "source": "loop",
+      "next": [
+        "retrieve"
+      ],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "routed",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-2eae-6f58-8003-ab977701999d",
+      "step": 3,
+      "source": "loop",
+      "next": [
+        "generate_answer"
+      ],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "retrieved",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 2,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-3c9f-69e2-8004-d1920825be18",
+      "step": 4,
+      "source": "loop",
+      "next": [
+        "compose_answer"
+      ],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "answered",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 2,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-3ca2-633a-8005-ccb61fb56b0a",
+      "step": 5,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "¿Cuánto cuesta el almacenamiento por metro cúbico al mes en Los Ángeles?",
+        "status": "answered",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 2,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "En Los Ángeles, el almacenamiento cuesta 18 USD por metro cúbico al mes.  \nFuente: Tarifas de Almacenamiento (storage-pricing) · Tarifas de Almacenamiento",
+  "failed_node": null,
+  "error": null
+}

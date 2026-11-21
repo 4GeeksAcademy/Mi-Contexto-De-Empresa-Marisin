@@ -1,0 +1,305 @@
+{
+  "eval_case": "a10",
+  "eval_vars": {},
+  "run_id": "63e06c6f-9ef6-468a-9841-9c0b68867237",
+  "thread_id": "63e06c6f-9ef6-468a-9841-9c0b68867237",
+  "graph": "trackflow_support_agent",
+  "question": "¿En qué estado está el ticket 999999?",
+  "started_at": "2026-11-21T17:56:40.622+00:00",
+  "finished_at": "2026-11-21T17:56:42.057+00:00",
+  "status": "tool_fallback",
+  "path": [
+    "receive_question",
+    "route_question",
+    "lookup_ticket",
+    "tool_fallback",
+    "compose_answer"
+  ],
+  "sources": [
+    "incidents"
+  ],
+  "route": {
+    "needs_rag": false,
+    "ticket": {
+      "ticket_id": 999999
+    },
+    "reason": "Consulta el estado de un ticket concreto.",
+    "decided_by": "llm",
+    "sources": [
+      "incidents"
+    ]
+  },
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-21T17:56:40.625+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "received"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "route_question",
+      "started_at": "2026-11-21T17:56:40.626+00:00",
+      "duration_ms": 1381.98,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "route": {
+          "needs_rag": false,
+          "ticket": {
+            "ticket_id": 999999
+          },
+          "reason": "Consulta el estado de un ticket concreto.",
+          "decided_by": "llm",
+          "sources": [
+            "incidents"
+          ]
+        },
+        "status": "routed"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "lookup_ticket",
+      "started_at": "2026-11-21T17:56:42.009+00:00",
+      "duration_ms": 39.18,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "routed",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "ticket_result": {
+          "tool": "incidents",
+          "status": "not_found",
+          "query": {
+            "ticket_id": 999999
+          },
+          "records": [],
+          "total": 0,
+          "error": "el ticket no existe",
+          "duration_ms": 39.1,
+          "fallback_message": null
+        },
+        "status": "tool_done"
+      },
+      "error": null
+    },
+    {
+      "step": 4,
+      "node": "tool_fallback",
+      "started_at": "2026-11-21T17:56:42.051+00:00",
+      "duration_ms": 0.01,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "tool_done",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "not_found"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "status": "tool_fallback",
+        "ticket_result": {
+          "tool": "incidents",
+          "status": "not_found",
+          "query": {
+            "ticket_id": 999999
+          },
+          "records": [],
+          "total": 0,
+          "error": "el ticket no existe",
+          "duration_ms": 39.1,
+          "fallback_message": "No encuentro el ticket 999999 en el gestor de incidentes, así que no puedo confirmar su estado. Revisa el número del ticket."
+        }
+      },
+      "error": null
+    },
+    {
+      "step": 5,
+      "node": "compose_answer",
+      "started_at": "2026-11-21T17:56:42.052+00:00",
+      "duration_ms": 0.01,
+      "status": "ok",
+      "input": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "tool_fallback",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "not_found"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "No encuentro el ticket 999999 en el gestor de incidentes, así que no puedo confirmar su estado. Revisa el número del ticket.",
+        "status": "tool_fallback"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e5d4e-7939-61d0-bfff-8db5b89c02e6",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-793b-6c37-8000-3ead21c69fae",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-793f-6680-8001-5be83a157673",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "route_question"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-866f-6bfc-8002-cda40e778d35",
+      "step": 2,
+      "source": "loop",
+      "next": [
+        "lookup_ticket"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "routed",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-86d6-61d3-8003-d2bc6172591e",
+      "step": 3,
+      "source": "loop",
+      "next": [
+        "tool_fallback"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "tool_done",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "not_found"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-86d9-6ae7-8004-f89be6e2fdf4",
+      "step": 4,
+      "source": "loop",
+      "next": [
+        "compose_answer"
+      ],
+      "values": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "tool_fallback",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "not_found"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-86db-61b0-8005-8c35e3689c9c",
+      "step": 5,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "¿En qué estado está el ticket 999999?",
+        "status": "tool_fallback",
+        "planned_sources": [
+          "incidents"
+        ],
+        "tool_status": {
+          "ticket": "not_found"
+        },
+        "context_chunks": 0,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "No encuentro el ticket 999999 en el gestor de incidentes, así que no puedo confirmar su estado. Revisa el número del ticket.",
+  "failed_node": null,
+  "error": null
+}

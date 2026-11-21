@@ -1,27 +1,43 @@
 {
   "eval_case": "a05",
-  "run_id": "7fa9ab7b-6fa8-474e-8239-540c2056fd2a",
-  "thread_id": "7fa9ab7b-6fa8-474e-8239-540c2056fd2a",
+  "eval_vars": {},
+  "run_id": "c135fd9f-e932-4979-b843-064cdb50071a",
+  "thread_id": "c135fd9f-e932-4979-b843-064cdb50071a",
   "graph": "trackflow_support_agent",
   "question": "¿Cuál es la capital de Francia?",
-  "started_at": "2026-11-20T21:11:00.897+00:00",
-  "finished_at": "2026-11-20T21:11:01.610+00:00",
+  "started_at": "2026-11-21T17:56:27.343+00:00",
+  "finished_at": "2026-11-21T17:56:29.224+00:00",
   "status": "no_context",
   "path": [
     "receive_question",
+    "route_question",
     "retrieve",
-    "no_context"
+    "no_context",
+    "compose_answer"
   ],
+  "sources": [
+    "rag"
+  ],
+  "route": {
+    "needs_rag": true,
+    "reason": "La pregunta es de conocimiento general y no requiere ninguna de las fuentes disponibles.",
+    "decided_by": "llm",
+    "sources": [
+      "rag"
+    ]
+  },
   "events": [
     {
       "step": 1,
       "node": "receive_question",
-      "started_at": "2026-11-20T21:11:00.898+00:00",
+      "started_at": "2026-11-21T17:56:27.345+00:00",
       "duration_ms": 0.0,
       "status": "ok",
       "input": {
         "question": "¿Cuál es la capital de Francia?",
         "status": null,
+        "planned_sources": null,
+        "tool_status": {},
         "context_chunks": 0,
         "has_answer": false
       },
@@ -33,13 +49,44 @@
     },
     {
       "step": 2,
-      "node": "retrieve",
-      "started_at": "2026-11-20T21:11:00.899+00:00",
-      "duration_ms": 708.29,
+      "node": "route_question",
+      "started_at": "2026-11-21T17:56:27.346+00:00",
+      "duration_ms": 1337.47,
       "status": "ok",
       "input": {
         "question": "¿Cuál es la capital de Francia?",
         "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "route": {
+          "needs_rag": true,
+          "reason": "La pregunta es de conocimiento general y no requiere ninguna de las fuentes disponibles.",
+          "decided_by": "llm",
+          "sources": [
+            "rag"
+          ]
+        },
+        "status": "routed"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "retrieve",
+      "started_at": "2026-11-21T17:56:28.685+00:00",
+      "duration_ms": 534.33,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "routed",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
         "context_chunks": 0,
         "has_answer": false
       },
@@ -50,14 +97,40 @@
       "error": null
     },
     {
-      "step": 3,
+      "step": 4,
       "node": "no_context",
-      "started_at": "2026-11-20T21:11:01.609+00:00",
+      "started_at": "2026-11-21T17:56:29.221+00:00",
       "duration_ms": 0.0,
       "status": "ok",
       "input": {
         "question": "¿Cuál es la capital de Francia?",
         "status": "retrieved",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "rag_answer": "No tengo información sobre eso en la base de conocimiento de TrackFlow, así que prefiero no darte una respuesta que no pueda respaldar. Te recomiendo consultarlo con el responsable del área.\nFuente: ninguna (sin información en la base de conocimiento)",
+        "status": "no_context"
+      },
+      "error": null
+    },
+    {
+      "step": 5,
+      "node": "compose_answer",
+      "started_at": "2026-11-21T17:56:29.221+00:00",
+      "duration_ms": 0.01,
+      "status": "ok",
+      "input": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "no_context",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
         "context_chunks": 0,
         "has_answer": false
       },
@@ -70,7 +143,7 @@
   ],
   "checkpoints": [
     {
-      "checkpoint_id": "1f1e526e-33a8-6576-bfff-4059cdaee58a",
+      "checkpoint_id": "1f1e5d4d-fa96-6831-bfff-5c4b8e221855",
       "step": -1,
       "source": "input",
       "next": [
@@ -79,12 +152,14 @@
       "values": {
         "question": null,
         "status": null,
+        "planned_sources": null,
+        "tool_status": {},
         "context_chunks": 0,
         "has_answer": false
       }
     },
     {
-      "checkpoint_id": "1f1e526e-33aa-610b-8000-7ce9469548ed",
+      "checkpoint_id": "1f1e5d4d-fa98-6aab-8000-3bde847803bd",
       "step": 0,
       "source": "loop",
       "next": [
@@ -93,27 +168,49 @@
       "values": {
         "question": "¿Cuál es la capital de Francia?",
         "status": null,
+        "planned_sources": null,
+        "tool_status": {},
         "context_chunks": 0,
         "has_answer": false
       }
     },
     {
-      "checkpoint_id": "1f1e526e-33ab-6ecd-8001-5c4637933133",
+      "checkpoint_id": "1f1e5d4d-fa9b-6059-8001-c5d08cae8044",
       "step": 1,
+      "source": "loop",
+      "next": [
+        "route_question"
+      ],
+      "values": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-075e-6927-8002-7633a269d332",
+      "step": 2,
       "source": "loop",
       "next": [
         "retrieve"
       ],
       "values": {
         "question": "¿Cuál es la capital de Francia?",
-        "status": "received",
+        "status": "routed",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
         "context_chunks": 0,
         "has_answer": false
       }
     },
     {
-      "checkpoint_id": "1f1e526e-3a6f-6b9d-8002-66f10bb001eb",
-      "step": 2,
+      "checkpoint_id": "1f1e5d4e-0c7a-67ea-8003-71befbe0d5a0",
+      "step": 3,
       "source": "loop",
       "next": [
         "no_context"
@@ -121,18 +218,44 @@
       "values": {
         "question": "¿Cuál es la capital de Francia?",
         "status": "retrieved",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
         "context_chunks": 0,
         "has_answer": false
       }
     },
     {
-      "checkpoint_id": "1f1e526e-3a72-67c0-8003-c0e7a309bd85",
-      "step": 3,
+      "checkpoint_id": "1f1e5d4e-0c7d-653d-8004-5a80837c0cb3",
+      "step": 4,
+      "source": "loop",
+      "next": [
+        "compose_answer"
+      ],
+      "values": {
+        "question": "¿Cuál es la capital de Francia?",
+        "status": "no_context",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-0c7e-6cb4-8005-b82e50779010",
+      "step": 5,
       "source": "loop",
       "next": [],
       "values": {
         "question": "¿Cuál es la capital de Francia?",
         "status": "no_context",
+        "planned_sources": [
+          "rag"
+        ],
+        "tool_status": {},
         "context_chunks": 0,
         "has_answer": true
       }

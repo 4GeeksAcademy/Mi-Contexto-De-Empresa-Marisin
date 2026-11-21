@@ -1,0 +1,260 @@
+{
+  "eval_case": "a12",
+  "eval_vars": {
+    "sku": "TF-TEE-001"
+  },
+  "run_id": "06da7475-d502-460f-bc3a-baf34cf41caf",
+  "thread_id": "06da7475-d502-460f-bc3a-baf34cf41caf",
+  "graph": "trackflow_support_agent",
+  "question": "¿Tenemos stock del SKU TF-TEE-001?",
+  "started_at": "2026-11-21T17:56:43.671+00:00",
+  "finished_at": "2026-11-21T17:56:45.488+00:00",
+  "status": "answered",
+  "path": [
+    "receive_question",
+    "route_question",
+    "lookup_inventory",
+    "compose_answer"
+  ],
+  "sources": [
+    "inventory"
+  ],
+  "route": {
+    "needs_rag": false,
+    "inventory": {
+      "sku": "TF-TEE-001"
+    },
+    "reason": "Pregunta por el stock de un SKU concreto.",
+    "decided_by": "llm",
+    "sources": [
+      "inventory"
+    ]
+  },
+  "events": [
+    {
+      "step": 1,
+      "node": "receive_question",
+      "started_at": "2026-11-21T17:56:43.677+00:00",
+      "duration_ms": 0.0,
+      "status": "ok",
+      "input": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": "received"
+      },
+      "error": null
+    },
+    {
+      "step": 2,
+      "node": "route_question",
+      "started_at": "2026-11-21T17:56:43.677+00:00",
+      "duration_ms": 1575.66,
+      "status": "ok",
+      "input": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "route": {
+          "needs_rag": false,
+          "inventory": {
+            "sku": "TF-TEE-001"
+          },
+          "reason": "Pregunta por el stock de un SKU concreto.",
+          "decided_by": "llm",
+          "sources": [
+            "inventory"
+          ]
+        },
+        "status": "routed"
+      },
+      "error": null
+    },
+    {
+      "step": 3,
+      "node": "lookup_inventory",
+      "started_at": "2026-11-21T17:56:45.258+00:00",
+      "duration_ms": 220.61,
+      "status": "ok",
+      "input": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": "routed",
+        "planned_sources": [
+          "inventory"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "inventory_result": {
+          "tool": "inventory",
+          "status": "ok",
+          "query": {
+            "sku": "TF-TEE-001"
+          },
+          "records": [
+            {
+              "id": 2,
+              "sku": "TF-TEE-001",
+              "name": "Camiseta de algodón",
+              "client_name": "EcoWear USA",
+              "category": "Apparel",
+              "current_stock": 174
+            }
+          ],
+          "total": 1,
+          "error": null,
+          "duration_ms": 220.31,
+          "fallback_message": null
+        },
+        "status": "tool_done"
+      },
+      "error": null
+    },
+    {
+      "step": 4,
+      "node": "compose_answer",
+      "started_at": "2026-11-21T17:56:45.480+00:00",
+      "duration_ms": 0.02,
+      "status": "ok",
+      "input": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": "tool_done",
+        "planned_sources": [
+          "inventory"
+        ],
+        "tool_status": {
+          "inventory": "ok"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      },
+      "output": {
+        "answer": "Stock actual (total entre almacenes):\n- Camiseta de algodón (SKU TF-TEE-001, cliente EcoWear USA): 174 unidades en stock\nFuente: gestor de inventario de TrackFlow (consulta en tiempo real)",
+        "status": "answered"
+      },
+      "error": null
+    }
+  ],
+  "checkpoints": [
+    {
+      "checkpoint_id": "1f1e5d4e-9651-62c0-bfff-fcb46c78067c",
+      "step": -1,
+      "source": "input",
+      "next": [
+        "__start__"
+      ],
+      "values": {
+        "question": null,
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-9653-64cd-8000-d6db24a53487",
+      "step": 0,
+      "source": "loop",
+      "next": [
+        "receive_question"
+      ],
+      "values": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": null,
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-965a-62f1-8001-9c242c62c2e5",
+      "step": 1,
+      "source": "loop",
+      "next": [
+        "route_question"
+      ],
+      "values": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": "received",
+        "planned_sources": null,
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-a56b-62db-8002-fa6a94d88444",
+      "step": 2,
+      "source": "loop",
+      "next": [
+        "lookup_inventory"
+      ],
+      "values": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": "routed",
+        "planned_sources": [
+          "inventory"
+        ],
+        "tool_status": {},
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-a78a-66d9-8003-964a920bcc9f",
+      "step": 3,
+      "source": "loop",
+      "next": [
+        "compose_answer"
+      ],
+      "values": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": "tool_done",
+        "planned_sources": [
+          "inventory"
+        ],
+        "tool_status": {
+          "inventory": "ok"
+        },
+        "context_chunks": 0,
+        "has_answer": false
+      }
+    },
+    {
+      "checkpoint_id": "1f1e5d4e-a792-6040-8004-815eef8d0edf",
+      "step": 4,
+      "source": "loop",
+      "next": [],
+      "values": {
+        "question": "¿Tenemos stock del SKU TF-TEE-001?",
+        "status": "answered",
+        "planned_sources": [
+          "inventory"
+        ],
+        "tool_status": {
+          "inventory": "ok"
+        },
+        "context_chunks": 0,
+        "has_answer": true
+      }
+    }
+  ],
+  "answer": "Stock actual (total entre almacenes):\n- Camiseta de algodón (SKU TF-TEE-001, cliente EcoWear USA): 174 unidades en stock\nFuente: gestor de inventario de TrackFlow (consulta en tiempo real)",
+  "failed_node": null,
+  "error": null
+}
