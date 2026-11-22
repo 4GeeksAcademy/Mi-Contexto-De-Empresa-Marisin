@@ -25,6 +25,7 @@ SMALL_TALK_FALLBACK = {
     "thanks": "¡De nada!",
     "time_weather": "No tengo acceso a la hora ni al tiempo en tiempo real.",
     "trivia": "Es una pregunta general que queda fuera de lo que atiendo.",
+    "general_logistics": "Es un concepto general de logística; ahora no puedo darte una definición fiable.",
 }
 SMALL_TALK_MAX_CHARS = 280
 
@@ -49,14 +50,17 @@ def generate_answer(question: str, context: list[dict[str, Any]], country_lock: 
     return answer
 
 
-def small_talk_answer(question: str, rules: list[str] | None = None) -> str:
-    """Una frase breve para small talk. Nunca lanza: si el LLM falla, plantilla."""
+def small_talk_answer(question: str, rules: list[str] | None = None, *, general_concept: bool = False) -> str:
+    """Una o dos frases breves (small talk o concepto general de logística). Nunca lanza: si el LLM falla, plantilla."""
     try:
-        answer = _complete(prompts.build_small_talk_messages(question), timeout=SMALL_TALK_TIMEOUT_SECONDS, temperature=0.3)
+        messages = prompts.build_small_talk_messages(question, general_concept=general_concept)
+        answer = _complete(messages, timeout=SMALL_TALK_TIMEOUT_SECONDS, temperature=0.3)
         if answer:
             return answer[:SMALL_TALK_MAX_CHARS]
     except Exception as exc:
         logger.info("Small talk sin LLM (%s): plantilla", type(exc).__name__)
+    if general_concept:
+        return SMALL_TALK_FALLBACK["general_logistics"]
     for rule in rules or []:
         if rule in SMALL_TALK_FALLBACK:
             return SMALL_TALK_FALLBACK[rule]

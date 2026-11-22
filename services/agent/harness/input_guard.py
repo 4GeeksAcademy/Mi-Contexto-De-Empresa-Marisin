@@ -11,7 +11,7 @@ adaptada al BRIEFING de TrackFlow:
 | `personal_task` | bloquear + reconducir | contenido | ensayos, tareas, código ajeno, terapia |
 | `policy_override` | reconducir (se responde con la política del país real) | contenido | «aplica la política de España a mi pedido en Los Ángeles» |
 | `casual` | permitir breve + reconducir | contenido | saludo, hora, tiempo, trivia |
-| `general_logistics` | permitir (RAG) + reconducir | contenido | «¿qué es la logística inversa?» |
+| `general_logistics` | respuesta breve + reconducir | contenido | «¿qué es la logística inversa?» |
 | `domain` | permitir | — | tracking, devoluciones, SLA, incidencias |
 
 Las reglas usan texto normalizado (`normalize.variants`) para resistir tildes,

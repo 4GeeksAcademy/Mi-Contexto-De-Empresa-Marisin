@@ -193,9 +193,15 @@ def guardrail_block(state: AgentState) -> AgentState:
 
 
 def small_talk(state: AgentState) -> AgentState:
-    """Small talk o trivia: una frase breve (LLM con plantilla de respaldo). La reconducción la añade `compose_answer`."""
-    rules = (state.get("guardrail") or {}).get("rules") or []
-    return {"small_talk_answer": agent_generation.small_talk_answer(state["question"], rules), "status": "redirected"}
+    """Small talk, trivia o concepto general de logística: respuesta breve (LLM con plantilla de respaldo).
+
+    La reconducción a TrackFlow la añade siempre `compose_answer`, no el modelo.
+    """
+    guard = state.get("guardrail") or {}
+    answer = agent_generation.small_talk_answer(
+        state["question"], guard.get("rules") or [], general_concept=guard.get("category") == "general_logistics"
+    )
+    return {"small_talk_answer": answer, "status": "redirected"}
 
 
 def lookup_shipment(state: AgentState) -> AgentState:
@@ -364,8 +370,8 @@ def route_after_receive(
         return "memory_decision"
     if guard.get("authorized_orders") and guard.get("category") == "domain":
         return "shipment"
-    if guard.get("category") == "casual":
-        return "casual"
+    if guard.get("category") in ("casual", "general_logistics"):
+        return "casual"  # respuesta breve + reconducción (BRIEFING: fuera de dominio permitido)
     return "valid"
 
 
@@ -374,7 +380,7 @@ def route_after_route(state: AgentState) -> Literal["ticket", "inventory", "rag"
     guard = state.get("guardrail") or {}
     if guard.get("action") == "block":
         return "blocked"
-    if guard.get("category") == "casual":
+    if guard.get("category") in ("casual", "general_logistics"):
         return "casual"
     return next_source(state)
 
