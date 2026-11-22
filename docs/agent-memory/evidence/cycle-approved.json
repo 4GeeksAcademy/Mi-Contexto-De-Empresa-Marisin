@@ -7,20 +7,19 @@
   },
   "proposal": {
     "status": "proposed",
-    "proposal_id": "02d291a0-a2aa-44aa-ac0e-3e0a66d93b98",
+    "proposal_id": "e3c62ce0-255c-45a7-b90c-76b4a927af70",
     "category": "carrier_rule",
-    "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
+    "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
     "slot_id": "carrier_rule:SEUR:ES",
-    "expires_at": "2026-11-22T08:53:29+00:00",
-    "supersedes": "SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.",
+    "expires_at": "2026-11-22T09:19:30+00:00",
     "reasons": [],
-    "question_text": "---\n**¿Quieres que recuerde esto para la próxima vez?** «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.» (regla de asignación de carrier). Sustituiría a la nota actual: «SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.».\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada."
+    "question_text": "---\n**¿Quieres que recuerde esto para la próxima vez?** «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.» (regla de asignación de carrier).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada."
   },
   "turns": [
     {
       "question": "En realidad SEUR ya no cubre esa zona rural de Zaragoza, hay que usar el carrier local desde el mes pasado.",
-      "run_id": "b377f855-623e-4c08-aebb-e152bf0026d3",
-      "conversation_id": "8dab9e85-bda7-4c57-ba55-60355a7c4d0f",
+      "run_id": "35c51895-abde-4298-a9a0-bb8f96d6dcee",
+      "conversation_id": "bbac4f31-10c1-4443-806c-c693d189497d",
       "status": "answered",
       "path": [
         "receive_question",
@@ -30,70 +29,53 @@
         "compose_answer",
         "propose_memory"
       ],
-      "answer": "La base de conocimiento no tiene información suficiente para confirmar ese cambio: indica que SEUR tiene mejor cobertura en zonas rurales de Aragón y que los transportistas locales solo cubren el área metropolitana de Zaragoza. Para validar la cobertura actual y el uso del carrier local, consúltalo con el responsable de transportistas.\n\nFuente: Cobertura de Transportistas (carrier-coverage) · Cobertura de Transportistas › España (Zaragoza)\n\nNotas operativas recordadas:\n- SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local. (aprobada el 2026-11-22, vigente hasta el 2027-02-20)\nFuente: memoria del agente (notas aprobadas por el equipo; no forman parte de la base documental)\n\n---\n**¿Quieres que recuerde esto para la próxima vez?** «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.» (regla de asignación de carrier). Sustituiría a la nota actual: «SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.».\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada.",
+      "answer": "No puedo confirmar ese cambio con seguridad: la base de conocimiento no recoge la actualización que mencionas y señala que los transportistas locales solo cubren el área metropolitana de Zaragoza. Para validar qué carrier usar en esa zona rural, conviene consultarlo con el responsable de transportistas.\n\nFuente: Cobertura de Transportistas (carrier-coverage) · Cobertura de Transportistas › España (Zaragoza)\n\n---\n**¿Quieres que recuerde esto para la próxima vez?** «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.» (regla de asignación de carrier).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada.",
       "memory": {
         "proposal": {
           "status": "proposed",
-          "proposal_id": "02d291a0-a2aa-44aa-ac0e-3e0a66d93b98",
+          "proposal_id": "e3c62ce0-255c-45a7-b90c-76b4a927af70",
           "category": "carrier_rule",
-          "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
+          "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
           "slot_id": "carrier_rule:SEUR:ES",
-          "expires_at": "2026-11-22T08:53:29+00:00",
-          "supersedes": "SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.",
+          "expires_at": "2026-11-22T09:19:30+00:00",
           "reasons": [],
-          "question_text": "---\n**¿Quieres que recuerde esto para la próxima vez?** «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.» (regla de asignación de carrier). Sustituiría a la nota actual: «SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.».\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada."
-        },
-        "notes": [
-          {
-            "slot_id": "carrier_rule:SEUR:ES",
-            "category": "carrier_rule",
-            "fact_id": "e5c80649-31c1-4fe7-89a8-d228943bcf99",
-            "fact": "SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.",
-            "approved_at": "2026-11-22T08:22:15+00:00",
-            "approved_by": {
-              "user_id": 9001,
-              "role": "user"
-            },
-            "confirmations": 1,
-            "expires_at": "2027-02-20T08:22:15+00:00"
-          }
-        ]
+          "question_text": "---\n**¿Quieres que recuerde esto para la próxima vez?** «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.» (regla de asignación de carrier).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada."
+        }
       }
     },
     {
       "question": "sí, recuérdalo",
-      "run_id": "6c75995a-eea3-47bd-b64e-40503b437dee",
-      "conversation_id": "8dab9e85-bda7-4c57-ba55-60355a7c4d0f",
+      "run_id": "bf360313-67e5-4e95-9c5c-d1c0e300722f",
+      "conversation_id": "bbac4f31-10c1-4443-806c-c693d189497d",
       "status": "memory_resolved",
       "path": [
         "receive_question",
         "resolve_memory_decision",
         "compose_answer"
       ],
-      "answer": "Guardado en la memoria del agente: «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.». Lo tendré en cuenta en próximas conversaciones (vigente hasta el 2027-02-20). Sustituye a la nota anterior: «SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.».",
+      "answer": "Guardado en la memoria del agente: «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.». Lo tendré en cuenta en próximas conversaciones (vigente hasta el 2027-02-20).",
       "memory": {
         "decision": {
-          "proposal_id": "02d291a0-a2aa-44aa-ac0e-3e0a66d93b98",
+          "proposal_id": "e3c62ce0-255c-45a7-b90c-76b4a927af70",
           "outcome": "approved",
           "slot_id": "carrier_rule:SEUR:ES",
-          "proposed_fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
-          "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
-          "action": "superseded",
-          "superseded_fact": "SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.",
+          "proposed_fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
+          "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
+          "action": "created",
           "label": "approve",
           "confidence": 1.0,
           "decided_by": "llm",
           "reasons": [],
-          "expires_at": "2027-02-20T08:23:31+00:00",
-          "message": "Guardado en la memoria del agente: «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.». Lo tendré en cuenta en próximas conversaciones (vigente hasta el 2027-02-20). Sustituye a la nota anterior: «SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.»."
+          "expires_at": "2027-02-20T08:49:32+00:00",
+          "message": "Guardado en la memoria del agente: «SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.». Lo tendré en cuenta en próximas conversaciones (vigente hasta el 2027-02-20)."
         }
       }
     }
   ],
   "later_interaction": {
     "question": "¿Qué transportista uso para un envío a la zona rural de Zaragoza?",
-    "run_id": "6e08d561-81ba-4ccd-9e46-e925036d6983",
-    "conversation_id": "05816702-7d2e-4e88-9e57-5f744974ac97",
+    "run_id": "344d5d14-edd8-4fad-b70e-0d8606dd1359",
+    "conversation_id": "a1fe075e-e541-4b86-9a59-5122ec0d24be",
     "status": "answered",
     "path": [
       "receive_question",
@@ -102,53 +84,26 @@
       "generate_answer",
       "compose_answer"
     ],
-    "answer": "Para un envío a una zona rural de Aragón, SEUR tiene la mejor cobertura.  \nFuente: Cobertura de Transportistas (carrier-coverage) · Cobertura de Transportistas › España (Zaragoza)\n\nNotas operativas recordadas:\n- SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local. (aprobada el 2026-11-22, vigente hasta el 2027-02-20)\nFuente: memoria del agente (notas aprobadas por el equipo; no forman parte de la base documental)",
+    "answer": "Para un envío a una zona rural de Aragón, SEUR tiene la mejor cobertura.  \nFuente: Cobertura de Transportistas (carrier-coverage) · Cobertura de Transportistas › España (Zaragoza)\n\nNotas operativas recordadas:\n- SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local. (aprobada el 2026-11-22, vigente hasta el 2027-02-20)\nFuente: memoria del agente (notas aprobadas por el equipo; no forman parte de la base documental)",
     "memory": {
       "notes": [
         {
           "slot_id": "carrier_rule:SEUR:ES",
           "category": "carrier_rule",
-          "fact_id": "1d73fac2-cf70-49cf-8e53-650ccf671ffe",
-          "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
-          "approved_at": "2026-11-22T08:23:31+00:00",
+          "fact_id": "0e0589a8-99e3-4644-bbde-1e1798a8cf5f",
+          "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
+          "approved_at": "2026-11-22T08:49:32+00:00",
           "approved_by": {
             "user_id": 9001,
             "role": "user"
           },
           "confirmations": 1,
-          "expires_at": "2027-02-20T08:23:31+00:00"
+          "expires_at": "2027-02-20T08:49:32+00:00"
         }
       ]
     }
   },
-  "memory_before": [
-    {
-      "slot_id": "carrier_rule:SEUR:ES",
-      "category": "carrier_rule",
-      "carrier": "SEUR",
-      "country": "ES",
-      "zone": null,
-      "client": null,
-      "facts": [
-        {
-          "fact_id": "e5c80649-31c1-4fe7-89a8-d228943bcf99",
-          "fact_key": "zona-rural-de-zaragoza",
-          "fact": "SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.",
-          "approved_by": {
-            "user_id": 9001,
-            "role": "user"
-          },
-          "approved_at": "2026-11-22T08:22:15+00:00",
-          "proposal_id": "4b75529c-56ee-420b-a81d-5d82838638cc",
-          "conversation_id": "97c9942e-8af6-4eb4-9cac-27093ab57d9a",
-          "confirmations": 1,
-          "last_confirmed_at": "2026-11-22T08:22:15+00:00",
-          "expires_at": "2027-02-20T08:22:15+00:00"
-        }
-      ],
-      "updated_at": "2026-11-22T08:22:15+00:00"
-    }
-  ],
+  "memory_before": [],
   "memory_after": [
     {
       "slot_id": "carrier_rule:SEUR:ES",
@@ -159,76 +114,74 @@
       "client": null,
       "facts": [
         {
-          "fact_id": "1d73fac2-cf70-49cf-8e53-650ccf671ffe",
+          "fact_id": "0e0589a8-99e3-4644-bbde-1e1798a8cf5f",
           "fact_key": "zona-rural-de-zaragoza",
-          "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
+          "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
           "approved_by": {
             "user_id": 9001,
             "role": "user"
           },
-          "approved_at": "2026-11-22T08:23:31+00:00",
-          "proposal_id": "02d291a0-a2aa-44aa-ac0e-3e0a66d93b98",
-          "conversation_id": "8dab9e85-bda7-4c57-ba55-60355a7c4d0f",
+          "approved_at": "2026-11-22T08:49:32+00:00",
+          "proposal_id": "e3c62ce0-255c-45a7-b90c-76b4a927af70",
+          "conversation_id": "bbac4f31-10c1-4443-806c-c693d189497d",
           "confirmations": 1,
-          "last_confirmed_at": "2026-11-22T08:23:31+00:00",
-          "expires_at": "2027-02-20T08:23:31+00:00"
+          "last_confirmed_at": "2026-11-22T08:49:32+00:00",
+          "expires_at": "2027-02-20T08:49:32+00:00"
         }
       ],
-      "updated_at": "2026-11-22T08:23:31+00:00"
+      "updated_at": "2026-11-22T08:49:32+00:00"
     }
   ],
   "audit": [
     {
-      "event_id": "62c6cd50-1583-4b92-b72c-64286c078cb6",
-      "at": "2026-11-22T08:23:29+00:00",
+      "event_id": "80d0032b-454d-4594-ad57-549a5ed833f7",
+      "at": "2026-11-22T08:49:30+00:00",
       "event": "proposed",
-      "proposal_id": "02d291a0-a2aa-44aa-ac0e-3e0a66d93b98",
-      "proposed_fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
+      "proposal_id": "e3c62ce0-255c-45a7-b90c-76b4a927af70",
+      "proposed_fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
       "draft": {
         "category": "carrier_rule",
-        "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
+        "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
         "carrier": "SEUR",
         "country": "ES",
         "zone": "esa zona rural de Zaragoza",
-        "reason": "Es un cambio de cobertura y ruta que puede ser útil para futuras consultas."
+        "reason": "Es un cambio de cobertura y ruta de un carrier que puede ser útil en consultas futuras."
       },
       "slot_id": "carrier_rule:SEUR:ES",
-      "supersedes": "SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.",
-      "expires_at": "2026-11-22T08:53:29+00:00",
-      "conversation_id": "8dab9e85-bda7-4c57-ba55-60355a7c4d0f",
+      "expires_at": "2026-11-22T09:19:30+00:00",
+      "conversation_id": "bbac4f31-10c1-4443-806c-c693d189497d",
       "actor": {
         "user_id": 9001,
         "role": "user"
       },
-      "origin_run_id": "b377f855-623e-4c08-aebb-e152bf0026d3",
+      "origin_run_id": "35c51895-abde-4298-a9a0-bb8f96d6dcee",
       "origin_message": "En realidad SEUR ya no cubre esa zona rural de Zaragoza, hay que usar el carrier local desde el mes pasado.",
       "category": "carrier_rule"
     },
     {
-      "event_id": "e17eb348-74bb-4c5c-aeee-fc114035d2d7",
-      "at": "2026-11-22T08:23:31+00:00",
+      "event_id": "5e504483-cd13-4ef7-a23c-6f22f2eb655d",
+      "at": "2026-11-22T08:49:32+00:00",
       "event": "approved",
-      "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
-      "fact_id": "1d73fac2-cf70-49cf-8e53-650ccf671ffe",
-      "action": "superseded",
-      "superseded_fact": "SEUR ya no cubre la zona rural de Zaragoza desde el mes pasado; se debe usar el carrier local.",
-      "expires_at": "2027-02-20T08:23:31+00:00",
-      "proposal_id": "02d291a0-a2aa-44aa-ac0e-3e0a66d93b98",
+      "fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
+      "fact_id": "0e0589a8-99e3-4644-bbde-1e1798a8cf5f",
+      "action": "created",
+      "expires_at": "2027-02-20T08:49:32+00:00",
+      "proposal_id": "e3c62ce0-255c-45a7-b90c-76b4a927af70",
       "slot_id": "carrier_rule:SEUR:ES",
-      "proposed_fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; debe usarse el carrier local.",
+      "proposed_fact": "SEUR ya no cubre esa zona rural de Zaragoza desde el mes pasado; hay que usar el carrier local.",
       "label": "approve",
       "confidence": 1.0,
       "decided_by": "llm",
-      "conversation_id": "8dab9e85-bda7-4c57-ba55-60355a7c4d0f",
+      "conversation_id": "bbac4f31-10c1-4443-806c-c693d189497d",
       "actor": {
         "user_id": 9001,
         "role": "user"
       },
-      "origin_run_id": "b377f855-623e-4c08-aebb-e152bf0026d3",
-      "decision_run_id": "6c75995a-eea3-47bd-b64e-40503b437dee",
+      "origin_run_id": "35c51895-abde-4298-a9a0-bb8f96d6dcee",
+      "decision_run_id": "bf360313-67e5-4e95-9c5c-d1c0e300722f",
       "origin_message": "En realidad SEUR ya no cubre esa zona rural de Zaragoza, hay que usar el carrier local desde el mes pasado.",
       "decision_message": "sí, recuérdalo",
-      "classifier_reason": "El usuario acepta explícitamente que se guarde el hecho."
+      "classifier_reason": "Acepta explícitamente que se guarde el hecho."
     }
   ]
 }
