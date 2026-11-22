@@ -160,3 +160,13 @@ Variables opcionales: `AGENT_MEMORY_BACKEND` (`redis` por defecto, o `memory`) y
 * `cycle-topic-change.json` — huelga de Los Ángeles: propuesta → otra pregunta → `discarded_topic_change`, sin escribir y respondiendo a la nueva pregunta.
 
 Cada fichero incluye los turnos (respuesta, ruta del grafo y bloque `memory`), la memoria antes y después y las entradas de auditoría de la propuesta. Los mismos ciclos están cubiertos sin servicios externos en `tests/pipelines/test_agent_memory_graph.py` y `tests/test_agent_routes.py`.
+
+Capturas de la ejecución en el Codespace (misma carpeta):
+
+| Captura | Qué muestra |
+|---|---|
+| `memory-pytest-all.png` | Suite completa de pytest en verde. |
+| `memory-redis-test.png` | Ciclo completo contra Redis real (`test_full_cycle_against_redis PASSED`). |
+| `memory-self-eval.png` | Los 11 casos de auto-evaluación en OK. |
+| `memory-cycle-approved.png` | `[approved] OK` y la respuesta posterior con la nota recordada. |
+| `memory-consolidate.png` | Barrido de limpieza y memoria consolidada (slot `carrier_rule:SEUR:ES`). |
