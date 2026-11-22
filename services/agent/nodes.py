@@ -21,7 +21,8 @@ Harness (Hito 8 · Parte 2): `receive_question` pasa el mensaje por la guardia d
 entrada determinista (inyección, autorización por sesión, datos sensibles, uso
 personal, mezcla de políticas, small talk); lo que se bloquea va a
 `guardrail_block` y nunca llega al LLM ni a las tools. `route_question` añade la
-segunda capa (alcance semántico del enrutador). `generate_answer` usa el prompt
+segunda capa (alcance semántico del enrutador). El small talk y la trivia los
+contesta `redirect_out_of_scope` con una plantilla de rechazo, sin LLM. `generate_answer` usa el prompt
 seguro de CX con los documentos aislados y `compose_answer` pasa la respuesta
 final por la guardia de salida. Ver `services/agent/harness/`.
 """
@@ -192,16 +193,15 @@ def guardrail_block(state: AgentState) -> AgentState:
     return update
 
 
-def small_talk(state: AgentState) -> AgentState:
-    """Small talk, trivia o concepto general de logística: respuesta breve (LLM con plantilla de respaldo).
+def redirect_out_of_scope(state: AgentState) -> AgentState:
+    """Small talk y trivia: **solo rechazo con plantilla, sin LLM** (Ticket #SEC-114, C02).
 
-    La reconducción a TrackFlow la añade siempre `compose_answer`, no el modelo.
+    No se contesta el dato fuera de dominio («París», la hora en Tokio): un saludo o un
+    agradecimiento reciben una cortesía breve y todo lo demás, el rechazo. La
+    reconducción a TrackFlow la añade `compose_answer`.
     """
-    guard = state.get("guardrail") or {}
-    answer = agent_generation.small_talk_answer(
-        state["question"], guard.get("rules") or [], general_concept=guard.get("category") == "general_logistics"
-    )
-    return {"small_talk_answer": answer, "status": "redirected"}
+    rules = (state.get("guardrail") or {}).get("rules") or []
+    return {"out_of_scope_reply": responses.out_of_scope_reply(rules), "status": "redirected"}
 
 
 def lookup_shipment(state: AgentState) -> AgentState:
@@ -256,6 +256,8 @@ def retrieve_context(state: AgentState) -> AgentState:
     """
     country = state.get("country_lock")
     query = state["question"]
+    if (state.get("guardrail") or {}).get("category") == "general_logistics":
+        query = input_guard.trackflow_query(query)  # cómo lo aplica TrackFlow, no la definición general
     if country:
         query = f"{query} ({guard_authorization.COUNTRY_NAMES[country]})"
     context = rag_pipeline.retrieve(query)
@@ -304,8 +306,8 @@ def compose_answer(state: AgentState) -> AgentState:
         sections.append(responses.policy_override_prefix(guard.get("requested_country"), state["country_lock"]))
     if state.get("shipment_result"):
         sections.append(guard_authorization.shipment_section(state["shipment_result"]))
-    if state.get("small_talk_answer"):
-        sections.append(state["small_talk_answer"])
+    if state.get("out_of_scope_reply"):
+        sections.append(state["out_of_scope_reply"])
     sections.extend(answers.tool_section(result) for result in results)
     if state.get("rag_answer"):
         sections.append(state["rag_answer"])
@@ -319,7 +321,7 @@ def compose_answer(state: AgentState) -> AgentState:
         sections.append(responses.GENERAL_LOGISTICS_REDIRECT)
 
     rag_answered = bool(state.get("context")) and bool(state.get("rag_answer"))
-    if state.get("small_talk_answer"):
+    if state.get("out_of_scope_reply"):
         status = "redirected"
     elif rag_answered or state.get("shipment_result") or any(result["status"] == "ok" for result in results):
         status = "answered"
@@ -370,9 +372,9 @@ def route_after_receive(
         return "memory_decision"
     if guard.get("authorized_orders") and guard.get("category") == "domain":
         return "shipment"
-    if guard.get("category") in ("casual", "general_logistics"):
-        return "casual"  # respuesta breve + reconducción (BRIEFING: fuera de dominio permitido)
-    return "valid"
+    if guard.get("category") == "casual":
+        return "casual"  # rechazo con plantilla + reconducción, sin LLM
+    return "valid"  # la logística general va al RAG: solo cómo lo aplica TrackFlow
 
 
 def route_after_route(state: AgentState) -> Literal["ticket", "inventory", "rag", "compose", "blocked", "casual"]:
@@ -380,7 +382,7 @@ def route_after_route(state: AgentState) -> Literal["ticket", "inventory", "rag"
     guard = state.get("guardrail") or {}
     if guard.get("action") == "block":
         return "blocked"
-    if guard.get("category") in ("casual", "general_logistics"):
+    if guard.get("category") == "casual":
         return "casual"
     return next_source(state)
 

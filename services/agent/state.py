@@ -32,7 +32,7 @@ Harness (Hito 8 · Parte 2):
 * `guardrail` — veredicto de la guardia de entrada (o del alcance del enrutador):
   categoría, acción (`allow`/`redirect`/`block`), tipo de fallo y reglas.
 * `country_lock` — país real del pedido cuando el usuario pide aplicar la política de otro.
-* `small_talk_answer` — la frase breve de small talk (antes de la reconducción).
+* `out_of_scope_reply` — plantilla para small talk/trivia (cortesía o rechazo, sin LLM), antes de la reconducción.
 * `shipment_result` — envíos de la sesión que la guardia ya autorizó.
 
 No incluye el historial de la conversación: cada consulta es independiente y
@@ -79,5 +79,5 @@ class AgentState(TypedDict, total=False):
     memory_proposal: dict[str, Any]
     guardrail: dict[str, Any]
     country_lock: str
-    small_talk_answer: str
+    out_of_scope_reply: str
     shipment_result: list[dict[str, Any]]

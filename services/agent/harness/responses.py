@@ -16,8 +16,27 @@ REDIRECT = (
     "una devolución o una incidencia, cuéntamela y te ayudo."
 )
 GENERAL_LOGISTICS_REDIRECT = (
-    "Si quieres, te explico cómo lo aplica TrackFlow a tus envíos, devoluciones o incidencias."
+    "Solo puedo explicarte cómo lo aplica TrackFlow según su documentación. Si tienes una consulta sobre "
+    "un envío, una devolución o una incidencia, cuéntamela y te ayudo."
 )
+
+# Fuera de dominio: rechazo con plantilla, SIN LLM. Nunca se contesta la trivia ni el dato pedido.
+OUT_OF_SCOPE = (
+    "Esa pregunta queda fuera de lo que atiendo: no respondo preguntas de cultura general, datos como la "
+    "hora o el tiempo, ni temas ajenos a TrackFlow."
+)
+SOCIAL_REPLIES = {"greeting": "¡Hola!", "how_are_you": "Gracias por preguntar.", "thanks": "¡De nada!"}
+
+
+def out_of_scope_reply(rules: list[str] | None) -> str:
+    """Saludo/agradecimiento → cortesía breve; cualquier otra cosa (trivia, hora, tiempo…) → rechazo.
+
+    No usa el LLM ni la pregunta: la respuesta no puede contener el dato fuera de dominio.
+    """
+    rules = rules or []
+    if rules and all(rule in SOCIAL_REPLIES for rule in rules):
+        return SOCIAL_REPLIES[rules[0]]
+    return OUT_OF_SCOPE
 
 BLOCK_MESSAGES = {
     "injection": (

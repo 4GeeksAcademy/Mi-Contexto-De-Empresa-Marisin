@@ -19,9 +19,10 @@ Harness (Hito 8 · Parte 2):
 
     receive_question ─blocked──→ guardrail_block → END     (inyección, uso personal, datos sensibles,
                      │                                      pedido de otra sesión: plantilla, sin LLM)
-                     ├casual───→ small_talk ─────→ compose_answer (+ reconducción)
+                     ├casual───→ redirect_out_of_scope → compose_answer   (small talk/trivia: rechazo con
+                     │                                                      plantilla + reconducción, sin LLM)
                      └shipment─→ lookup_shipment → compose_answer (envíos de la sesión)
-    route_question ─blocked/casual─→ guardrail_block / small_talk   (2.ª capa: alcance del enrutador LLM)
+    route_question ─blocked/casual─→ guardrail_block / redirect_out_of_scope   (2.ª capa: alcance del enrutador LLM)
 
 Las consultas de dominio permitidas siguen exactamente la ruta de la Parte 2.
 
@@ -62,7 +63,7 @@ NODE_COMPOSE = "compose_answer"
 NODE_MEMORY_DECISION = "resolve_memory_decision"
 NODE_PROPOSE = "propose_memory"
 NODE_BLOCK = "guardrail_block"
-NODE_SMALL_TALK = "small_talk"
+NODE_OUT_OF_SCOPE = "redirect_out_of_scope"
 NODE_SHIPMENT = "lookup_shipment"
 
 AGENT_SPEC = GraphSpec(
@@ -81,7 +82,7 @@ AGENT_SPEC = GraphSpec(
         NODE_MEMORY_DECISION: nodes.resolve_memory_decision,
         NODE_PROPOSE: nodes.propose_memory,
         NODE_BLOCK: nodes.guardrail_block,
-        NODE_SMALL_TALK: nodes.small_talk,
+        NODE_OUT_OF_SCOPE: nodes.redirect_out_of_scope,
         NODE_SHIPMENT: nodes.lookup_shipment,
     },
     edges=(
@@ -91,7 +92,7 @@ AGENT_SPEC = GraphSpec(
         (NODE_NO_CONTEXT, NODE_COMPOSE),
         (NODE_PROPOSE, END),
         (NODE_BLOCK, END),
-        (NODE_SMALL_TALK, NODE_COMPOSE),
+        (NODE_OUT_OF_SCOPE, NODE_COMPOSE),
         (NODE_SHIPMENT, NODE_COMPOSE),
     ),
     conditional={
@@ -99,7 +100,7 @@ AGENT_SPEC = GraphSpec(
             router=nodes.route_after_receive,
             targets={
                 "valid": NODE_ROUTE, "empty": NODE_INVALID, "memory_decision": NODE_MEMORY_DECISION,
-                "blocked": NODE_BLOCK, "casual": NODE_SMALL_TALK, "shipment": NODE_SHIPMENT,
+                "blocked": NODE_BLOCK, "casual": NODE_OUT_OF_SCOPE, "shipment": NODE_SHIPMENT,
             },
         ),
         NODE_MEMORY_DECISION: ConditionalEdge(
@@ -110,7 +111,7 @@ AGENT_SPEC = GraphSpec(
             router=nodes.route_after_route,
             targets={
                 "ticket": NODE_TICKET, "inventory": NODE_INVENTORY, "rag": NODE_RETRIEVE, "compose": NODE_COMPOSE,
-                "blocked": NODE_BLOCK, "casual": NODE_SMALL_TALK,
+                "blocked": NODE_BLOCK, "casual": NODE_OUT_OF_SCOPE,
             },
         ),
         NODE_TICKET: ConditionalEdge(
