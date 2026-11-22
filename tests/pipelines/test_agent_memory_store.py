@@ -316,3 +316,44 @@ def test_slot_is_capped_at_five_facts(store):
         approve(store, draft, f"MRW ya no cubre la comarca {index}b", f"c-{index}", actor=MANAGER)
     assert len(store.get_slot("carrier_rule:MRW:ES").facts) == memory_store.MAX_FACTS_PER_SLOT
     assert "evicted" in events(store)
+
+
+# --------------------------------------------------------------------------- #
+# Zona normalizada (evidencia real: el LLM guardó "esa zona rural de Zaragoza")
+# --------------------------------------------------------------------------- #
+def test_zone_key_drops_leading_determiners_but_keeps_place_names():
+    from services.agent.memory.models import zone_key
+
+    assert zone_key("esa zona rural de Zaragoza") == "zona-rural-de-zaragoza"
+    assert zone_key("la zona rural de Zaragoza") == "zona-rural-de-zaragoza"
+    assert zone_key("nuestra ruta de Teruel") == "ruta-de-teruel"
+    assert zone_key("Los Ángeles") == "los-angeles"
+    assert zone_key("La Rioja") == "la-rioja"
+
+
+def test_the_users_wording_of_the_zone_is_recalled_in_another_conversation(store):
+    draft = SEUR_DRAFT.model_copy(update={
+        "zone": "esa zona rural de Zaragoza",
+        "fact": "SEUR ya no cubre esa zona rural de Zaragoza; desde el mes pasado hay que usar el carrier local.",
+    })
+    approve(store, draft, SEUR_MESSAGE, "c-1")
+
+    assert store.get_slot("carrier_rule:SEUR:ES").facts[0].fact_key == "zona-rural-de-zaragoza"
+    question = "¿Qué transportista uso para un envío a la zona rural de Zaragoza?"
+    assert [n["fact"] for n in flow.recall_notes(store, question)] == [draft.fact]
+    # "la zona rural de Zaragoza" es el mismo ámbito: no se vuelve a proponer
+    same = SEUR_DRAFT.model_copy(update={"zone": "la zona rural de Zaragoza", "fact": draft.fact})
+    assert propose(store, same, "SEUR ya no cubre la zona rural de Zaragoza", "c-2").status == "skipped_duplicate"
+
+
+def test_facts_saved_with_the_old_key_are_still_recalled(store):
+    from services.agent.memory.models import PendingProposal
+
+    created, expires = store.new_pending_window()
+    legacy = PendingProposal(proposal_id="p-old", conversation_id="c-old", created_at=created, expires_at=expires,
+                             proposed_to=AGENT, origin_message=SEUR_MESSAGE, draft=SEUR_DRAFT,
+                             slot_id="carrier_rule:SEUR:ES", fact_key="esa-zona-rural-de-zaragoza")
+    store.consolidate_fact(legacy, SEUR_DRAFT.fact, AGENT)
+
+    notes = flow.recall_notes(store, "¿Qué transportista uso para un envío a la zona rural de Zaragoza?")
+    assert [n["fact"] for n in notes] == [SEUR_DRAFT.fact]
