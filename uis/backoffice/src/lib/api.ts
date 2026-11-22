@@ -26,7 +26,8 @@ export async function fetchWithAuth(
   protectedEndpoint = true,
 ) {
   const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
+  // JSON por defecto; una subida binaria (p. ej. el PDF de una RFP) trae su propio Content-Type.
+  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   const requestId = globalThis.crypto?.randomUUID?.();
   if (requestId) headers.set("X-Request-ID", requestId);
   const token = getAuthToken();
