@@ -15,6 +15,17 @@ mensaje contra ella; si queda otra consulta en el mensaje, sigue a
 `route_question`, y si no, a `compose_answer`. `propose_memory` solo se ejecuta
 si el modelo devolvió `memory_proposal` en este turno.
 
+Harness (Hito 8 · Parte 2):
+
+    receive_question ─blocked──→ guardrail_block → END     (inyección, uso personal, datos sensibles,
+                     │                                      pedido de otra sesión: plantilla, sin LLM)
+                     ├casual───→ redirect_out_of_scope → compose_answer   (small talk/trivia: rechazo con
+                     │                                                      plantilla + reconducción, sin LLM)
+                     └shipment─→ lookup_shipment → compose_answer (envíos de la sesión)
+    route_question ─blocked/casual─→ guardrail_block / redirect_out_of_scope   (2.ª capa: alcance del enrutador LLM)
+
+Las consultas de dominio permitidas siguen exactamente la ruta de la Parte 2.
+
 `route_question` decide las fuentes (LLM + reglas). Después de cada tool,
 `route_after_tool` envía a `tool_fallback` si la tool falló o el recurso no
 existe, y si no, a la siguiente fuente pendiente (tools → RAG → composición).
@@ -51,6 +62,9 @@ NODE_NO_CONTEXT = "no_context"
 NODE_COMPOSE = "compose_answer"
 NODE_MEMORY_DECISION = "resolve_memory_decision"
 NODE_PROPOSE = "propose_memory"
+NODE_BLOCK = "guardrail_block"
+NODE_OUT_OF_SCOPE = "redirect_out_of_scope"
+NODE_SHIPMENT = "lookup_shipment"
 
 AGENT_SPEC = GraphSpec(
     state_schema=AgentState,
@@ -67,6 +81,9 @@ AGENT_SPEC = GraphSpec(
         NODE_COMPOSE: nodes.compose_answer,
         NODE_MEMORY_DECISION: nodes.resolve_memory_decision,
         NODE_PROPOSE: nodes.propose_memory,
+        NODE_BLOCK: nodes.guardrail_block,
+        NODE_OUT_OF_SCOPE: nodes.redirect_out_of_scope,
+        NODE_SHIPMENT: nodes.lookup_shipment,
     },
     edges=(
         (START, NODE_RECEIVE),
@@ -74,19 +91,28 @@ AGENT_SPEC = GraphSpec(
         (NODE_GENERATE, NODE_COMPOSE),
         (NODE_NO_CONTEXT, NODE_COMPOSE),
         (NODE_PROPOSE, END),
+        (NODE_BLOCK, END),
+        (NODE_OUT_OF_SCOPE, NODE_COMPOSE),
+        (NODE_SHIPMENT, NODE_COMPOSE),
     ),
     conditional={
         NODE_RECEIVE: ConditionalEdge(
             router=nodes.route_after_receive,
-            targets={"valid": NODE_ROUTE, "empty": NODE_INVALID, "memory_decision": NODE_MEMORY_DECISION},
+            targets={
+                "valid": NODE_ROUTE, "empty": NODE_INVALID, "memory_decision": NODE_MEMORY_DECISION,
+                "blocked": NODE_BLOCK, "casual": NODE_OUT_OF_SCOPE, "shipment": NODE_SHIPMENT,
+            },
         ),
         NODE_MEMORY_DECISION: ConditionalEdge(
             router=nodes.route_after_memory_decision,
             targets={"continue": NODE_ROUTE, "compose": NODE_COMPOSE},
         ),
         NODE_ROUTE: ConditionalEdge(
-            router=nodes.next_source,
-            targets={"ticket": NODE_TICKET, "inventory": NODE_INVENTORY, "rag": NODE_RETRIEVE, "compose": NODE_COMPOSE},
+            router=nodes.route_after_route,
+            targets={
+                "ticket": NODE_TICKET, "inventory": NODE_INVENTORY, "rag": NODE_RETRIEVE, "compose": NODE_COMPOSE,
+                "blocked": NODE_BLOCK, "casual": NODE_OUT_OF_SCOPE,
+            },
         ),
         NODE_TICKET: ConditionalEdge(
             router=nodes.route_after_tool,

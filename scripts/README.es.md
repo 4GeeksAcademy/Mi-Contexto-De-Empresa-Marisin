@@ -74,3 +74,14 @@ python scripts/agent_memory_evidence.py
 ```bash
 python scripts/agent_memory_consolidate.py --show
 ```
+
+## `agent_guardrails_evidence.py` y `agent_guardrails_report.py` — harness y guardrails del agente
+
+`agent_guardrails_evidence.py` ejecuta la batería `data/eval/agent-guardrail-cases.json` (4 casos del BRIEFING, variantes de jailbreak, uso personal, datos sensibles, small talk/trivia —que nunca se responde: `must_not_contain`— y dominio) con el grafo real y un usuario de sesión sintético, comprueba estado y categoría de cada caso y guarda `docs/agent-guardrails/evidence/harness-cases.json` y el resumen de la sesión `guardrails-summary.json`. Requiere el `.env` del Hito 7, Qdrant y Redis. `agent_guardrails_report.py` imprime cuántas veces se activó cada guardrail por guardia, categoría, tipo de fallo y acción (`--since` para acotar a una sesión de pruebas); es lo mismo que `GET /agent/guardrails/summary`.
+
+```bash
+python scripts/agent_guardrails_evidence.py
+```
+```bash
+python scripts/agent_guardrails_report.py
+```

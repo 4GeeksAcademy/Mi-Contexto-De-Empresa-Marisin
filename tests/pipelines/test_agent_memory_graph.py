@@ -16,6 +16,7 @@ import pytest
 
 from data.pipelines import rag as rag_pipeline
 from services.agent import graph as agent_graph
+from services.agent.harness import generation as agent_generation
 from services.agent import mcp_client, routing, runner
 from services.agent.memory import decision as memory_decision
 from services.agent.memory import store as memory_store
@@ -80,7 +81,7 @@ def fakes(monkeypatch):
         raise mcp_client.McpCallError("NOT_FOUND", "El recurso no existe en TrackFlow.", 404)
 
     monkeypatch.setattr(rag_pipeline, "retrieve", lambda q: list(CONTEXT) if "devoluci" in q.lower() else [])
-    monkeypatch.setattr(rag_pipeline, "generate_answer", lambda q, c: RAG_ANSWER)
+    monkeypatch.setattr(agent_generation, "generate_answer", lambda q, c: RAG_ANSWER)
     monkeypatch.setattr(rag_pipeline, "query", lambda *_: pytest.fail("ningún nodo debe llamar a query()"))
     monkeypatch.setattr(mcp_client, "call_tool", fake_mcp)
     monkeypatch.setattr(routing, "classify_with_llm", fake_router)

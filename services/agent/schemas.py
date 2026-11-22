@@ -57,17 +57,27 @@ class AgentMemoryInfo(BaseModel):
     notes_used: int = Field(default=0, description="Notas aprobadas de la memoria usadas en la respuesta.")
 
 
+class GuardrailInfo(BaseModel):
+    category: str
+    action: Literal["block", "redirect"]
+    failure_type: Literal["structural", "content", "security"] | None = None
+    rules: list[str] = []
+
+
 class AgentQueryResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     run_id: str = Field(description="Id de la corrida; sirve para consultar su trace.")
     conversation_id: str = Field(description="Envíalo en el siguiente mensaje para seguir la conversación.")
-    status: Literal["answered", "no_context", "tool_fallback", "memory_resolved"]
+    status: Literal["answered", "no_context", "tool_fallback", "memory_resolved", "blocked", "redirected"]
     answer: str
     sources: list[Literal["incidents", "inventory", "rag"]] = Field(
         description="Fuentes consultadas, en orden (tools en vivo y/o RAG)."
     )
     memory: AgentMemoryInfo
+    guardrail: GuardrailInfo | None = Field(
+        default=None, description="Si el harness bloqueó o recondujo la consulta: categoría, acción y tipo de fallo."
+    )
 
 
 class AgentTraceEvent(BaseModel):
@@ -107,6 +117,8 @@ class AgentTraceResponse(BaseModel):
     error: dict[str, str] | None = None
     conversation_id: str | None = None
     memory: dict[str, Any] | None = None
+    guardrail: dict[str, Any] | None = None
+    guardrail_events: list[dict[str, Any]] | None = None
 
 
 class AgentMemoryResponse(BaseModel):
@@ -117,3 +129,14 @@ class AgentMemoryResponse(BaseModel):
 
 class AgentMemoryAuditResponse(BaseModel):
     events: list[dict[str, Any]] = Field(description="Registro append-only, del más antiguo al más reciente.")
+
+
+class GuardrailSummaryResponse(BaseModel):
+    since: str | None = None
+    total: int
+    by_guard: dict[str, int]
+    by_category: dict[str, int]
+    by_failure_type: dict[str, int]
+    by_action: dict[str, int]
+    by_guard_and_category: dict[str, int]
+    recent: list[dict[str, Any]] = Field(description="Últimos 20 eventos (sin texto del usuario).")

@@ -1,6 +1,6 @@
 """Pruebas del grafo LangGraph del agente de soporte (sin Qdrant, LLM ni API en vivo).
 
-`retrieve()` y `generate_answer()` del RAG, el enrutador LLM y el cliente MCP de
+`retrieve()` del RAG y `generate_answer()` del harness (prompt de CX), el enrutador LLM y el cliente MCP de
 las tools se sustituyen por dobles; `query()` se sustituye por una función que
 falla, para demostrar que ningún nodo usa el pipeline monolítico.
 
@@ -17,6 +17,7 @@ from langgraph.graph import START as LG_START
 
 from data.pipelines import rag as rag_pipeline
 from services.agent import graph as agent_graph
+from services.agent.harness import generation as agent_generation
 from services.agent import mcp_client, nodes, routing, runner
 from services.agent.state import AgentState
 from services.agent.structure import END, START, GraphStructureError
@@ -71,7 +72,7 @@ def rag(monkeypatch):
         raise RuntimeError("sin LLM en los tests")
 
     monkeypatch.setattr(rag_pipeline, "retrieve", fake_retrieve)
-    monkeypatch.setattr(rag_pipeline, "generate_answer", fake_generate)
+    monkeypatch.setattr(agent_generation, "generate_answer", fake_generate)
     monkeypatch.setattr(rag_pipeline, "query", lambda *_: pytest.fail("ningún nodo debe llamar a query()"))
     monkeypatch.setattr(mcp_client, "call_tool", fake_mcp)
     monkeypatch.setattr(routing, "classify_with_llm", no_llm)
@@ -103,6 +104,8 @@ def test_state_is_minimal_and_has_no_conversation_history():
         "question", "route", "ticket_result", "inventory_result", "context", "rag_answer", "answer", "status",
         # Memoria (Hito 8): ids de la corrida, la propuesta pendiente y su resolución; nunca los mensajes.
         "conversation_id", "run_id", "actor", "pending_memory", "memory_decision", "memory_notes", "memory_proposal",
+        # Harness (Hito 8 · Parte 2): veredicto de las guardias, país fijado, small talk y envíos de la sesión.
+        "guardrail", "country_lock", "out_of_scope_reply", "shipment_result",
     }
 
 
@@ -115,7 +118,7 @@ def test_module_compiles_the_graph_with_single_responsibility_nodes():
     assert set(drawn.nodes) == {
         START, "receive_question", "invalid_question", "route_question", "lookup_ticket", "lookup_inventory",
         "tool_fallback", "retrieve", "generate_answer", "no_context", "compose_answer",
-        "resolve_memory_decision", "propose_memory", END,
+        "resolve_memory_decision", "propose_memory", "guardrail_block", "redirect_out_of_scope", "lookup_shipment", END,
     }
     assert agent_graph.AGENT_GRAPH.checkpointer is not None
 
@@ -134,7 +137,9 @@ def test_edges_are_conditional_not_a_fixed_sequence():
     assert conditional["compose_answer"].targets == {"propose": "propose_memory", "end": END}
     assert conditional["route_question"].targets == {
         "ticket": "lookup_ticket", "inventory": "lookup_inventory", "rag": "retrieve", "compose": "compose_answer",
+        "blocked": "guardrail_block", "casual": "redirect_out_of_scope",
     }
+    assert conditional["receive_question"].targets["blocked"] == "guardrail_block"
     assert conditional["lookup_ticket"].targets["fallback"] == "tool_fallback"
     assert conditional["lookup_inventory"].targets["fallback"] == "tool_fallback"
     assert conditional["retrieve"].targets == {"with_context": "generate_answer", "without_context": "no_context"}
@@ -246,7 +251,8 @@ def test_the_llm_router_decides_when_it_answers(graph, rag, monkeypatch):
 
 
 def test_without_context_answers_honestly_without_calling_the_llm(graph, rag):
-    final, _ = run(graph, "¿Cuál es la capital de Francia?")
+    # (Antes era «¿capital de Francia?»: desde el harness es trivia y se reconduce; ver test_agent_guardrails_graph.py.)
+    final, _ = run(graph, "¿Qué seguro cubre los paquetes de joyas?")
 
     assert final["status"] == "no_context"
     assert final["answer"] == nodes.NO_CONTEXT_ANSWER
@@ -327,7 +333,7 @@ def test_a_failing_node_is_recorded_in_the_trace_and_raises(graph, rag, monkeypa
     def broken_llm(question, context):
         raise RuntimeError("gateway LLM caído")
 
-    monkeypatch.setattr(rag_pipeline, "generate_answer", broken_llm)
+    monkeypatch.setattr(agent_generation, "generate_answer", broken_llm)
 
     with pytest.raises(runner.AgentRunError) as error:
         runner.run_agent("¿Cuál es la ventana de devolución estándar?", graph=graph, trace_directory=tmp_path)

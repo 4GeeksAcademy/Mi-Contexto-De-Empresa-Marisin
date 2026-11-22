@@ -7,6 +7,8 @@
   `admin` o `manager`: incluye los chunks recuperados).
 * `GET /agent/memory` — memoria consolidada del agente (solo `admin`/`manager`).
 * `GET /agent/memory/audit` — registro de propuestas y decisiones (solo `admin`/`manager`).
+* `GET /agent/guardrails/summary` — cuántas veces se activó cada guardrail, por tipo de
+  fallo (solo `admin`/`manager`; `?since=` para acotar a una sesión de pruebas).
 
 Errores: pregunta vacía → 422 con el mensaje del nodo `invalid_question`;
 fallo de cualquier nodo → 503 con un mensaje claro y la referencia `run_id`,
@@ -30,6 +32,7 @@ except ModuleNotFoundError as exc:
 
 from . import runner
 from .graph import AGENT_GRAPH  # noqa: F401  — compila el grafo al arrancar la API
+from .harness import events as guard_events
 from .memory import store as memory_store
 from .memory.backend import MemoryUnavailable
 from .schemas import (
@@ -39,6 +42,8 @@ from .schemas import (
     AgentQueryRequest,
     AgentQueryResponse,
     AgentTraceResponse,
+    GuardrailInfo,
+    GuardrailSummaryResponse,
     MemoryDecisionView,
     MemoryProposalView,
 )
@@ -95,6 +100,7 @@ def agent_query(
         answer=result.answer,
         sources=list(result.sources),
         memory=memory_info(result.memory),
+        guardrail=GuardrailInfo.model_validate(result.guardrail) if result.guardrail else None,
     )
 
 
@@ -135,3 +141,17 @@ def agent_memory_audit(
     except MemoryUnavailable:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=MEMORY_UNAVAILABLE)
     return AgentMemoryAuditResponse(events=events)
+
+
+@router.get("/guardrails/summary", response_model=GuardrailSummaryResponse)
+def agent_guardrails_summary(
+    user: Annotated[dict, Depends(get_current_user)],
+    since: Annotated[str | None, Query(max_length=40, description="ISO 8601: solo eventos desde ese instante.")] = None,
+) -> GuardrailSummaryResponse:
+    """Cuántas veces se activó cada guardrail (por guardia, categoría, tipo de fallo y acción)."""
+    require_trace_role(user)
+    try:
+        summary = guard_events.get_log().summary(since=since)
+    except MemoryUnavailable:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="El registro de guardrails no está disponible.")
+    return GuardrailSummaryResponse.model_validate(summary)
