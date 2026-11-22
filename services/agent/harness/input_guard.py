@@ -10,8 +10,8 @@ adaptada al BRIEFING de TrackFlow:
 | `sensitive_request` | bloquear | contenido | tarifas negociadas con carriers, ubicación/rutas internas de almacenes |
 | `personal_task` | bloquear + reconducir | contenido | ensayos, tareas, código ajeno, terapia |
 | `policy_override` | reconducir (se responde con la política del país real) | contenido | «aplica la política de España a mi pedido en Los Ángeles» |
-| `casual` | permitir breve + reconducir | contenido | saludo, hora, tiempo, trivia |
-| `general_logistics` | respuesta breve + reconducir | contenido | «¿qué es la logística inversa?» |
+| `casual` | rechazo con plantilla (sin LLM) + reconducir | contenido | saludo, hora, tiempo, trivia |
+| `general_logistics` | solo cómo lo aplica TrackFlow (RAG) + reconducir | contenido | «¿qué es la logística inversa?» |
 | `domain` | permitir | — | tracking, devoluciones, SLA, incidencias |
 
 Las reglas usan texto normalizado (`normalize.variants`) para resistir tildes,
@@ -181,8 +181,8 @@ CASUAL_RULES: dict[str, re.Pattern[str]] = {
     "thanks": _P(r"^(?:muchas\s+)?(?:gracias|thank you|thanks|genial|perfecto|ok gracias)(?:\s+por\s+(?:todo|tu ayuda|la ayuda))?[\s!.,]*$"),
     "time_weather": _P(r"\b(?:que hora es|que hora (?:es )?en|what time|que tiempo hace|clima en|weather in|va a llover|temperatura en)\b"),
     "trivia": _P(
-        r"\b(?:capital de|quien (?:gano|invento|descubrio|es el presidente|escribio)|cuantos habitantes|"
-        r"dato curioso|chiste|joke|fun fact|en que ano)\b"
+        r"\b(?:capital de|quien (?:gano|invento|descubrio|es el presidente|escribio|pinto|fue)|cuantos habitantes|"
+        r"dato curioso|chiste|joke|fun fact|en que ano|cuanto mide|que significa la palabra|capital of|who (?:won|invented|painted|wrote))\b"
     ),
 }
 # Si el mensaje habla de un envío, una devolución o una incidencia, no es small talk aunque salude.
@@ -194,6 +194,27 @@ GENERAL_LOGISTICS = _P(
     r"\b(?:que es|que significa|explica(?:me)?|definicion de|what is)\s+(?:la |el |un |una |the |a )?"
     r"(?:logistica(?: inversa)?|ultima milla|cross[- ]?docking|picking|fulfillment|3pl|incoterms?|reverse logistics|last mile|almacenaje|sga|wms)\b"
 )
+# Conceptos generales → términos de la documentación de TrackFlow (se responde cómo lo aplica TrackFlow).
+TRACKFLOW_TERMS = {
+    "logistica inversa": "proceso de devoluciones de TrackFlow (logística inversa)",
+    "reverse logistics": "proceso de devoluciones de TrackFlow (logística inversa)",
+    "ultima milla": "SLA de entrega de última milla de TrackFlow",
+    "last mile": "SLA de entrega de última milla de TrackFlow",
+    "cross": "almacenamiento y preparación de pedidos en TrackFlow",
+    "picking": "almacenamiento y preparación de pedidos en TrackFlow",
+    "fulfillment": "almacenamiento y preparación de pedidos en TrackFlow",
+    "almacenaje": "tarifas y servicio de almacenamiento de TrackFlow",
+    "incoterm": "envío internacional entre Estados Unidos y España en TrackFlow",
+}
+
+
+def trackflow_query(question: str) -> str:
+    """Consulta para el RAG orientada a cómo aplica TrackFlow un concepto general de logística."""
+    folded = variants(question).folded
+    terms = [term for key, term in TRACKFLOW_TERMS.items() if key in folded]
+    return f"{question} — {terms[0]}" if terms else f"{question} — cómo lo aplica TrackFlow"
+
+
 POLICY_WORDS = r"(?:politica|politicas|condiciones|plazos?|sla|ventana|reglas|normas|policy|terms)"
 POLICY_OVERRIDE = _P(
     rf"\b(?:aplica\w*|usa|utiliza\w*|quiero|pon\w*|dame|apply|use)\b(?:\s+\w+){{0,3}}\s+{POLICY_WORDS}\b(?:\s+\w+){{0,3}}?\s+(?:de|del|of|from)\s+"
