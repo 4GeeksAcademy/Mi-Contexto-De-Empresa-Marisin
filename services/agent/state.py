@@ -27,6 +27,14 @@ y `actor` (las peticiones autenticadas de `POST /agent/query`):
 * `memory_notes` — los hechos aprobados que se recordaron para esta pregunta.
 * `memory_proposal` — qué pasó con la `memory_proposal` del modelo en este turno.
 
+Harness (Hito 8 · Parte 2):
+
+* `guardrail` — veredicto de la guardia de entrada (o del alcance del enrutador):
+  categoría, acción (`allow`/`redirect`/`block`), tipo de fallo y reglas.
+* `country_lock` — país real del pedido cuando el usuario pide aplicar la política de otro.
+* `small_talk_answer` — la frase breve de small talk (antes de la reconducción).
+* `shipment_result` — envíos de la sesión que la guardia ya autorizó.
+
 No incluye el historial de la conversación: cada consulta es independiente y
 ningún nodo lo necesita para decidir. La memoria no es historial: guarda hechos
 aprobados y, como mucho, una propuesta pendiente; nunca los mensajes. Arrastrarlo inflaría cada checkpoint y
@@ -48,6 +56,8 @@ AgentStatus = Literal[
     "no_context",
     "tool_fallback",
     "memory_resolved",
+    "blocked",
+    "redirected",
 ]
 
 
@@ -67,3 +77,7 @@ class AgentState(TypedDict, total=False):
     memory_decision: dict[str, Any]
     memory_notes: list[dict[str, Any]]
     memory_proposal: dict[str, Any]
+    guardrail: dict[str, Any]
+    country_lock: str
+    small_talk_answer: str
+    shipment_result: list[dict[str, Any]]

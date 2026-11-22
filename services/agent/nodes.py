@@ -16,6 +16,14 @@ tocan la pregunta y `propose_memory` deja pendiente la `memory_proposal` del
 modelo y añade la pregunta al final de la respuesta. La memoria solo se lee y
 escribe con `services/agent/memory/store.py` y es *best-effort*: si Redis no
 responde, el agente contesta igual, sin memoria.
+
+Harness (Hito 8 · Parte 2): `receive_question` pasa el mensaje por la guardia de
+entrada determinista (inyección, autorización por sesión, datos sensibles, uso
+personal, mezcla de políticas, small talk); lo que se bloquea va a
+`guardrail_block` y nunca llega al LLM ni a las tools. `route_question` añade la
+segunda capa (alcance semántico del enrutador). `generate_answer` usa el prompt
+seguro de CX con los documentos aislados y `compose_answer` pasa la respuesta
+final por la guardia de salida. Ver `services/agent/harness/`.
 """
 
 import logging
@@ -26,6 +34,10 @@ from data.pipelines import rag as rag_pipeline
 from . import answers
 from . import routing as agent_routing
 from . import tools as agent_tools
+from .harness import authorization as guard_authorization
+from .harness import events as guard_events
+from .harness import generation as agent_generation
+from .harness import input_guard, isolation, output_guard, responses
 from .memory import decision as memory_decision
 from .memory import flow as memory_flow
 from .memory import store as memory_store
@@ -59,11 +71,25 @@ def memory_enabled(state: AgentState) -> bool:
     return bool(state.get("conversation_id")) and bool(state.get("actor"))
 
 
+def _user_id(state: AgentState) -> int | None:
+    actor = _actor(state)
+    return actor.user_id if actor else None
+
+
 def receive_question(state: AgentState) -> AgentState:
-    """Recibe y normaliza la pregunta y mira si la conversación tiene una propuesta pendiente."""
+    """Recibe la pregunta, la pasa por la guardia de entrada y mira si hay una propuesta de memoria pendiente."""
     question = (state.get("question") or "").strip()
     update: AgentState = {"question": question, "status": "received" if question else "invalid"}
-    if question and memory_enabled(state):
+    if not question:
+        return update
+    verdict = input_guard.check_input(question, user_id=_user_id(state))
+    update["guardrail"] = verdict.model_dump(mode="json", exclude_defaults=True) | {"category": verdict.category, "action": verdict.action}
+    if verdict.action != "allow":
+        guard_events.record(guard="input", category=verdict.category, failure_type=verdict.failure_type,
+                            action=verdict.action, rules=verdict.rules)
+    if verdict.country_lock:
+        update["country_lock"] = verdict.country_lock
+    if memory_enabled(state):
         try:
             pending, expired = memory_flow.check_pending(
                 memory_store.get_store(), state["conversation_id"], _actor(state)
@@ -109,10 +135,73 @@ def reject_invalid_question(state: AgentState) -> AgentState:
 
 
 def route_question(state: AgentState) -> AgentState:
-    """Decide qué fuentes necesita la pregunta (LLM con reglas de respaldo)."""
+    """Decide qué fuentes necesita la pregunta (LLM con reglas de respaldo) y su alcance (2.ª capa)."""
     decision = agent_routing.decide_route(state["question"])
     route = {**decision.model_dump(mode="json", exclude_none=True), "sources": decision.sources}
-    return {"route": route, "status": "routed"}
+    update: AgentState = {"route": route, "status": "routed"}
+    if decision.scope != "domain":
+        category = SCOPE_CATEGORY[decision.scope]
+        action = "block" if decision.scope in agent_routing.BLOCKING_SCOPES else "redirect"
+        failure = "security" if decision.scope == "injection" else "content"
+        guard_events.record(guard="router_scope", category=category, failure_type=failure, action=action,
+                            rules=[f"llm_scope:{decision.scope}"])
+        if action == "block" or (state.get("guardrail") or {}).get("action") == "allow":
+            update["guardrail"] = {"category": category, "action": action, "failure_type": failure,
+                                   "rules": [f"llm_scope:{decision.scope}"]}
+    return update
+
+
+# Alcance del enrutador → categoría de la guardia de entrada.
+SCOPE_CATEGORY = {
+    "general_logistics": "general_logistics", "casual": "casual", "personal": "personal_task",
+    "sensitive": "sensitive_request", "injection": "injection",
+}
+
+
+# --------------------------------------------------------------------------- #
+# Harness: bloqueo, small talk y envíos de la sesión
+# --------------------------------------------------------------------------- #
+def guardrail_block(state: AgentState) -> AgentState:
+    """Rechazo firme con plantilla (sin LLM, sin tools). Descarta una propuesta de memoria pendiente."""
+    guard = state.get("guardrail") or {}
+    category = guard.get("category", "personal_task")
+    strikes = 0
+    if category == "injection" and state.get("conversation_id"):
+        try:
+            strikes = guard_events.get_log().strikes(state["conversation_id"])
+        except Exception as exc:
+            logger.warning("No se pudo contar los intentos de la conversación: %s", exc)
+        if strikes >= 3:
+            guard_events.record(guard="input", category="repeated_injection", failure_type="security",
+                                action="block", rules=[f"strikes:{strikes}"])
+    update: AgentState = {
+        "answer": responses.block_message(category, denied_orders=guard.get("denied_orders"), strikes=strikes),
+        "status": "blocked",
+    }
+    if state.get("pending_memory"):
+        # El mensaje no responde a la propuesta: se descarta (nunca se aprueba por un mensaje bloqueado).
+        pending = PendingProposal.model_validate(state["pending_memory"])
+        classification = memory_decision.DecisionClassification(
+            label="unrelated", confidence=1.0, decided_by="rules", reason=f"Mensaje bloqueado por el harness ({category})")
+        try:
+            result = memory_flow.apply_decision(memory_store.get_store(), pending, classification,
+                                                message=state["question"], actor=_actor(state), run_id=state.get("run_id"))
+            update["memory_decision"] = result.model_dump(mode="json", exclude_none=True)
+        except Exception as exc:
+            logger.warning("No se pudo descartar la propuesta pendiente: %s", exc)
+    return update
+
+
+def small_talk(state: AgentState) -> AgentState:
+    """Small talk o trivia: una frase breve (LLM con plantilla de respaldo). La reconducción la añade `compose_answer`."""
+    rules = (state.get("guardrail") or {}).get("rules") or []
+    return {"small_talk_answer": agent_generation.small_talk_answer(state["question"], rules), "status": "redirected"}
+
+
+def lookup_shipment(state: AgentState) -> AgentState:
+    """Envíos de la sesión (ya autorizados por la guardia de entrada). No consulta nada ajeno."""
+    shipments = (state.get("guardrail") or {}).get("authorized_orders") or []
+    return {"shipment_result": shipments, "status": "tool_done"}
 
 
 # --------------------------------------------------------------------------- #
@@ -122,14 +211,16 @@ def lookup_ticket(state: AgentState) -> AgentState:
     """Tool 1: consulta el gestor de incidentes (GET, timeout de 4 s)."""
     query = agent_tools.TicketQuery.model_validate(state["route"]["ticket"])
     result = agent_tools.lookup_tickets(query)
-    return {"ticket_result": result.model_dump(mode="json"), "status": "tool_done"}
+    data = isolation.sanitize_tool_result(result.model_dump(mode="json"), source="tool:incidents")
+    return {"ticket_result": data, "status": "tool_done"}
 
 
 def lookup_inventory(state: AgentState) -> AgentState:
     """Tool 2: consulta el gestor de inventario (GET, timeout de 4 s)."""
     query = agent_tools.InventoryQuery.model_validate(state["route"]["inventory"])
     result = agent_tools.lookup_inventory(query)
-    return {"inventory_result": result.model_dump(mode="json"), "status": "tool_done"}
+    data = isolation.sanitize_tool_result(result.model_dump(mode="json"), source="tool:inventory")
+    return {"inventory_result": data, "status": "tool_done"}
 
 
 def tool_fallback(state: AgentState) -> AgentState:
@@ -145,17 +236,34 @@ def tool_fallback(state: AgentState) -> AgentState:
 # --------------------------------------------------------------------------- #
 # RAG
 # --------------------------------------------------------------------------- #
+def _other_country_only(chunk: dict, country: str) -> bool:
+    """El chunk habla solo del otro país (no del país fijado)."""
+    mentioned = guard_authorization.countries_mentioned(f"{chunk.get('section', '')} {chunk.get('text', '')}")
+    return bool(mentioned) and country not in mentioned
+
+
 def retrieve_context(state: AgentState) -> AgentState:
-    """Ejecuta `retrieve()` del RAG; ya filtra por `min_score` y puede devolver []."""
-    context = rag_pipeline.retrieve(state["question"])
+    """Ejecuta `retrieve()` del RAG; ya filtra por `min_score` y puede devolver [].
+
+    Con `country_lock` (mezcla de políticas, BRIEFING caso 4) se busca la política del
+    país real y se descartan los chunks que solo hablan del otro país.
+    """
+    country = state.get("country_lock")
+    query = state["question"]
+    if country:
+        query = f"{query} ({guard_authorization.COUNTRY_NAMES[country]})"
+    context = rag_pipeline.retrieve(query)
+    if country:
+        context = [chunk for chunk in context if not _other_country_only(chunk, country)]
     return {"context": context, "status": "retrieved"}
 
 
 def generate_answer(state: AgentState) -> AgentState:
-    """Genera la parte RAG con `generate_answer()` sobre el contexto YA recuperado."""
+    """Genera la parte RAG con el prompt seguro de CX y los documentos aislados (`harness/generation.py`)."""
     question = state["question"]
     context = state.get("context") or []
-    answer = rag_pipeline.generate_answer(question, context)
+    extra = {"country_lock": state["country_lock"]} if state.get("country_lock") else {}
+    answer = output_guard.check_rag_answer(agent_generation.generate_answer(question, context, **extra))
     unsupported = rag_pipeline.unsupported_figures(answer, context, question)
     if unsupported:
         logger.warning("Respuesta con cifras que no están en el contexto: %s", unsupported)
@@ -184,7 +292,14 @@ def compose_answer(state: AgentState) -> AgentState:
     """Une las partes: decisión de memoria, tools (con plantilla), RAG y notas recordadas."""
     results = [state[key] for key in TOOL_RESULT_KEYS if state.get(key)]
     decision = state.get("memory_decision")
+    guard = state.get("guardrail") or {}
     sections = [decision["message"]] if decision else []
+    if guard.get("category") == "policy_override" and state.get("country_lock"):
+        sections.append(responses.policy_override_prefix(guard.get("requested_country"), state["country_lock"]))
+    if state.get("shipment_result"):
+        sections.append(guard_authorization.shipment_section(state["shipment_result"]))
+    if state.get("small_talk_answer"):
+        sections.append(state["small_talk_answer"])
     sections.extend(answers.tool_section(result) for result in results)
     if state.get("rag_answer"):
         sections.append(state["rag_answer"])
@@ -192,9 +307,15 @@ def compose_answer(state: AgentState) -> AgentState:
     if notes:
         # Plantilla, no LLM: la nota aparece tal como se aprobó y separada de la base documental.
         sections.append(memory_flow.notes_section(notes))
+    if guard.get("category") == "casual":
+        sections.append(responses.REDIRECT)  # la reconducción la pone el harness, no el modelo
+    elif guard.get("category") == "general_logistics":
+        sections.append(responses.GENERAL_LOGISTICS_REDIRECT)
 
     rag_answered = bool(state.get("context")) and bool(state.get("rag_answer"))
-    if rag_answered or any(result["status"] == "ok" for result in results):
+    if state.get("small_talk_answer"):
+        status = "redirected"
+    elif rag_answered or state.get("shipment_result") or any(result["status"] == "ok" for result in results):
         status = "answered"
     elif results:
         status = "tool_fallback"
@@ -202,7 +323,9 @@ def compose_answer(state: AgentState) -> AgentState:
         status = "memory_resolved"  # el mensaje solo respondía a la propuesta
     else:
         status = "no_context"
-    update: AgentState = {"answer": "\n\n".join(sections), "status": status}
+    authorized = [item["reference"] for item in state.get("shipment_result") or []]
+    verdict = output_guard.check_output("\n\n".join(sections), authorized_refs=authorized)
+    update: AgentState = {"answer": verdict.answer, "status": "blocked" if verdict.blocked else status}
     if notes:
         update["memory_notes"] = notes
     return update
@@ -229,10 +352,31 @@ def propose_memory(state: AgentState) -> AgentState:
 # --------------------------------------------------------------------------- #
 # Routers (condiciones de salida de las aristas condicionales)
 # --------------------------------------------------------------------------- #
-def route_after_receive(state: AgentState) -> Literal["valid", "empty", "memory_decision"]:
+def route_after_receive(
+    state: AgentState,
+) -> Literal["valid", "empty", "memory_decision", "blocked", "casual", "shipment"]:
     if not state.get("question"):
         return "empty"
-    return "memory_decision" if state.get("pending_memory") else "valid"
+    guard = state.get("guardrail") or {}
+    if guard.get("action") == "block":
+        return "blocked"
+    if state.get("pending_memory"):
+        return "memory_decision"
+    if guard.get("authorized_orders") and guard.get("category") == "domain":
+        return "shipment"
+    if guard.get("category") == "casual":
+        return "casual"
+    return "valid"
+
+
+def route_after_route(state: AgentState) -> Literal["ticket", "inventory", "rag", "compose", "blocked", "casual"]:
+    """Segunda capa: si el enrutador LLM detecta un alcance bloqueado o small talk, no se consultan fuentes."""
+    guard = state.get("guardrail") or {}
+    if guard.get("action") == "block":
+        return "blocked"
+    if guard.get("category") == "casual":
+        return "casual"
+    return next_source(state)
 
 
 def route_after_memory_decision(state: AgentState) -> Literal["continue", "compose"]:

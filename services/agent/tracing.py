@@ -70,6 +70,8 @@ def _memory_summary(state: dict[str, Any]) -> dict[str, Any]:
         summary["memory_proposal"] = state["memory_proposal"].get("status")
     if state.get("memory_notes"):
         summary["memory_notes"] = len(state["memory_notes"])
+    if isinstance(state.get("guardrail"), dict) and state["guardrail"].get("action") not in (None, "allow"):
+        summary["guardrail"] = f"{state['guardrail'].get('action')}:{state['guardrail'].get('category')}"
     return summary
 
 

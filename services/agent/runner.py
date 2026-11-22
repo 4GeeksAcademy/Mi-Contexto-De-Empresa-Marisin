@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from .harness import events as guard_events
 from .memory.models import Actor
 from .tracing import TraceRecorder, jsonable, recording, save_trace, summarize_state, utc_now
 
@@ -39,6 +40,7 @@ class AgentResult:
     sources: tuple[str, ...] = ()
     conversation_id: str | None = None
     memory: dict[str, Any] = field(default_factory=dict)
+    guardrail: dict[str, Any] | None = None
 
 
 def memory_summary(final_state: dict[str, Any] | None) -> dict[str, Any]:
@@ -95,6 +97,7 @@ def build_trace(
     checkpoints: list[dict[str, Any]],
     error: BaseException | None,
     conversation_id: str | None = None,
+    guardrail_events: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     final_state = final_state or {}
     trace = {
@@ -117,7 +120,19 @@ def build_trace(
     if conversation_id:
         trace["conversation_id"] = conversation_id
         trace["memory"] = jsonable(memory_summary(final_state))
+    guardrail = guardrail_summary(final_state)
+    if guardrail or guardrail_events:
+        trace["guardrail"] = guardrail
+        trace["guardrail_events"] = jsonable(guardrail_events or [])
     return trace
+
+
+def guardrail_summary(final_state: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Veredicto del harness si la corrida se bloqueó o se recondujo (None si fue de dominio)."""
+    guard = (final_state or {}).get("guardrail") or {}
+    if guard.get("action") in (None, "allow"):
+        return None
+    return {key: guard.get(key) for key in ("category", "action", "failure_type", "rules") if guard.get(key)}
 
 
 def run_agent(
@@ -151,7 +166,9 @@ def run_agent(
     else:
         conversation_id = None
 
-    with recording(recorder):
+    with recording(recorder), guard_events.bind(
+        run_id=run_id, conversation_id=conversation_id, user_id=actor.user_id if actor else None
+    ) as collected_events:
         try:
             final_state = graph.invoke(initial, config)
         except Exception as exc:
@@ -164,6 +181,7 @@ def run_agent(
         checkpoints=checkpoint_summary(graph, config),
         error=error,
         conversation_id=conversation_id,
+        guardrail_events=collected_events,
     )
     path = save_trace(trace, trace_directory)
     logger.info("agent run_id=%s status=%s path=%s", run_id, trace["status"], " → ".join(trace["path"]))
@@ -179,4 +197,5 @@ def run_agent(
         sources=tuple(trace["sources"]),
         conversation_id=conversation_id,
         memory=trace.get("memory") or {},
+        guardrail=trace.get("guardrail"),
     )
