@@ -4,7 +4,8 @@
 # RAG (retrieve/query con mocks; sin Qdrant ni LLM en vivo), y del agente
 # LangGraph: grafo con dobles del RAG, tools con transporte HTTP simulado,
 # enrutador y evals sobre los traces grabados; y del servidor MCP con OAuth
-# (MCP Auth con un verificador de token simulado).
+# (MCP Auth con un verificador de token simulado); y del flujo de RFPs (clasificador,
+# workers, orquestador, synthesizer y grafo con LLM simulado; almacén en SQLite).
 name: sales-model-tests
 
 on:
@@ -44,4 +45,10 @@ jobs:
           tests/pipelines/test_agent_guardrails_input.py
           tests/pipelines/test_agent_guardrails_output.py
           tests/pipelines/test_agent_guardrails_graph.py
+          tests/pipelines/test_rfp_intake_classifier.py
+          tests/pipelines/test_rfp_intake_workers.py
+          tests/pipelines/test_rfp_intake_metadata.py
+          tests/pipelines/test_rfp_intake_orchestration.py
+          tests/pipelines/test_rfp_intake_graph.py
+          tests/pipelines/test_rfp_intake_sql_store.py
           tests/mcps/test_trackflow_mcp.py
