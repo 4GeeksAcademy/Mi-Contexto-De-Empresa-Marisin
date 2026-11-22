@@ -163,46 +163,75 @@ def test_spains_policy_is_never_applied_to_an_order_in_los_angeles(ask, calls):
 
 
 # --------------------------------------------------------------------------- #
-# Fuera de dominio permitido: respuesta breve + reconducción obligatoria
+# Fuera de dominio (C02): se reconduce, NUNCA se responde como asistente genérico
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("message", ["¿Qué hora es en Tokio?", "hola", "¿Cuál es la capital de Francia?"])
-def test_small_talk_is_answered_briefly_and_brought_back_to_trackflow(ask, calls, message):
+@pytest.fixture
+def knowing_model(monkeypatch):
+    """Un LLM que "sabe" la respuesta de trivia y la daría si se le preguntara."""
+    llm_calls = []
+
+    def model(messages, **kwargs):
+        llm_calls.append(messages)
+        return "París. En Tokio son 8 horas más que en Madrid. Leonardo da Vinci."
+
+    monkeypatch.setattr(agent_generation, "_complete", model)
+    return llm_calls
+
+
+@pytest.mark.parametrize(
+    "message, leak",
+    [
+        ("¿Cuál es la capital de Francia?", "París"),
+        ("¿Qué hora es en Tokio?", "8 horas"),
+        ("¿Quién pintó la Mona Lisa?", "Leonardo"),
+    ],
+)
+def test_trivia_is_never_answered_even_if_the_model_knows_it(ask, calls, knowing_model, message, leak):
     result, trace = ask(message)
 
+    assert leak not in result.answer
+    assert result.answer == f"{responses.OUT_OF_SCOPE}\n\n{responses.REDIRECT}"
     assert result.status == "redirected"
-    assert trace["path"] == ["receive_question", "small_talk", "compose_answer"]
-    assert result.answer.endswith(responses.REDIRECT)
+    assert trace["path"] == ["receive_question", "redirect_out_of_scope", "compose_answer"]
+    assert knowing_model == []  # ni siquiera se consulta al modelo
     assert calls["retrieve"] == [] and calls["mcp"] == []
     assert result.guardrail["action"] == "redirect"
 
 
-def test_small_talk_with_a_live_model_still_ends_with_the_redirection(ask, monkeypatch):
-    monkeypatch.setattr(agent_generation, "_complete", lambda *a, **k: "En Tokio son 8 horas más que en Madrid.")
-    result, _ = ask("¿Qué hora es en Tokio?")
-    assert result.answer == f"En Tokio son 8 horas más que en Madrid.\n\n{responses.REDIRECT}"
+def test_trivia_the_rules_miss_is_redirected_by_the_router_scope_without_answering(ask, calls, knowing_model, monkeypatch):
+    """Segunda capa: el enrutador marca `casual` una trivia que ninguna regla conoce."""
+    monkeypatch.setattr(routing, "classify_with_llm",
+                        lambda q: routing.parse_llm_decision('{"needs_rag": true, "scope": "casual", "reason": "trivia"}', q))
+    result, trace = ask("¿Cuántos jugadores tiene un equipo de rugby?")
+
+    assert trace["path"] == ["receive_question", "route_question", "redirect_out_of_scope", "compose_answer"]
+    assert result.answer == f"{responses.OUT_OF_SCOPE}\n\n{responses.REDIRECT}"
+    assert knowing_model == [] and calls["retrieve"] == []
 
 
-def test_general_logistics_gets_a_brief_answer_and_is_redirected(ask, calls, monkeypatch):
-    seen = {}
+@pytest.mark.parametrize("message, reply", [("hola", "¡Hola!"), ("gracias por tu ayuda", "¡De nada!")])
+def test_greetings_get_only_a_courtesy_and_the_redirection(ask, knowing_model, message, reply):
+    result, _ = ask(message)
+    assert result.answer == f"{reply}\n\n{responses.REDIRECT}"
+    assert knowing_model == []
 
-    def model(messages, **kwargs):
-        seen["system"] = messages[0]["content"]
-        return "Es la gestión del flujo de productos desde el cliente de vuelta al origen: devoluciones, reparación o reciclaje."
 
-    monkeypatch.setattr(agent_generation, "_complete", model)
+def test_general_logistics_is_answered_only_with_how_trackflow_applies_it(ask, calls):
     result, trace = ask("¿Qué es la logística inversa?")
 
-    assert trace["path"] == ["receive_question", "small_talk", "compose_answer"]
-    assert seen["system"] == prompts.GENERAL_CONCEPT_PROMPT
-    assert result.answer.startswith("Es la gestión del flujo de productos")
+    assert trace["path"] == ["receive_question", "route_question", "retrieve", "generate_answer", "compose_answer"]
+    assert calls["retrieve"] == ["¿Qué es la logística inversa? — proceso de devoluciones de TrackFlow (logística inversa)"]
+    assert ANSWER in result.answer  # respuesta con los documentos de TrackFlow, no definición general
     assert result.answer.endswith(responses.GENERAL_LOGISTICS_REDIRECT)
-    assert result.status == "redirected" and calls["retrieve"] == []
 
 
-def test_general_logistics_without_a_model_still_answers_briefly_and_redirects(ask):
-    result, _ = ask("¿Qué es la logística inversa?")
+def test_general_logistics_without_trackflow_documents_does_not_define_it(ask, calls, knowing_model, monkeypatch):
+    monkeypatch.setattr(rag_pipeline, "retrieve", lambda q: [])
+    result, _ = ask("¿Qué es el cross-docking?")
+
+    assert "París" not in result.answer and knowing_model == []  # sin documentos no se llama al modelo
+    assert result.answer.startswith("No tengo información sobre eso en la base de conocimiento de TrackFlow")
     assert result.answer.endswith(responses.GENERAL_LOGISTICS_REDIRECT)
-    assert result.status == "redirected"
 
 
 # --------------------------------------------------------------------------- #

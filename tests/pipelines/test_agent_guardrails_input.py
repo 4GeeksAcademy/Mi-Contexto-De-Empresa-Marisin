@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 from services.agent.harness import authorization
-from services.agent.harness.input_guard import check_input, injection_rules
+from services.agent.harness.input_guard import check_input, injection_rules, trackflow_query
 
 ROOT = Path(__file__).resolve().parents[2]
 SESSION_USER = 9001  # dueño de 45900 y 46012 en data/agent/shipments.json; 45821 es de 9002
@@ -189,6 +189,16 @@ def test_casual_messages_are_allowed_but_redirected(message):
 def test_general_logistics_goes_to_the_rag_with_redirection():
     verdict = check_input("¿Qué es la logística inversa?", user_id=SESSION_USER)
     assert (verdict.category, verdict.action) == ("general_logistics", "redirect")
+
+
+def test_general_logistics_is_searched_as_how_trackflow_applies_it():
+    assert trackflow_query("¿Qué es la logística inversa?").endswith("proceso de devoluciones de TrackFlow (logística inversa)")
+    assert trackflow_query("¿Qué es un WMS?").endswith("cómo lo aplica TrackFlow")
+
+
+@pytest.mark.parametrize("message", ["¿Quién pintó la Mona Lisa?", "What is the capital of France?", "¿Quién ganó el mundial?"])
+def test_more_trivia_is_caught_by_the_rules(message):
+    assert check_input(message, user_id=SESSION_USER).category == "casual"
 
 
 # --------------------------------------------------------------------------- #

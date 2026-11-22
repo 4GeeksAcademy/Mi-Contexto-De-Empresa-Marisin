@@ -105,7 +105,7 @@ def test_state_is_minimal_and_has_no_conversation_history():
         # Memoria (Hito 8): ids de la corrida, la propuesta pendiente y su resolución; nunca los mensajes.
         "conversation_id", "run_id", "actor", "pending_memory", "memory_decision", "memory_notes", "memory_proposal",
         # Harness (Hito 8 · Parte 2): veredicto de las guardias, país fijado, small talk y envíos de la sesión.
-        "guardrail", "country_lock", "small_talk_answer", "shipment_result",
+        "guardrail", "country_lock", "out_of_scope_reply", "shipment_result",
     }
 
 
@@ -118,7 +118,7 @@ def test_module_compiles_the_graph_with_single_responsibility_nodes():
     assert set(drawn.nodes) == {
         START, "receive_question", "invalid_question", "route_question", "lookup_ticket", "lookup_inventory",
         "tool_fallback", "retrieve", "generate_answer", "no_context", "compose_answer",
-        "resolve_memory_decision", "propose_memory", "guardrail_block", "small_talk", "lookup_shipment", END,
+        "resolve_memory_decision", "propose_memory", "guardrail_block", "redirect_out_of_scope", "lookup_shipment", END,
     }
     assert agent_graph.AGENT_GRAPH.checkpointer is not None
 
@@ -137,7 +137,7 @@ def test_edges_are_conditional_not_a_fixed_sequence():
     assert conditional["compose_answer"].targets == {"propose": "propose_memory", "end": END}
     assert conditional["route_question"].targets == {
         "ticket": "lookup_ticket", "inventory": "lookup_inventory", "rag": "retrieve", "compose": "compose_answer",
-        "blocked": "guardrail_block", "casual": "small_talk",
+        "blocked": "guardrail_block", "casual": "redirect_out_of_scope",
     }
     assert conditional["receive_question"].targets["blocked"] == "guardrail_block"
     assert conditional["lookup_ticket"].targets["fallback"] == "tool_fallback"
