@@ -1,26 +1,25 @@
 {
-  "since": "2026-11-22T10:30:57+00:00",
-  "total": 18,
+  "since": "2026-11-22T11:17:29+00:00",
+  "total": 17,
   "by_guard": {
-    "input": 17,
-    "router_scope": 1
+    "input": 17
   },
   "by_category": {
     "injection": 7,
     "personal_task": 3,
     "sensitive_request": 2,
     "casual": 2,
-    "general_logistics": 2,
     "unauthorized_order": 1,
-    "policy_override": 1
+    "policy_override": 1,
+    "general_logistics": 1
   },
   "by_failure_type": {
-    "content": 11,
+    "content": 10,
     "security": 7
   },
   "by_action": {
     "block": 13,
-    "redirect": 5
+    "redirect": 4
   },
   "by_guard_and_category": {
     "input:injection": 7,
@@ -29,13 +28,12 @@
     "input:casual": 2,
     "input:unauthorized_order": 1,
     "input:policy_override": 1,
-    "input:general_logistics": 1,
-    "router_scope:general_logistics": 1
+    "input:general_logistics": 1
   },
   "recent": [
     {
-      "event_id": "df3f7be7-1deb-47a5-9ef7-dc60f56b4f6c",
-      "at": "2026-11-22T10:30:58+00:00",
+      "event_id": "7ba79905-b0f4-4ccc-9576-2d32cbf4ea9d",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "injection",
       "failure_type": "security",
@@ -45,13 +43,13 @@
         "role_change_en",
         "no_rules"
       ],
-      "run_id": "e60fc6f9-ba89-4600-8fca-4859f6e53f1a",
-      "conversation_id": "ace5a43a-0074-4606-b0f3-edd82e97ee7b",
+      "run_id": "14f6ac7e-cb7f-4338-89ab-10cc3c8e93dd",
+      "conversation_id": "8a9a2f1c-8740-46d3-b265-d034ececc97b",
       "user_id": 9001
     },
     {
-      "event_id": "c18192c1-88fe-4a23-9a11-db19a05607a2",
-      "at": "2026-11-22T10:30:59+00:00",
+      "event_id": "d0fdac94-ed29-46a7-9336-3db37b333ee2",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "injection",
       "failure_type": "security",
@@ -59,13 +57,13 @@
       "rules": [
         "forget_company"
       ],
-      "run_id": "3a76a574-d9ce-44d7-95ab-031cd1976b8c",
-      "conversation_id": "5bb2e665-5177-403d-b0f5-d72c17a2d9ba",
+      "run_id": "ade0dbcf-a67e-4fc1-b2f3-3eec2b060153",
+      "conversation_id": "409bd409-a303-4ff7-ac6c-aa1a166b49eb",
       "user_id": 9001
     },
     {
-      "event_id": "5082133a-355c-4a78-9d59-9adeb3ebc8d8",
-      "at": "2026-11-22T10:30:59+00:00",
+      "event_id": "9a1a1a42-9027-49d9-9ba6-b042c2135fd6",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "injection",
       "failure_type": "security",
@@ -73,13 +71,13 @@
       "rules": [
         "ignore_instructions_es"
       ],
-      "run_id": "6aef0583-dd91-4130-a379-b06972400bf9",
-      "conversation_id": "a09c636c-267f-46f2-8d26-ed25ecd440bb",
+      "run_id": "ca6af5d1-dcc7-46ba-ac1d-c653dd4e01c9",
+      "conversation_id": "879f5c22-576c-499d-9510-eba060e826f3",
       "user_id": 9001
     },
     {
-      "event_id": "d21555b5-9534-427b-b0db-550e8ff55dfd",
-      "at": "2026-11-22T10:30:59+00:00",
+      "event_id": "2d57b339-3733-4fb6-9f4e-a075e20ad153",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "injection",
       "failure_type": "security",
@@ -88,13 +86,13 @@
         "role_change_es",
         "no_rules"
       ],
-      "run_id": "4e8fbd9f-30e9-4a4d-92d6-e737e4148395",
-      "conversation_id": "badd2a2d-4d48-4cf0-a24e-e37076c632ab",
+      "run_id": "6b47ea90-51bd-48e7-8bf8-bfb929278f71",
+      "conversation_id": "a17bfc83-5d28-47dc-a90a-98c5d5619972",
       "user_id": 9001
     },
     {
-      "event_id": "06c25837-2a50-478e-adfd-eb1c47ba16a2",
-      "at": "2026-11-22T10:30:59+00:00",
+      "event_id": "80dce828-9993-4fce-ae84-f7c4538af3f8",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "injection",
       "failure_type": "security",
@@ -102,13 +100,13 @@
       "rules": [
         "forget_company"
       ],
-      "run_id": "d05c84a8-099a-4353-9dca-c1b7e416e7c1",
-      "conversation_id": "9cb3c572-4272-4f53-81f5-9d0d635bcb3d",
+      "run_id": "f7dfbd81-3264-4862-b234-c0cd217dc1c8",
+      "conversation_id": "11b81dc1-7d2e-4355-b8cf-9d3dd6501636",
       "user_id": 9001
     },
     {
-      "event_id": "740d3e1e-370c-4416-8908-ee07b0f4db09",
-      "at": "2026-11-22T10:30:59+00:00",
+      "event_id": "5a85d1f5-9849-4850-9744-69bdffbcd3a8",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "injection",
       "failure_type": "security",
@@ -116,13 +114,13 @@
       "rules": [
         "reveal_prompt"
       ],
-      "run_id": "d0843116-c015-4db4-857c-aee3e0bd97d3",
-      "conversation_id": "851797be-4fd4-419f-b243-78ed2345b212",
+      "run_id": "ae23fd95-cf1d-44aa-a206-b550b0fb646d",
+      "conversation_id": "bc32a78e-2b97-474f-90a4-30a0ca3677a5",
       "user_id": 9001
     },
     {
-      "event_id": "30b518ba-9532-49c9-9515-35ea329d286a",
-      "at": "2026-11-22T10:30:59+00:00",
+      "event_id": "d9c3eb13-c3dd-45cc-9e14-6ad703cddf55",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "injection",
       "failure_type": "security",
@@ -130,13 +128,13 @@
       "rules": [
         "ignore_instructions_es"
       ],
-      "run_id": "c7f29bd3-9e45-489c-b2b7-538d88af6af5",
-      "conversation_id": "93bbcb3d-85ec-4850-b7c8-9cacb0e10bb4",
+      "run_id": "273430dd-683c-480b-bf41-9461fa9efd69",
+      "conversation_id": "af014f17-aa63-4727-9da9-71f5c075fdbf",
       "user_id": 9001
     },
     {
-      "event_id": "5feaaae9-b79a-4176-bdd6-7c29826ddccc",
-      "at": "2026-11-22T10:30:59+00:00",
+      "event_id": "4dc57a24-ee85-442e-9295-88df00fe9287",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "unauthorized_order",
       "failure_type": "content",
@@ -144,13 +142,13 @@
       "rules": [
         "order_not_in_session"
       ],
-      "run_id": "ccef7641-ec8f-42c8-b5fa-9fa800067eb8",
-      "conversation_id": "8a6175bb-bbf9-48c0-9b0e-c593396fe7d7",
+      "run_id": "1087ab15-6236-41d2-9ff5-c92927a92c8c",
+      "conversation_id": "51e0265a-9297-4523-aba8-607bc46840ec",
       "user_id": 9001
     },
     {
-      "event_id": "c48e28ed-a680-4b40-ade3-d5d08743b155",
-      "at": "2026-11-22T10:30:59+00:00",
+      "event_id": "27fde00f-57a9-428f-ab88-b0a4f11790c9",
+      "at": "2026-11-22T11:17:30+00:00",
       "guard": "input",
       "category": "policy_override",
       "failure_type": "content",
@@ -159,13 +157,13 @@
         "policy_override",
         "convenience"
       ],
-      "run_id": "fb26719a-8cf8-465d-860e-34cf8d6e8ed3",
-      "conversation_id": "aacc6939-cfdd-4c9e-9745-625411f10dc9",
+      "run_id": "53debe4e-0802-40f2-a84b-5a1545a1142e",
+      "conversation_id": "b9228868-1f38-4924-a2f4-4de253ce7f4e",
       "user_id": 9001
     },
     {
-      "event_id": "37a901e6-2ab8-43c9-8577-1eb7dcf9570a",
-      "at": "2026-11-22T10:31:09+00:00",
+      "event_id": "bfc6d1de-4908-4114-9f7d-db9e4e7b0ce3",
+      "at": "2026-11-22T11:17:36+00:00",
       "guard": "input",
       "category": "personal_task",
       "failure_type": "content",
@@ -173,13 +171,13 @@
       "rules": [
         "creative_or_academic"
       ],
-      "run_id": "72e4d4bd-487f-443f-848c-e6b0ad3b29de",
-      "conversation_id": "ba9f43fa-d09e-47c2-a48e-1bca5b8be3e8",
+      "run_id": "43bf7f7a-3db1-48cf-8965-b60d1476439a",
+      "conversation_id": "2841ce6f-c0e0-4724-a5ca-eb80a23c6cd4",
       "user_id": 9001
     },
     {
-      "event_id": "e2b668d0-2256-48dc-b09f-281b25a7ba46",
-      "at": "2026-11-22T10:31:09+00:00",
+      "event_id": "e89deb13-4010-410b-bcb9-9c0d2f2b0aac",
+      "at": "2026-11-22T11:17:36+00:00",
       "guard": "input",
       "category": "personal_task",
       "failure_type": "content",
@@ -187,13 +185,13 @@
       "rules": [
         "creative_or_academic"
       ],
-      "run_id": "1d993d6d-fccb-4a47-be9b-e0d0892def25",
-      "conversation_id": "cdd66a03-98d9-4880-abce-bdcd2cbc1173",
+      "run_id": "bcc79ff5-c11e-4fa6-bf36-511aab11811a",
+      "conversation_id": "2b2a652b-d4cb-4459-8412-02e85aadce6a",
       "user_id": 9001
     },
     {
-      "event_id": "dc4df310-c9c5-458a-b4fa-4bb323b2f84e",
-      "at": "2026-11-22T10:31:09+00:00",
+      "event_id": "f6b62920-6226-4a08-9d54-a5872fbc7e6c",
+      "at": "2026-11-22T11:17:36+00:00",
       "guard": "input",
       "category": "personal_task",
       "failure_type": "content",
@@ -201,13 +199,13 @@
       "rules": [
         "foreign_code"
       ],
-      "run_id": "1a5d9284-5dad-46ec-bd53-b6edbdd00714",
-      "conversation_id": "e635f272-0095-4614-bbbb-405b4e2b2fa2",
+      "run_id": "01d0fa94-0554-4e59-ba57-c96ce3cf5be4",
+      "conversation_id": "67d70876-b8f0-4373-92b6-a3d730a6493c",
       "user_id": 9001
     },
     {
-      "event_id": "43b649a9-9f7e-4fe8-915f-51cd2a277249",
-      "at": "2026-11-22T10:31:09+00:00",
+      "event_id": "d53c5b1f-d6b3-4ad9-8d9e-1e7f534952d6",
+      "at": "2026-11-22T11:17:36+00:00",
       "guard": "input",
       "category": "sensitive_request",
       "failure_type": "content",
@@ -215,13 +213,13 @@
       "rules": [
         "negotiated_rates"
       ],
-      "run_id": "a7e443db-06a1-49b6-87dd-6a5923d9a58b",
-      "conversation_id": "cb71ab12-84be-4276-b7d3-182d7923e6d6",
+      "run_id": "f6948285-6f5b-4ade-957c-ab41993e7019",
+      "conversation_id": "0780e19b-81ad-4502-ab61-e4dcf2e9f0e7",
       "user_id": 9001
     },
     {
-      "event_id": "294277eb-de5e-48c7-a170-e97d2390d2eb",
-      "at": "2026-11-22T10:31:09+00:00",
+      "event_id": "4e5390aa-edf9-46be-aed3-d2070b744748",
+      "at": "2026-11-22T11:17:36+00:00",
       "guard": "input",
       "category": "sensitive_request",
       "failure_type": "content",
@@ -229,13 +227,13 @@
       "rules": [
         "warehouse_location"
       ],
-      "run_id": "7d403a7e-d586-4289-b49d-ffa1831c1e64",
-      "conversation_id": "1fa96ef0-8079-4798-a3bf-55d9c2d73951",
+      "run_id": "4aab32ff-7b54-425a-b9ec-9e650fbd4266",
+      "conversation_id": "d5a76975-254b-41b7-9b63-af8781e30996",
       "user_id": 9001
     },
     {
-      "event_id": "f4daec6b-001c-47b7-be4f-1990dace49e6",
-      "at": "2026-11-22T10:31:09+00:00",
+      "event_id": "b850b4cb-f46c-4f2e-9bd6-f56a35b94720",
+      "at": "2026-11-22T11:17:36+00:00",
       "guard": "input",
       "category": "casual",
       "failure_type": "content",
@@ -243,13 +241,13 @@
       "rules": [
         "time_weather"
       ],
-      "run_id": "328240a6-b701-4652-a77b-a2ad24b4d674",
-      "conversation_id": "4cf38654-c3f3-4669-9dae-20b883b2adec",
+      "run_id": "f9585cff-e913-4b53-b1e9-18fa3cd59627",
+      "conversation_id": "cf9c01ee-fb6b-49ff-ae60-99a575cfcfd7",
       "user_id": 9001
     },
     {
-      "event_id": "a97a2ec3-41f0-44f5-9bf0-eb5b35b4124b",
-      "at": "2026-11-22T10:31:10+00:00",
+      "event_id": "32a52fc8-3082-4ada-b6c5-2b73e8f929ac",
+      "at": "2026-11-22T11:17:38+00:00",
       "guard": "input",
       "category": "casual",
       "failure_type": "content",
@@ -257,13 +255,13 @@
       "rules": [
         "greeting"
       ],
-      "run_id": "2f8b3351-15e4-416c-8fa2-9aeed05b30af",
-      "conversation_id": "81ab8b84-1313-4e97-b79d-642273ecbfd9",
+      "run_id": "cfbd339a-ae42-4187-a545-03d2a7b3b197",
+      "conversation_id": "dc052755-fb08-4b46-bc35-da7686f73f4a",
       "user_id": 9001
     },
     {
-      "event_id": "f205f3fe-cec9-47a9-a6a9-5e9c0e33a613",
-      "at": "2026-11-22T10:31:11+00:00",
+      "event_id": "d17638e9-b67e-4f12-b70b-104e146ad5b7",
+      "at": "2026-11-22T11:17:39+00:00",
       "guard": "input",
       "category": "general_logistics",
       "failure_type": "content",
@@ -271,22 +269,8 @@
       "rules": [
         "general_logistics"
       ],
-      "run_id": "b1c1604b-ffcc-44fc-86a6-5ed74ab707a6",
-      "conversation_id": "c4b8e910-9617-415d-acc3-6b6eebc767a4",
-      "user_id": 9001
-    },
-    {
-      "event_id": "d8184ea4-5517-4b95-b2e5-c0f82d8cc78b",
-      "at": "2026-11-22T10:31:13+00:00",
-      "guard": "router_scope",
-      "category": "general_logistics",
-      "failure_type": "content",
-      "action": "redirect",
-      "rules": [
-        "llm_scope:general_logistics"
-      ],
-      "run_id": "b1c1604b-ffcc-44fc-86a6-5ed74ab707a6",
-      "conversation_id": "c4b8e910-9617-415d-acc3-6b6eebc767a4",
+      "run_id": "2be62a31-6ce6-4a45-a4e5-26115edb2165",
+      "conversation_id": "9d70ac2a-6aff-4f45-9390-8c9edb504891",
       "user_id": 9001
     }
   ]
