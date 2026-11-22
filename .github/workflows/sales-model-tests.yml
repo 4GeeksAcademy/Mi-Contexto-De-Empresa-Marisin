@@ -41,4 +41,7 @@ jobs:
           tests/pipelines/test_agent_memory_store.py
           tests/pipelines/test_agent_memory_decision.py
           tests/pipelines/test_agent_memory_graph.py
+          tests/pipelines/test_agent_guardrails_input.py
+          tests/pipelines/test_agent_guardrails_output.py
+          tests/pipelines/test_agent_guardrails_graph.py
           tests/mcps/test_trackflow_mcp.py
