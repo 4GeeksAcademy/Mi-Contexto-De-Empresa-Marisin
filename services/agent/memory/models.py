@@ -40,6 +40,32 @@ def slug(text: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", "-", fold(text)).strip("-") or "general"
 
 
+# Demostrativos, indefinidos y posesivos que el usuario pone delante de una zona ("esa zona
+# rural de Zaragoza", "nuestra ruta de Teruel") y que no forman parte del ámbito: sin
+# quitarlos, la misma zona tendría claves distintas y la nota no se reconocería después.
+LEADING_DETERMINERS = {
+    "un", "una", "unos", "unas", "ese", "esa", "esos", "esas", "este", "esta", "estos", "estas",
+    "aquel", "aquella", "aquellos", "aquellas", "nuestro", "nuestra", "mi", "su", "that", "this", "those", "these",
+}
+# El artículo definido solo se quita delante de un nombre genérico ("la zona rural…"): en
+# topónimos como "Los Ángeles" o "La Rioja" es parte del nombre.
+DEFINITE_ARTICLES = {"el", "la", "los", "las", "the"}
+GENERIC_PLACE_WORDS = {"zona", "zonas", "ruta", "rutas", "comarca", "area", "region", "provincia", "periferia", "parte"}
+
+
+def zone_key(zone: str | None) -> str:
+    """Clave estable de una zona: plegada y sin determinantes al inicio."""
+    words = re.findall(r"[a-z0-9]+", fold(zone))
+    while words:
+        if words[0] in LEADING_DETERMINERS:
+            words.pop(0)
+        elif words[0] in DEFINITE_ARTICLES and len(words) > 1 and words[1] in GENERIC_PLACE_WORDS:
+            words.pop(0)
+        else:
+            break
+    return "-".join(words) or "general"
+
+
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -145,9 +171,9 @@ class MemoryDraft(BaseModel):
 def slot_of(draft: MemoryDraft) -> tuple[str, str]:
     """`(slot_id, clave del hecho)` de una propuesta. Requiere que la política ya la haya validado."""
     if draft.category is MemoryCategory.carrier_rule:
-        return f"carrier_rule:{draft.carrier}:{draft.country.value}", slug(draft.zone)
+        return f"carrier_rule:{draft.carrier}:{draft.country.value}", zone_key(draft.zone)
     if draft.category is MemoryCategory.known_incident:
-        return f"known_incident:{draft.country.value}:{slug(draft.zone)}", slug(draft.carrier)
+        return f"known_incident:{draft.country.value}:{zone_key(draft.zone)}", slug(draft.carrier)
     return f"b2b_report_preference:{slug(draft.client)}", "report"
 
 

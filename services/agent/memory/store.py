@@ -36,6 +36,7 @@ from typing import Any, Callable
 from .backend import KEY_PREFIX, InMemoryBackend, MemoryBackend, RedisBackend, check_prefix
 from .models import (
     CARRIER_ALIASES,
+    LEADING_DETERMINERS,
     Actor,
     MemoryCategory,
     MemoryFact,
@@ -62,7 +63,10 @@ CATEGORY_TTL = {
 MAX_FACTS_PER_SLOT = 5
 MAX_SLOTS_PER_CATEGORY = 100
 RECALL_LIMIT = 3
+# Palabras que no identifican un ámbito. Incluye los determinantes para reconocer también
+# claves guardadas antes de normalizar la zona (p. ej. "esa-zona-rural-de-zaragoza").
 STOPWORDS = {"zona", "ruta", "del", "las", "los", "una", "para", "desde", "hacia", "cliente", "de", "la", "el"}
+STOPWORDS |= LEADING_DETERMINERS
 
 
 def normalized(text: str) -> str:
