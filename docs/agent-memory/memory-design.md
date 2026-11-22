@@ -61,7 +61,7 @@ mensaje ─→ receive_question ─→ route_question (LLM: ruta + memory_propos
 | `approvals:<user_id>:<AAAAMMDD>` | Escrituras aprobadas hoy por ese usuario. | 2 días |
 | `audit` | Redis Stream con cada evento (JSON). | sin TTL |
 
-Slots: `carrier_rule:<CARRIER>:<PAÍS>` (clave del hecho = zona), `known_incident:<PAÍS>:<zona>` (clave = carrier), `b2b_report_preference:<cliente>` (clave = `report`). La "gracia" de Redis existe para que el barrido de limpieza **siempre** llegue a auditar lo que caduca antes de que la clave desaparezca.
+Slots: `carrier_rule:<CARRIER>:<PAÍS>` (clave del hecho = zona), `known_incident:<PAÍS>:<zona>` (clave = carrier), `b2b_report_preference:<cliente>` (clave = `report`). La zona se normaliza con `zone_key()`: sin tildes y sin determinantes al inicio («esa zona rural de Zaragoza» y «la zona rural de Zaragoza» → `zona-rural-de-zaragoza`), pero conservando el artículo de los topónimos («Los Ángeles» → `los-angeles`). Lo detectó la primera ejecución real de la evidencia: el LLM copió «esa zona…» del mensaje y la nota no se reconocía en otra conversación. La "gracia" de Redis existe para que el barrido de limpieza **siempre** llegue a auditar lo que caduca antes de que la clave desaparezca.
 
 ## 4. Auto-evaluación con criterio explícito (una sola llamada)
 
