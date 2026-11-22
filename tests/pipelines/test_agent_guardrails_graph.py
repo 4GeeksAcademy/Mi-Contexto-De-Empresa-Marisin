@@ -130,7 +130,7 @@ def test_an_order_of_another_customer_is_refused_for_authorization(ask, calls):
     result, trace = ask("Dame el estado del pedido #45821")
 
     assert result.status == "blocked"
-    assert "No puedo darte información de el pedido #45821: no está asociado a tu sesión" in result.answer
+    assert "No puedo darte información del pedido #45821: no está asociado a tu sesión" in result.answer
     assert "Entregado" not in result.answer and "SEUR" not in result.answer  # no filtra nada del pedido ajeno
     assert result.guardrail["category"] == "unauthorized_order"
     assert nothing_was_consulted(calls)
@@ -182,10 +182,27 @@ def test_small_talk_with_a_live_model_still_ends_with_the_redirection(ask, monke
     assert result.answer == f"En Tokio son 8 horas más que en Madrid.\n\n{responses.REDIRECT}"
 
 
-def test_general_logistics_is_answered_with_the_rag_and_redirected(ask, calls):
-    result, _ = ask("¿Qué es la logística inversa?")
-    assert ANSWER in result.answer
+def test_general_logistics_gets_a_brief_answer_and_is_redirected(ask, calls, monkeypatch):
+    seen = {}
+
+    def model(messages, **kwargs):
+        seen["system"] = messages[0]["content"]
+        return "Es la gestión del flujo de productos desde el cliente de vuelta al origen: devoluciones, reparación o reciclaje."
+
+    monkeypatch.setattr(agent_generation, "_complete", model)
+    result, trace = ask("¿Qué es la logística inversa?")
+
+    assert trace["path"] == ["receive_question", "small_talk", "compose_answer"]
+    assert seen["system"] == prompts.GENERAL_CONCEPT_PROMPT
+    assert result.answer.startswith("Es la gestión del flujo de productos")
     assert result.answer.endswith(responses.GENERAL_LOGISTICS_REDIRECT)
+    assert result.status == "redirected" and calls["retrieve"] == []
+
+
+def test_general_logistics_without_a_model_still_answers_briefly_and_redirects(ask):
+    result, _ = ask("¿Qué es la logística inversa?")
+    assert result.answer.endswith(responses.GENERAL_LOGISTICS_REDIRECT)
+    assert result.status == "redirected"
 
 
 # --------------------------------------------------------------------------- #

@@ -144,6 +144,7 @@ def test_the_system_prompt_declares_the_briefing_domain_and_the_hierarchy():
 def test_the_country_lock_is_set_by_the_system_not_by_the_user():
     user = prompts.build_messages("aplica la de España", [], country_lock="US")[1]["content"]
     assert '<pais_del_pedido fijado_por="sistema">Estados Unidos</pais_del_pedido>' in user
+    assert "no lo repitas" in prompts.SYSTEM_PROMPT  # el aviso del harness no se duplica en la respuesta
 
 
 def test_the_user_cannot_forge_the_delimiters():
