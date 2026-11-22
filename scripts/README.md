@@ -64,3 +64,14 @@ python scripts/mcp_get_token.py
 ```bash
 python scripts/mcp_smoke_test.py
 ```
+
+## `agent_memory_evidence.py` and `agent_memory_consolidate.py` — agent memory
+
+`agent_memory_evidence.py` runs the cases in `data/eval/agent-memory-cases.json` through the agent's real structured call and the memory policy (`self-eval.json`), and runs three full cycles through the real graph: approved and reflected in another conversation, rejected with memory unchanged, and discarded on a topic change. Evidence goes to `docs/agent-memory/evidence/`. Requires the Milestone 7 `.env`, Qdrant with the indexed collection, and Redis. `agent_memory_consolidate.py` runs the cleanup (expired proposals, expired facts, caps) and records it in the audit log; `--show` prints the consolidated memory.
+
+```bash
+python scripts/agent_memory_evidence.py
+```
+```bash
+python scripts/agent_memory_consolidate.py --show
+```

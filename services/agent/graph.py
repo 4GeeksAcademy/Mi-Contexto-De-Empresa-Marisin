@@ -5,7 +5,15 @@
                                                       ├inventory─→ lookup_inventory┤ (fallo/404 → tool_fallback)
                                                       └rag───────→ retrieve ─with_context────→ generate_answer ─┐
                                                                             └without_context─→ no_context ──────┤
-                                                      compose_answer ←───────────────────────────────────────────┘ → END
+                                                      compose_answer ←───────────────────────────────────────────┘
+                                                            ├proposal─→ propose_memory → END
+                                                            └end──────→ END
+
+Memoria (Hito 8 · Parte 1): si la conversación tiene una propuesta pendiente,
+`receive_question` va primero a `resolve_memory_decision`, que clasifica el
+mensaje contra ella; si queda otra consulta en el mensaje, sigue a
+`route_question`, y si no, a `compose_answer`. `propose_memory` solo se ejecuta
+si el modelo devolvió `memory_proposal` en este turno.
 
 `route_question` decide las fuentes (LLM + reglas). Después de cada tool,
 `route_after_tool` envía a `tool_fallback` si la tool falló o el recurso no
@@ -41,6 +49,8 @@ NODE_RETRIEVE = "retrieve"
 NODE_GENERATE = "generate_answer"
 NODE_NO_CONTEXT = "no_context"
 NODE_COMPOSE = "compose_answer"
+NODE_MEMORY_DECISION = "resolve_memory_decision"
+NODE_PROPOSE = "propose_memory"
 
 AGENT_SPEC = GraphSpec(
     state_schema=AgentState,
@@ -55,18 +65,24 @@ AGENT_SPEC = GraphSpec(
         NODE_GENERATE: nodes.generate_answer,
         NODE_NO_CONTEXT: nodes.answer_without_context,
         NODE_COMPOSE: nodes.compose_answer,
+        NODE_MEMORY_DECISION: nodes.resolve_memory_decision,
+        NODE_PROPOSE: nodes.propose_memory,
     },
     edges=(
         (START, NODE_RECEIVE),
         (NODE_INVALID, END),
         (NODE_GENERATE, NODE_COMPOSE),
         (NODE_NO_CONTEXT, NODE_COMPOSE),
-        (NODE_COMPOSE, END),
+        (NODE_PROPOSE, END),
     ),
     conditional={
         NODE_RECEIVE: ConditionalEdge(
             router=nodes.route_after_receive,
-            targets={"valid": NODE_ROUTE, "empty": NODE_INVALID},
+            targets={"valid": NODE_ROUTE, "empty": NODE_INVALID, "memory_decision": NODE_MEMORY_DECISION},
+        ),
+        NODE_MEMORY_DECISION: ConditionalEdge(
+            router=nodes.route_after_memory_decision,
+            targets={"continue": NODE_ROUTE, "compose": NODE_COMPOSE},
         ),
         NODE_ROUTE: ConditionalEdge(
             router=nodes.next_source,
@@ -87,6 +103,10 @@ AGENT_SPEC = GraphSpec(
         NODE_RETRIEVE: ConditionalEdge(
             router=nodes.route_after_retrieve,
             targets={"with_context": NODE_GENERATE, "without_context": NODE_NO_CONTEXT},
+        ),
+        NODE_COMPOSE: ConditionalEdge(
+            router=nodes.route_after_compose,
+            targets={"propose": NODE_PROPOSE, "end": END},
         ),
     },
 )

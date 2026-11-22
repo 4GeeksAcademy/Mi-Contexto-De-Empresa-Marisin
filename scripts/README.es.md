@@ -63,3 +63,14 @@ python scripts/mcp_get_token.py
 ```bash
 python scripts/mcp_smoke_test.py
 ```
+
+## `agent_memory_evidence.py` y `agent_memory_consolidate.py` — memoria del agente
+
+`agent_memory_evidence.py` pasa los casos de `data/eval/agent-memory-cases.json` por la llamada estructurada real del agente y por la política de memoria (`self-eval.json`) y ejecuta tres ciclos completos con el grafo real: aprobado y reflejado en otra conversación, rechazado sin cambios en la memoria y descartado por cambio de tema. Guarda la evidencia en `docs/agent-memory/evidence/`. Requiere el `.env` del Hito 7, Qdrant con la colección indexada y Redis. `agent_memory_consolidate.py` ejecuta la limpieza (propuestas caducadas, hechos vencidos, topes) y la deja en la auditoría; `--show` imprime la memoria consolidada.
+
+```bash
+python scripts/agent_memory_evidence.py
+```
+```bash
+python scripts/agent_memory_consolidate.py --show
+```

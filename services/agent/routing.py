@@ -13,6 +13,13 @@ Enrutador híbrido:
 
 El usuario nunca indica qué fuente usar: la decisión sale del contenido de la
 pregunta, y queda registrada en el trace (`decided_by` y `reason`).
+
+Memoria (Hito 8 · Parte 1): la misma llamada estructurada devuelve también
+`memory_proposal`, la **auto-evaluación** del turno: si el mensaje aporta un hecho
+nuevo o corregido de las categorías memorizables del BRIEFING (o `null`, que es
+lo normal). No hay una segunda llamada ni un segundo agente. Una propuesta mal
+formada se descarta sin invalidar el enrutamiento, y las reglas de respaldo
+nunca proponen nada (si el LLM falla, no hay memoria nueva).
 """
 
 from __future__ import annotations
@@ -27,6 +34,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 from data.pipelines import rag as rag_pipeline
 from packages.shared.incident_validation import IncidentBranch, IncidentCategory, IncidentStatus
 
+from .memory.models import MemoryDraft
 from .tools import InventoryQuery, TicketQuery, fold
 
 logger = logging.getLogger("agent.routing")
@@ -44,6 +52,7 @@ class RouteDecision(BaseModel):
     inventory: InventoryQuery | None = None
     reason: str = ""
     decided_by: Literal["llm", "rules"] = "rules"
+    memory_proposal: MemoryDraft | None = None
 
     @model_validator(mode="after")
     def _at_least_one_source(self) -> "RouteDecision":
@@ -180,9 +189,22 @@ Reglas:
 - Si pide datos en vivo y además una política, usa la tool y "rag".
 - Nunca inventes ids, SKU ni nombres de producto: cópialos literalmente de la pregunta.
 
+Auto-evaluación de memoria ("memory_proposal"). Casi siempre es null. Solo propón algo si el
+usuario AFIRMA un hecho nuevo o CORRIGE uno, y es de una de estas categorías:
+- "carrier_rule": cambio de cobertura o de ruta de un carrier (carrier: UPS, FEDEX, DHL, MRW, SEUR o LOCAL;
+  country: US o ES; zone: la zona tal como la nombra el usuario).
+- "known_incident": causa conocida de un incidente recurrente en una zona (country, zone y, si aplica, carrier).
+- "b2b_report_preference": cómo quiere un cliente B2B (marca) su reporte mensual (client: cómo lo nombra el usuario).
+Es null si el mensaje es una pregunta, una consulta puntual (tracking de un paquete, estado de un ticket,
+stock), un cierre ("gracias, ya está"), una tarea de un solo uso (traducir, redactar) o una queja aislada.
+NUNCA propongas: direcciones o ubicación de clientes (B2C o B2B), rutas internas o seguridad del almacén,
+datos de un solo paquete, contratos comerciales o negociaciones, datos personales.
+
 Responde SOLO con un objeto JSON, sin texto alrededor:
 {"needs_rag": true|false, "ticket": null | {"ticket_id": null, "status": null, "category": null, "origin": null, "branch": null},
- "inventory": null | {"sku": null, "product_name": null}, "reason": "una frase"}"""
+ "inventory": null | {"sku": null, "product_name": null}, "reason": "una frase",
+ "memory_proposal": null | {"category": "...", "fact": "el hecho en una frase", "carrier": null, "country": null,
+                            "zone": null, "client": null, "reason": "por qué vale la pena recordarlo"}}"""
 
 JSON_OBJECT = re.compile(r"\{.*\}", re.DOTALL)
 
@@ -211,10 +233,12 @@ def parse_llm_decision(text: str, question: str) -> RouteDecision:
     if raw.get("inventory") == {}:
         raw.pop("inventory")  # inventario sin SKU ni nombre: no hay nada que consultar
     raw.pop("decided_by", None)
+    proposal = raw.pop("memory_proposal", None)
     try:
         decision = RouteDecision.model_validate({**raw, "decided_by": "llm"})
     except ValidationError as exc:
         raise RouteRejected(f"contrato no válido: {exc.error_count()} errores") from exc
+    decision.memory_proposal = parse_memory_proposal(proposal)
 
     folded = _fold(question)
     if decision.ticket and decision.ticket.ticket_id is not None:
@@ -229,6 +253,17 @@ def parse_llm_decision(text: str, question: str) -> RouteDecision:
     ):
         raise RouteRejected(f"producto {decision.inventory.product_name!r} no aparece en la pregunta")
     return decision
+
+
+def parse_memory_proposal(raw) -> MemoryDraft | None:
+    """`memory_proposal` del LLM validada contra `MemoryDraft`; si no es válida, se ignora."""
+    if not isinstance(raw, dict) or not raw:
+        return None
+    try:
+        return MemoryDraft.model_validate(raw)
+    except ValidationError as exc:
+        logger.info("memory_proposal del LLM descartada: %s errores de contrato", exc.error_count())
+        return None
 
 
 def classify_with_llm(question: str) -> RouteDecision:

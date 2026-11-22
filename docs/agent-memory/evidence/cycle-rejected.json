@@ -1,0 +1,189 @@
+{
+  "passed": true,
+  "checks": {
+    "outcome": true,
+    "memory_unchanged": true,
+    "not_used_later": true
+  },
+  "proposal": {
+    "status": "proposed",
+    "proposal_id": "1b4d0229-cea6-41a6-bb21-12995a4637c5",
+    "category": "b2b_report_preference",
+    "fact": "El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.",
+    "slot_id": "b2b_report_preference:cliente-de-cosmeticos",
+    "expires_at": "2026-11-22T08:36:37+00:00",
+    "reasons": [],
+    "question_text": "---\n**¿Quieres que recuerde esto para la próxima vez?** «El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.» (preferencia de reporte de cliente B2B).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada."
+  },
+  "turns": [
+    {
+      "question": "El cliente de cosméticos siempre quiere su reporte mensual con el desglose de devoluciones primero, antes que el volumen de envíos.",
+      "run_id": "8dabad02-7eef-49c8-a435-f0aae2790e51",
+      "conversation_id": "f53e7c4b-fadc-47c6-9bee-ce0f36fbd36d",
+      "status": "no_context",
+      "path": [
+        "receive_question",
+        "route_question",
+        "retrieve",
+        "no_context",
+        "compose_answer",
+        "propose_memory"
+      ],
+      "answer": "No tengo información sobre eso en la base de conocimiento de TrackFlow, así que prefiero no darte una respuesta que no pueda respaldar. Te recomiendo consultarlo con el responsable del área.\nFuente: ninguna (sin información en la base de conocimiento)\n\n---\n**¿Quieres que recuerde esto para la próxima vez?** «El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.» (preferencia de reporte de cliente B2B).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada.",
+      "memory": {
+        "proposal": {
+          "status": "proposed",
+          "proposal_id": "1b4d0229-cea6-41a6-bb21-12995a4637c5",
+          "category": "b2b_report_preference",
+          "fact": "El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.",
+          "slot_id": "b2b_report_preference:cliente-de-cosmeticos",
+          "expires_at": "2026-11-22T08:36:37+00:00",
+          "reasons": [],
+          "question_text": "---\n**¿Quieres que recuerde esto para la próxima vez?** «El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.» (preferencia de reporte de cliente B2B).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada."
+        }
+      }
+    },
+    {
+      "question": "no, no hace falta",
+      "run_id": "9d1fdf20-f71f-4675-9b63-30e290a4bb9d",
+      "conversation_id": "f53e7c4b-fadc-47c6-9bee-ce0f36fbd36d",
+      "status": "memory_resolved",
+      "path": [
+        "receive_question",
+        "resolve_memory_decision",
+        "compose_answer"
+      ],
+      "answer": "Entendido: no lo guardo. La memoria del agente no ha cambiado.",
+      "memory": {
+        "decision": {
+          "proposal_id": "1b4d0229-cea6-41a6-bb21-12995a4637c5",
+          "outcome": "rejected",
+          "slot_id": "b2b_report_preference:cliente-de-cosmeticos",
+          "proposed_fact": "El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.",
+          "label": "reject",
+          "confidence": 1.0,
+          "decided_by": "llm",
+          "reasons": [],
+          "message": "Entendido: no lo guardo. La memoria del agente no ha cambiado."
+        }
+      }
+    }
+  ],
+  "later_interaction": {
+    "question": "¿Cómo preparo el reporte mensual del cliente de cosméticos?",
+    "run_id": "28c20dc9-029a-4e79-89a8-dcc0141084d1",
+    "conversation_id": "0c508434-0025-483d-94a1-4be5686bd00d",
+    "status": "no_context",
+    "path": [
+      "receive_question",
+      "route_question",
+      "retrieve",
+      "no_context",
+      "compose_answer"
+    ],
+    "answer": "No tengo información sobre eso en la base de conocimiento de TrackFlow, así que prefiero no darte una respuesta que no pueda respaldar. Te recomiendo consultarlo con el responsable del área.\nFuente: ninguna (sin información en la base de conocimiento)",
+    "memory": {}
+  },
+  "memory_before": [
+    {
+      "slot_id": "carrier_rule:SEUR:ES",
+      "category": "carrier_rule",
+      "carrier": "SEUR",
+      "country": "ES",
+      "zone": null,
+      "client": null,
+      "facts": [
+        {
+          "fact_id": "d4c8044a-87b8-4d18-b28f-c4c6d50587dc",
+          "fact_key": "esa-zona-rural-de-zaragoza",
+          "fact": "SEUR ya no cubre esa zona rural de Zaragoza; desde el mes pasado hay que usar el carrier local.",
+          "approved_by": {
+            "user_id": 9001,
+            "role": "user"
+          },
+          "approved_at": "2026-11-22T08:06:27+00:00",
+          "proposal_id": "58bd8b49-f4d6-4635-a1f2-ec0a7b6324fc",
+          "conversation_id": "3c23ad5e-0ec1-42f6-9fce-5465d528bbb0",
+          "confirmations": 1,
+          "last_confirmed_at": "2026-11-22T08:06:27+00:00",
+          "expires_at": "2027-02-20T08:06:27+00:00"
+        }
+      ],
+      "updated_at": "2026-11-22T08:06:27+00:00"
+    }
+  ],
+  "memory_after": [
+    {
+      "slot_id": "carrier_rule:SEUR:ES",
+      "category": "carrier_rule",
+      "carrier": "SEUR",
+      "country": "ES",
+      "zone": null,
+      "client": null,
+      "facts": [
+        {
+          "fact_id": "d4c8044a-87b8-4d18-b28f-c4c6d50587dc",
+          "fact_key": "esa-zona-rural-de-zaragoza",
+          "fact": "SEUR ya no cubre esa zona rural de Zaragoza; desde el mes pasado hay que usar el carrier local.",
+          "approved_by": {
+            "user_id": 9001,
+            "role": "user"
+          },
+          "approved_at": "2026-11-22T08:06:27+00:00",
+          "proposal_id": "58bd8b49-f4d6-4635-a1f2-ec0a7b6324fc",
+          "conversation_id": "3c23ad5e-0ec1-42f6-9fce-5465d528bbb0",
+          "confirmations": 1,
+          "last_confirmed_at": "2026-11-22T08:06:27+00:00",
+          "expires_at": "2027-02-20T08:06:27+00:00"
+        }
+      ],
+      "updated_at": "2026-11-22T08:06:27+00:00"
+    }
+  ],
+  "audit": [
+    {
+      "event_id": "4983986a-0d12-4d60-b366-20a60b0c2ded",
+      "at": "2026-11-22T08:06:37+00:00",
+      "event": "proposed",
+      "proposal_id": "1b4d0229-cea6-41a6-bb21-12995a4637c5",
+      "proposed_fact": "El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.",
+      "draft": {
+        "category": "b2b_report_preference",
+        "fact": "El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.",
+        "client": "cliente de cosméticos",
+        "reason": "Es una preferencia recurrente de reporte de un cliente B2B."
+      },
+      "slot_id": "b2b_report_preference:cliente-de-cosmeticos",
+      "expires_at": "2026-11-22T08:36:37+00:00",
+      "conversation_id": "f53e7c4b-fadc-47c6-9bee-ce0f36fbd36d",
+      "actor": {
+        "user_id": 9001,
+        "role": "user"
+      },
+      "origin_run_id": "8dabad02-7eef-49c8-a435-f0aae2790e51",
+      "origin_message": "El cliente de cosméticos siempre quiere su reporte mensual con el desglose de devoluciones primero, antes que el volumen de envíos.",
+      "category": "b2b_report_preference"
+    },
+    {
+      "event_id": "54fb98d6-2736-4e1d-88e6-c2f38df9d599",
+      "at": "2026-11-22T08:06:38+00:00",
+      "event": "rejected",
+      "proposal_id": "1b4d0229-cea6-41a6-bb21-12995a4637c5",
+      "slot_id": "b2b_report_preference:cliente-de-cosmeticos",
+      "proposed_fact": "El cliente de cosméticos quiere que el desglose de devoluciones aparezca antes que el volumen de envíos en su reporte mensual.",
+      "label": "reject",
+      "confidence": 1.0,
+      "decided_by": "llm",
+      "conversation_id": "f53e7c4b-fadc-47c6-9bee-ce0f36fbd36d",
+      "actor": {
+        "user_id": 9001,
+        "role": "user"
+      },
+      "origin_run_id": "8dabad02-7eef-49c8-a435-f0aae2790e51",
+      "decision_run_id": "9d1fdf20-f71f-4675-9b63-30e290a4bb9d",
+      "origin_message": "El cliente de cosméticos siempre quiere su reporte mensual con el desglose de devoluciones primero, antes que el volumen de envíos.",
+      "decision_message": "no, no hace falta",
+      "classifier_reason": "El usuario rechaza guardar el hecho."
+    }
+  ]
+}
