@@ -34,7 +34,7 @@ BLOCK_MESSAGES = {
         f"comerciales, habla con tu account manager. Yo puedo ayudarte con {PURPOSE}."
     ),
     "unauthorized_order": (
-        "No puedo darte información de {refs}: no está asociado a tu sesión. Por seguridad solo consulto los "
+        "No puedo darte información {refs}: no está asociado a tu sesión. Por seguridad solo consulto los "
         "envíos de la cuenta con la que has iniciado sesión. Si el pedido es tuyo, accede con la cuenta que lo "
         "realizó o contacta con el equipo de CX."
     ),
@@ -46,7 +46,9 @@ def block_message(category: str, *, denied_orders: list[str] | None = None, stri
     text = BLOCK_MESSAGES.get(category, BLOCK_MESSAGES["personal_task"])
     if category == "unauthorized_order":
         refs = ", ".join(f"#{ref}" for ref in denied_orders or []) or "ese pedido"
-        text = text.format(refs=f"el pedido {refs}" if len(denied_orders or []) <= 1 else f"los pedidos {refs}")
+        text = text.format(refs=f"del pedido {refs}" if len(denied_orders or []) <= 1 else f"de los pedidos {refs}")
+        if len(denied_orders or []) > 1:
+            text = text.replace("no está asociado", "no están asociados")
     if category == "injection" and strikes >= 3:
         text += REPEATED_ATTEMPT
     return text
