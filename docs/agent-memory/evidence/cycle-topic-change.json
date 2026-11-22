@@ -1,0 +1,178 @@
+{
+  "passed": true,
+  "checks": {
+    "outcome": true,
+    "memory_unchanged": true
+  },
+  "proposal": {
+    "status": "proposed",
+    "proposal_id": "7479d3e5-b550-4547-9004-1f4afd6a389e",
+    "category": "known_incident",
+    "fact": "Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.",
+    "slot_id": "known_incident:US:los-angeles",
+    "expires_at": "2026-11-22T08:36:47+00:00",
+    "reasons": [],
+    "question_text": "---\n**¿Quieres que recuerde esto para la próxima vez?** «Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.» (incidente conocido y recurrente).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada."
+  },
+  "turns": [
+    {
+      "question": "Esos retrasos reportados en incidencias de Los Ángeles esta semana son por la huelga portuaria, no por un problema nuestro — ya van tres tickets sobre lo mismo.",
+      "run_id": "4ac329e4-8f18-4f56-83e5-86f78b6c131a",
+      "conversation_id": "10ae78f5-8aaf-4205-a769-f15614f4fad6",
+      "status": "no_context",
+      "path": [
+        "receive_question",
+        "route_question",
+        "retrieve",
+        "no_context",
+        "compose_answer",
+        "propose_memory"
+      ],
+      "answer": "No tengo información sobre eso en la base de conocimiento de TrackFlow, así que prefiero no darte una respuesta que no pueda respaldar. Te recomiendo consultarlo con el responsable del área.\nFuente: ninguna (sin información en la base de conocimiento)\n\n---\n**¿Quieres que recuerde esto para la próxima vez?** «Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.» (incidente conocido y recurrente).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada.",
+      "memory": {
+        "proposal": {
+          "status": "proposed",
+          "proposal_id": "7479d3e5-b550-4547-9004-1f4afd6a389e",
+          "category": "known_incident",
+          "fact": "Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.",
+          "slot_id": "known_incident:US:los-angeles",
+          "expires_at": "2026-11-22T08:36:47+00:00",
+          "reasons": [],
+          "question_text": "---\n**¿Quieres que recuerde esto para la próxima vez?** «Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.» (incidente conocido y recurrente).\nResponde «sí», «no» o corrígelo. Si no respondes o cambias de tema, no se guardará nada."
+        }
+      }
+    },
+    {
+      "question": "¿Cuál es la ventana de devolución estándar?",
+      "run_id": "aec9fb20-cf7c-473d-a5e9-3f5278d79b42",
+      "conversation_id": "10ae78f5-8aaf-4205-a769-f15614f4fad6",
+      "status": "answered",
+      "path": [
+        "receive_question",
+        "resolve_memory_decision",
+        "route_question",
+        "retrieve",
+        "generate_answer",
+        "compose_answer"
+      ],
+      "answer": "No has respondido a la propuesta de memoria anterior, así que la he descartado sin guardar nada.\n\nLa ventana de devolución estándar es de 30 días desde la entrega, salvo que la marca haya configurado una distinta en su contrato.\n\nFuente: Política de Devoluciones (returns-policy) · Política de Devoluciones › Ventana de devolución estándar",
+      "memory": {
+        "decision": {
+          "proposal_id": "7479d3e5-b550-4547-9004-1f4afd6a389e",
+          "outcome": "discarded_topic_change",
+          "slot_id": "known_incident:US:los-angeles",
+          "proposed_fact": "Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.",
+          "label": "unrelated",
+          "confidence": 1.0,
+          "decided_by": "llm",
+          "reasons": [],
+          "message": "No has respondido a la propuesta de memoria anterior, así que la he descartado sin guardar nada."
+        }
+      }
+    }
+  ],
+  "later_interaction": null,
+  "memory_before": [
+    {
+      "slot_id": "carrier_rule:SEUR:ES",
+      "category": "carrier_rule",
+      "carrier": "SEUR",
+      "country": "ES",
+      "zone": null,
+      "client": null,
+      "facts": [
+        {
+          "fact_id": "d4c8044a-87b8-4d18-b28f-c4c6d50587dc",
+          "fact_key": "esa-zona-rural-de-zaragoza",
+          "fact": "SEUR ya no cubre esa zona rural de Zaragoza; desde el mes pasado hay que usar el carrier local.",
+          "approved_by": {
+            "user_id": 9001,
+            "role": "user"
+          },
+          "approved_at": "2026-11-22T08:06:27+00:00",
+          "proposal_id": "58bd8b49-f4d6-4635-a1f2-ec0a7b6324fc",
+          "conversation_id": "3c23ad5e-0ec1-42f6-9fce-5465d528bbb0",
+          "confirmations": 1,
+          "last_confirmed_at": "2026-11-22T08:06:27+00:00",
+          "expires_at": "2027-02-20T08:06:27+00:00"
+        }
+      ],
+      "updated_at": "2026-11-22T08:06:27+00:00"
+    }
+  ],
+  "memory_after": [
+    {
+      "slot_id": "carrier_rule:SEUR:ES",
+      "category": "carrier_rule",
+      "carrier": "SEUR",
+      "country": "ES",
+      "zone": null,
+      "client": null,
+      "facts": [
+        {
+          "fact_id": "d4c8044a-87b8-4d18-b28f-c4c6d50587dc",
+          "fact_key": "esa-zona-rural-de-zaragoza",
+          "fact": "SEUR ya no cubre esa zona rural de Zaragoza; desde el mes pasado hay que usar el carrier local.",
+          "approved_by": {
+            "user_id": 9001,
+            "role": "user"
+          },
+          "approved_at": "2026-11-22T08:06:27+00:00",
+          "proposal_id": "58bd8b49-f4d6-4635-a1f2-ec0a7b6324fc",
+          "conversation_id": "3c23ad5e-0ec1-42f6-9fce-5465d528bbb0",
+          "confirmations": 1,
+          "last_confirmed_at": "2026-11-22T08:06:27+00:00",
+          "expires_at": "2027-02-20T08:06:27+00:00"
+        }
+      ],
+      "updated_at": "2026-11-22T08:06:27+00:00"
+    }
+  ],
+  "audit": [
+    {
+      "event_id": "9aa94356-b7da-4853-8134-bc06c5263dbe",
+      "at": "2026-11-22T08:06:47+00:00",
+      "event": "proposed",
+      "proposal_id": "7479d3e5-b550-4547-9004-1f4afd6a389e",
+      "proposed_fact": "Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.",
+      "draft": {
+        "category": "known_incident",
+        "fact": "Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.",
+        "country": "US",
+        "zone": "Los Ángeles",
+        "reason": "Conviene recordar esta causa recurrente para contextualizar futuras incidencias en la zona."
+      },
+      "slot_id": "known_incident:US:los-angeles",
+      "expires_at": "2026-11-22T08:36:47+00:00",
+      "conversation_id": "10ae78f5-8aaf-4205-a769-f15614f4fad6",
+      "actor": {
+        "user_id": 9001,
+        "role": "user"
+      },
+      "origin_run_id": "4ac329e4-8f18-4f56-83e5-86f78b6c131a",
+      "origin_message": "Esos retrasos reportados en incidencias de Los Ángeles esta semana son por la huelga portuaria, no por un problema nuestro — ya van tres tickets sobre lo mismo.",
+      "category": "known_incident"
+    },
+    {
+      "event_id": "bb475d6f-f03b-4dee-944b-58f1497028f1",
+      "at": "2026-11-22T08:06:48+00:00",
+      "event": "discarded_topic_change",
+      "proposal_id": "7479d3e5-b550-4547-9004-1f4afd6a389e",
+      "slot_id": "known_incident:US:los-angeles",
+      "proposed_fact": "Los retrasos recurrentes reportados en incidencias de Los Ángeles se deben a la huelga portuaria, no a un problema interno.",
+      "label": "unrelated",
+      "confidence": 1.0,
+      "decided_by": "llm",
+      "conversation_id": "10ae78f5-8aaf-4205-a769-f15614f4fad6",
+      "actor": {
+        "user_id": 9001,
+        "role": "user"
+      },
+      "origin_run_id": "4ac329e4-8f18-4f56-83e5-86f78b6c131a",
+      "decision_run_id": "aec9fb20-cf7c-473d-a5e9-3f5278d79b42",
+      "origin_message": "Esos retrasos reportados en incidencias de Los Ángeles esta semana son por la huelga portuaria, no por un problema nuestro — ya van tres tickets sobre lo mismo.",
+      "decision_message": "¿Cuál es la ventana de devolución estándar?",
+      "classifier_reason": "Pregunta por la política de devoluciones y no responde a la propuesta de guardar el hecho."
+    }
+  ]
+}
