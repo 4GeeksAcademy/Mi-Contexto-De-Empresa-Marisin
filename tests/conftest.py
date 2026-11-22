@@ -6,6 +6,8 @@
 * Las llamadas de generación del harness (respuesta de dominio y small talk) nunca
   llegan a un LLM real en los tests, aunque el `.env` tenga credenciales: fallan
   como un LLM caído, salvo que el test las sustituya. Así la suite es determinista.
+* Lo mismo para los agentes del flujo de RFPs (`data/pipelines/rfp_intake/`): sin
+  un doble explícito, todos caen a sus reglas deterministas.
 """
 
 import pytest
@@ -14,6 +16,7 @@ from services.agent.harness import events as guard_events
 from services.agent.harness import generation as agent_generation
 from services.agent.memory import store as memory_store
 from services.agent.memory.backend import InMemoryBackend
+from data.pipelines.rfp_intake import llm as rfp_llm
 
 
 @pytest.fixture(autouse=True)
@@ -38,3 +41,11 @@ def no_live_llm_in_generation(monkeypatch):
         raise RuntimeError("sin LLM en los tests")
 
     monkeypatch.setattr(agent_generation, "_complete", offline)
+
+
+@pytest.fixture(autouse=True)
+def no_live_llm_in_rfp_intake(monkeypatch):
+    def offline(system, user):
+        raise RuntimeError("sin LLM en los tests")
+
+    monkeypatch.setattr(rfp_llm, "complete", offline)
