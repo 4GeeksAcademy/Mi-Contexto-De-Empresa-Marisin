@@ -1,0 +1,45 @@
+{
+  "description": "Directorio de envíos de DEMOSTRACIÓN para el agente de CX (Hito 8 · Parte 2). TrackFlow aún no tiene API de tracking unificada (necesidad del área de Carlos Vega en CONTEXT.md); este fichero simula la fuente con datos sintéticos para probar la autorización por sesión del BRIEFING: cada envío solo es visible para los usuarios de `owner_user_ids`. Sin direcciones ni datos personales: solo ciudad y país.",
+  "shipments": [
+    {
+      "reference": "45900",
+      "owner_user_ids": [1, 9001],
+      "country": "US",
+      "city": "Los Ángeles",
+      "carrier": "UPS",
+      "status": "in_transit",
+      "last_event": "Salida del centro de distribución de Los Ángeles",
+      "updated_at": "2026-11-21T16:40:00+00:00"
+    },
+    {
+      "reference": "46012",
+      "owner_user_ids": [1, 9001],
+      "country": "ES",
+      "city": "Zaragoza",
+      "carrier": "MRW",
+      "status": "out_for_delivery",
+      "last_event": "En reparto",
+      "updated_at": "2026-11-22T08:15:00+00:00"
+    },
+    {
+      "reference": "45821",
+      "owner_user_ids": [9002],
+      "country": "ES",
+      "city": "Zaragoza",
+      "carrier": "SEUR",
+      "status": "delivered",
+      "last_event": "Entregado",
+      "updated_at": "2026-11-20T11:05:00+00:00"
+    },
+    {
+      "reference": "1Z999AA10123456784",
+      "owner_user_ids": [9002],
+      "country": "US",
+      "city": "Los Ángeles",
+      "carrier": "UPS",
+      "status": "delivery_failed",
+      "last_event": "Entrega fallida: destinatario ausente",
+      "updated_at": "2026-11-21T19:30:00+00:00"
+    }
+  ]
+}
