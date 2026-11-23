@@ -45,7 +45,7 @@ class RunResult:
 
 
 def process_ticket(ticket_id: int, store: RfpStore, *, llm: LLM | None = None, graph=None) -> RunResult:
-    from .graph import get_graph
+    from .graph import build_graph
 
     started = time.perf_counter()
     ticket = store.get_ticket(ticket_id)
@@ -64,8 +64,8 @@ def process_ticket(ticket_id: int, store: RfpStore, *, llm: LLM | None = None, g
         "sections": [],
     }
     try:
-        compiled = graph or get_graph()
-        for update in compiled.stream(initial, config={"configurable": {"llm": llm}}, stream_mode="updates"):
+        compiled = graph or build_graph(llm)
+        for update in compiled.stream(initial, stream_mode="updates"):
             for node, output in (update or {}).items():
                 output = output or {}
                 executed.append(node)

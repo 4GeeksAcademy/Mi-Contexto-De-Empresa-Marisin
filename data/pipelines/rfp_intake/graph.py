@@ -7,19 +7,18 @@
     department_worker ──────────────────────────────→ synthesize → END
 
 No comparte nodos ni estado con el grafo del agente de CX (`services/agent/graph.py`).
-`RFP_GRAPH` se compila la primera vez que se pide (`get_graph()`), no al importar:
-la API arranca aunque el pipeline no se use.
+`build_graph(llm)` fija el LLM en cada nodo con un cierre de un solo argumento
+(sin `config`); el runner compila un grafo por ejecución, que es barato.
 """
 
 from __future__ import annotations
-
-from functools import lru_cache
 
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Send
 
 from . import nodes
 from .config import GRAPH_NAME
+from .llm import LLM
 from .state import RfpState
 
 NODE_CONVERT = "convert_document"
@@ -43,15 +42,23 @@ def fan_out(state: RfpState) -> list[Send] | str:
     return [Send(NODE_WORKER, worker_input) for worker_input in inputs]
 
 
-def build_graph():
+def _bind(node, llm: LLM | None):
+    def run(state):
+        return node(state, llm=llm)
+
+    run.__name__ = node.__name__
+    return run
+
+
+def build_graph(llm: LLM | None = None):
     builder = StateGraph(RfpState)
-    builder.add_node(NODE_CONVERT, nodes.convert_document)
-    builder.add_node(NODE_CLASSIFY, nodes.classify_document)
-    builder.add_node(NODE_DISCARD, nodes.discard_document)
-    builder.add_node(NODE_METADATA, nodes.extract_metadata)
-    builder.add_node(NODE_ORCHESTRATE, nodes.orchestrate)
-    builder.add_node(NODE_WORKER, nodes.department_worker)
-    builder.add_node(NODE_SYNTHESIZE, nodes.synthesize)
+    builder.add_node(NODE_CONVERT, _bind(nodes.convert_document, llm))
+    builder.add_node(NODE_CLASSIFY, _bind(nodes.classify_document, llm))
+    builder.add_node(NODE_DISCARD, _bind(nodes.discard_document, llm))
+    builder.add_node(NODE_METADATA, _bind(nodes.extract_metadata, llm))
+    builder.add_node(NODE_ORCHESTRATE, _bind(nodes.orchestrate, llm))
+    builder.add_node(NODE_WORKER, _bind(nodes.department_worker, llm))
+    builder.add_node(NODE_SYNTHESIZE, _bind(nodes.synthesize, llm))
 
     builder.add_edge(START, NODE_CONVERT)
     builder.add_edge(NODE_CONVERT, NODE_CLASSIFY)
@@ -66,8 +73,3 @@ def build_graph():
     builder.add_edge(NODE_WORKER, NODE_SYNTHESIZE)
     builder.add_edge(NODE_SYNTHESIZE, END)
     return builder.compile(name=GRAPH_NAME)
-
-
-@lru_cache(maxsize=1)
-def get_graph():
-    return build_graph()
