@@ -30,6 +30,10 @@ class ScriptedLLM:
     """Doble del LLM: responde según el agente que llama (se reconoce por su system prompt)."""
 
     ROLES = (
+        # Parte 2: generadores (antes que los workers: comparten el nombre del departamento).
+        ("agente generador de Warehouse Operations", "draft_warehouse"),
+        ("agente generador de Last Mile", "draft_lastmile"),
+        ("agente generador de Reverse Logistics", "draft_reverse"),
         ("agente clasificador", "classifier"),
         ("agente de metadatos", "metadata"),
         ("orquestador", "orchestrator"),
@@ -63,3 +67,40 @@ class ScriptedLLM:
 
     def roles_called(self) -> list[str]:
         return [role for role, _ in self.calls]
+
+
+def offline_handoff(fixture: str, ticket_id: int | None = None) -> dict:
+    """Handoff de la Parte 1 (`trackflow.rfp_intake.handoff/v1`) sin LLM ni grafo, para la Parte 2."""
+    from data.pipelines.rfp_intake import metadata, orchestrator, signals, synthesizer, workers
+    from data.pipelines.rfp_intake.schemas import Workstream
+
+    markdown = load(fixture)
+    rfp_metadata = metadata.rules_metadata(markdown)
+    plan = orchestrator.plan_workstreams(markdown, rfp_metadata, llm=offline_llm)
+    sections = [
+        workers.run_department_worker(Workstream.model_validate(w), rfp_metadata, llm=offline_llm)
+        for w in plan["workstreams"]
+    ]
+    return synthesizer.synthesize(
+        ticket_id=ticket_id, rfp_id=f"rfp-{fixture}", metadata=rfp_metadata, sections=sections,
+        inactive_departments=plan["inactive_departments"], unassigned_requests=plan["unassigned_requests"],
+        excluded_services=signals.detect_services(markdown).excluded, readability=None, llm=offline_llm,
+    )
+
+
+def ticket_ready_for_drafting(store, fixture: str) -> int:
+    """Ticket en `analisis_completo` con secciones y handoff, como lo deja la Parte 1."""
+    ticket = store.create_ticket(
+        rfp_id=f"rfp-{fixture}", raw_pdf_path=f"data/raw/rfp/{fixture}.pdf", original_filename=fixture,
+        file_sha256="0" * 64, file_size_bytes=100, uploaded_by="1",
+    )
+    ticket_id = ticket["ticket_id"]
+    handoff = offline_handoff(fixture, ticket_id)
+    for department in handoff["departments"]:
+        store.save_section(ticket_id, {
+            "department_id": department["department_id"], "department_name": department["department_name"],
+            "responsible": department["responsible"], "key_aspects": department["key_aspects"],
+            "open_questions": department["open_questions"], "excerpts": [], "source": "rules", "warnings": [],
+        })
+    store.complete(ticket_id, handoff)
+    return ticket_id
