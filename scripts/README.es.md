@@ -85,3 +85,17 @@ python scripts/agent_guardrails_evidence.py
 ```bash
 python scripts/agent_guardrails_report.py
 ```
+
+## `rfp_intake_run.py` — runner CLI del flujo de RFPs (Hito 9 · Parte 1)
+
+No es un segundo API: ejecuta el mismo grafo `rfp_intake` de `data/pipelines/rfp_intake/` que dispara `POST /rfp/tickets`. `--pdf` hace un smoke run de un PDF local con un almacén en memoria (sin BD); `--ticket-id` reprocesa un ticket ya creado desde la UI (PostgreSQL, p. ej. uno que falló a mitad o quedó sin actividad); `--show` exporta el resultado guardado de un ticket sin reprocesarlo (evidencia del PR). `--offline` ejecuta los agentes sin LLM (deciden las reglas) y `--out` guarda el JSON.
+
+```bash
+python scripts/rfp_intake_run.py --pdf ruta/trackflow-request-1.pdf --offline
+```
+```bash
+python scripts/rfp_intake_run.py --ticket-id 3
+```
+```bash
+python scripts/rfp_intake_run.py --show 3 --out docs/rfp-intake/evidence/ticket-3.json
+```

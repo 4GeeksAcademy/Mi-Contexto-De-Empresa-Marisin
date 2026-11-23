@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/inventory/counts", label: "Conteo físico" },
   { href: "/reporting", label: "Reporte semanal" },
   { href: "/knowledge", label: "Asistente comercial" },
+  { href: "/rfp", label: "RFPs" },
 ];
 
 export default function BackofficeNav() {

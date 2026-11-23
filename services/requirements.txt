@@ -13,3 +13,5 @@ celery[redis]>=5.4
 qdrant-client>=1.12
 openai>=1.40
 langgraph>=1.2
+markitdown[pdf]>=0.1
+py-readability-metrics>=1.4

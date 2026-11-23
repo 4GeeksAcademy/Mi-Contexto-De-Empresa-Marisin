@@ -48,6 +48,14 @@ except ModuleNotFoundError as exc:
         raise
     from agent.router import router as agent_router
 
+try:
+    # Recepción de RFPs (Hito 9 · Parte 1): el grafo `rfp_intake` vive en data/pipelines/.
+    from services.rfp.router import router as rfp_router
+except ModuleNotFoundError as exc:
+    if exc.name not in {"services", "services.rfp"}:
+        raise
+    from rfp.router import router as rfp_router
+
 app = FastAPI(
     title="TrackFlow - Supplier Directory API",
     version="1.0.0",
@@ -138,3 +146,4 @@ app.include_router(reporting_router)
 app.include_router(tasks_router)
 app.include_router(knowledge_router)
 app.include_router(agent_router)
+app.include_router(rfp_router)

@@ -17,6 +17,8 @@ data/eval/snapshots/
 # Snapshots CSV del script nocturno (datos de runtime; evidencias en docs/nightly-export/)
 data/raw/telemetry_*.csv
 data/raw/telemetry_*.csv.tmp
+# PDFs de RFPs subidos desde el backoffice (artefacto runtime, Hito 9)
+data/raw/rfp/
 
 # Logs de los jobs en segundo plano (cron)
 logs/
