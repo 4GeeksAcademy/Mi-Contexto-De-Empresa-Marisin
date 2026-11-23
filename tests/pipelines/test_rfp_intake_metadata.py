@@ -164,3 +164,28 @@ def test_a_long_dense_document_is_a_high_cost_tier():
 def test_short_documents_use_the_internal_formulas():
     """py-readability-metrics exige 100 palabras: con menos se usan las fórmulas propias."""
     assert metrics.readability_metrics("Hello there. Send a proposal please.")["source"] == "internal"
+
+
+def test_spanish_density_uses_fernandez_huerta_even_with_the_library(monkeypatch):
+    """py-readability-metrics aplica Flesch-Kincaid (inglés) al español y lo infla: no decide el costo."""
+    monkeypatch.setattr(
+        metrics, "_library_scores",
+        lambda text: {"flesch_kincaid_grade": 18.0, "flesch_reading_ease": 10.0, "gunning_fog": 20.0},
+    )
+
+    result = metrics.readability_metrics(load(FORMAL))
+
+    assert result["source"] == "py-readability-metrics"
+    assert result["flesch_kincaid_grade"] == 18.0
+    assert result["fernandez_huerta"] > 50
+    assert result["dense"] is False
+    assert result["cost_tier"] == "bajo"
+
+
+def test_dense_english_raises_the_cost_tier(monkeypatch):
+    monkeypatch.setattr(
+        metrics, "_library_scores",
+        lambda text: {"flesch_kincaid_grade": 16.0, "flesch_reading_ease": 20.0, "gunning_fog": 18.0},
+    )
+
+    assert metrics.readability_metrics(load(INFORMAL))["cost_tier"] == "medio"

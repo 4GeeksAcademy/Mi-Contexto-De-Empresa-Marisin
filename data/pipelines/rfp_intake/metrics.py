@@ -11,6 +11,8 @@ Parte 2).
   aquí con las mismas fórmulas; `source` dice cuál se usó.
 - Esas fórmulas están pensadas para inglés. Para RFPs en español se añade la
   fórmula de Fernández Huerta (adaptación de Flesch al castellano).
+- La densidad usa Fernández Huerta (< 50 = difícil) en español y Flesch-Kincaid
+  (≥ 14) en inglés: así el resultado no cambia según esté o no la librería.
 - `estimated_tokens` ≈ caracteres / 4 y `estimated_llm_input_tokens` multiplica
   por el número de agentes que leen texto de la RFP en este grafo.
 """
@@ -94,11 +96,22 @@ def _library_scores(text: str) -> dict[str, float] | None:
         return None
 
 
-def cost_tier(estimated_tokens: int, grade: float) -> str:
+def is_dense(language: str, grade: float, fernandez_huerta: float) -> bool:
+    """Texto difícil: Fernández Huerta < 50 en español; Flesch-Kincaid ≥ 14 en el resto.
+
+    Flesch-Kincaid aplicado a español sale inflado (palabras más largas), así que
+    no sirve para decidir la densidad de una RFP en castellano.
+    """
+    if language == "es":
+        return fernandez_huerta < 50
+    return grade >= 14
+
+
+def cost_tier(estimated_tokens: int, dense: bool) -> str:
     """Bajo / medio / alto: tamaño del documento, corregido por su densidad."""
-    if estimated_tokens > 6000 or (estimated_tokens > 3000 and grade >= 14):
+    if estimated_tokens > 6000 or (estimated_tokens > 3000 and dense):
         return "alto"
-    if estimated_tokens > 1500 or grade >= 14:
+    if estimated_tokens > 1500 or dense:
         return "medio"
     return "bajo"
 
@@ -138,5 +151,7 @@ def readability_metrics(markdown: str, *, llm_readers: int = 1) -> dict[str, Any
         "fernandez_huerta": round(206.84 - 0.60 * syllables_per_100 - 1.02 * sentences_per_100, 2),
         "source": source,
     }
-    result["cost_tier"] = cost_tier(estimated_tokens, float(result["flesch_kincaid_grade"]))
+    dense = is_dense(base["language"], float(result["flesch_kincaid_grade"]), result["fernandez_huerta"])
+    result["dense"] = dense
+    result["cost_tier"] = cost_tier(estimated_tokens, dense)
     return result
