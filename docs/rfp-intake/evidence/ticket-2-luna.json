@@ -1,0 +1,194 @@
+{
+  "ticket_id": 2,
+  "original_filename": "trackflow-request-2.pdf",
+  "status": "analisis_completo",
+  "stage": "completado",
+  "error_stage": null,
+  "error_message": null,
+  "classification": {
+    "is_rfp": true,
+    "reason": "Luna Cosmetics solicita a TrackFlow una propuesta para gestionar almacenamiento y envíos en EE. UU.",
+    "source": "llm",
+    "confidence": 0.99,
+    "document_type": "informal_request",
+    "second_opinion": {
+      "is_rfp": true,
+      "reason": "Pide una propuesta (proposal, 3pl partner) para: warehousing, last_mile.",
+      "source": "rules",
+      "confidence": 0.7,
+      "document_type": "informal_request"
+    }
+  },
+  "metadata": {
+    "client_name": "Luna Cosmetics",
+    "client_reference": null,
+    "client_country": "United States",
+    "currency": "USD",
+    "services_requested": [
+      "warehousing",
+      "last_mile"
+    ],
+    "monthly_volume": 5000,
+    "deadline_text": "within the next 3 weeks (around August 24th)",
+    "budget_range": null,
+    "contact": {
+      "name": "Maya Chen",
+      "role": "Founder",
+      "email": null
+    },
+    "departments_needed": [
+      "warehouse",
+      "lastmile"
+    ],
+    "warnings": [],
+    "deadline": null,
+    "source": "llm",
+    "readability": {
+      "dense": false,
+      "source": "py-readability-metrics",
+      "language": "en",
+      "cost_tier": "bajo",
+      "characters": 702,
+      "word_count": 120,
+      "gunning_fog": 11.37,
+      "sentence_count": 9,
+      "estimated_tokens": 176,
+      "fernandez_huerta": 109.19,
+      "flesch_reading_ease": 57.72,
+      "flesch_kincaid_grade": 10.02,
+      "avg_syllables_per_word": 1.5,
+      "avg_words_per_sentence": 13.33,
+      "estimated_llm_input_tokens": 528
+    }
+  },
+  "ready_for_drafting": true,
+  "handoff": {
+    "client": {
+      "name": "Luna Cosmetics",
+      "contact": {
+        "name": "Maya Chen",
+        "role": "Founder",
+        "email": null
+      },
+      "country": "United States",
+      "currency": "USD",
+      "reference": null
+    },
+    "rfp_id": "45dfb957-f359-48c6-971e-1ae428f5d4ab",
+    "summary": "Luna Cosmetics, marca de cuidado de la piel de venta directa al consumidor de Los Ángeles, solicita almacenamiento y envíos de última milla en todo Estados Unidos; indica un volumen de 5.000 pedidos mensuales y espera estar operativa alrededor del 24 de agosto, pero no precisa el año. La cotización debe hacerse en USD. Ana Whitfield, de Warehouse Operations, debe aclarar las necesidades de almacenamiento, la ubicación del almacén y el plazo de onboarding; Carlos Vega, de Last Mile and Carrier Management, debe evaluar cobertura, transportistas, volúmenes de envío y puesta en marcha. Faltan, entre otros datos, el inventario y sus dimensiones, la ubicación preferida del almacén, las integraciones necesarias, el desglose de destinos y envíos, el tamaño y peso de los paquetes, los niveles de servicio y la fecha exacta de inicio.",
+    "contract": "trackflow.rfp_intake.handoff/v1",
+    "deadline": null,
+    "conflicts": [],
+    "ticket_id": 2,
+    "departments": [
+      {
+        "ask": "Pedir a Ana Whitfield (Warehouse Operations): Volumen mensual, Ubicación del cliente, Alcance geográfico, Plazo de onboarding — 5 preguntas abiertas para el cliente.",
+        "key_aspects": [
+          {
+            "topic": "Volumen mensual",
+            "detail": "El volumen indicado es de 5.000 pedidos al mes y condiciona la capacidad de preparación y almacenamiento que debemos cotizar.",
+            "evidence": "we just crossed 5,000 orders a month"
+          },
+          {
+            "topic": "Ubicación del cliente",
+            "detail": "La marca está en Los Ángeles, pero no se especifica dónde debe estar el almacén.",
+            "evidence": "a small direct-to-consumer skincare brand out of LA"
+          },
+          {
+            "topic": "Alcance geográfico",
+            "detail": "Solicita almacenamiento y envíos en todo Estados Unidos.",
+            "evidence": "We need someone to handle warehousing and shipping for us across the US"
+          },
+          {
+            "topic": "Plazo de onboarding",
+            "detail": "Busca estar operativa dentro de las próximas tres semanas, aproximadamente el 24 de agosto.",
+            "evidence": "We're hoping to be up and running within the next 3 weeks\n(around August 24th)"
+          }
+        ],
+        "responsible": "Ana Whitfield",
+        "department_id": "warehouse",
+        "open_questions": [
+          "¿Cuántos SKUs, pallets o m³ hay que almacenar?",
+          "¿Qué inventario inicial prevén, en pallets o m³?",
+          "¿Prefieren un almacén en Los Ángeles o Zaragoza?",
+          "¿Qué ERP utilizan y qué integraciones ERP/API necesitan?",
+          "¿A qué año corresponde el 24 de agosto como fecha objetivo de onboarding?"
+        ],
+        "department_name": "Warehouse Operations"
+      },
+      {
+        "ask": "Pedir a Carlos Vega (Last Mile and Carrier Management): Cobertura nacional, Selección de transportista, Volumen mensual, Puesta en marcha — 6 preguntas abiertas para el cliente.",
+        "key_aspects": [
+          {
+            "topic": "Cobertura nacional",
+            "detail": "Se requiere evaluar opciones de transporte para destinos en todo Estados Unidos; falta el desglose de destinos o zonas para estimar costos.",
+            "evidence": "We need someone to handle warehousing and shipping for us across the US"
+          },
+          {
+            "topic": "Selección de transportista",
+            "detail": "El cliente busca que TrackFlow pueda seleccionar el transportista, ya que aún no tiene relaciones con transportistas.",
+            "evidence": "ideally someone who can also handle carrier selection since we don't have relationships with any carriers yet."
+          },
+          {
+            "topic": "Volumen mensual",
+            "detail": "El volumen indicado es de 5.000 al mes, pero hay que confirmar cuántos corresponden a envíos y su distribución por destino.",
+            "evidence": "\"monthly_volume\": 5000"
+          },
+          {
+            "topic": "Puesta en marcha",
+            "detail": "El cliente espera estar operativo dentro de las próximas tres semanas, alrededor del 24 de agosto; conviene confirmar la fecha objetivo.",
+            "evidence": "We're hoping to be up and running within the next 3 weeks\n(around August 24th)"
+          }
+        ],
+        "responsible": "Carlos Vega",
+        "department_id": "lastmile",
+        "open_questions": [
+          "¿Cuál es el peso y tamaño medio de los paquetes?",
+          "¿Qué plazo de entrega (SLA) espera el cliente?",
+          "¿A qué destinos o zonas de Estados Unidos se envían los pedidos y en qué proporción?",
+          "¿Cuántos envíos mensuales prevén y cómo se distribuyen por destino?",
+          "¿Qué plazos de entrega o niveles de servicio necesitan y qué urgencia tienen los envíos?",
+          "¿Qué fecha exacta esperan para la puesta en marcha?"
+        ],
+        "department_name": "Last Mile and Carrier Management"
+      }
+    ],
+    "next_status": "generando_borrador",
+    "readability": {
+      "dense": false,
+      "source": "py-readability-metrics",
+      "language": "en",
+      "cost_tier": "bajo",
+      "characters": 702,
+      "word_count": 120,
+      "gunning_fog": 11.37,
+      "sentence_count": 9,
+      "estimated_tokens": 176,
+      "fernandez_huerta": 109.19,
+      "flesch_reading_ease": 57.72,
+      "flesch_kincaid_grade": 10.02,
+      "avg_syllables_per_word": 1.5,
+      "avg_words_per_sentence": 13.33,
+      "estimated_llm_input_tokens": 528
+    },
+    "budget_range": null,
+    "generated_at": "2026-11-23T13:16:45.722532+00:00",
+    "deadline_text": "within the next 3 weeks (around August 24th)",
+    "monthly_volume": 5000,
+    "summary_source": "llm",
+    "ready_for_drafting": true,
+    "services_requested": [
+      "warehousing",
+      "last_mile"
+    ],
+    "unassigned_requests": [],
+    "inactive_departments": [
+      {
+        "reason": "el cliente no lo solicita",
+        "evidence": "",
+        "department_id": "reverse"
+      }
+    ]
+  },
+  "run": null
+}

@@ -1,0 +1,26 @@
+{
+  "ticket_id": 3,
+  "original_filename": "trackflow-request-3.pdf",
+  "status": "descartado",
+  "stage": "descartado",
+  "error_stage": null,
+  "error_message": null,
+  "classification": {
+    "is_rfp": false,
+    "reason": "RapidShip ofrece sus tarifas y servicios de transporte a TrackFlow; no solicita una propuesta de TrackFlow.",
+    "source": "llm",
+    "confidence": 0.99,
+    "document_type": "vendor_pitch",
+    "second_opinion": {
+      "is_rfp": false,
+      "reason": "Un proveedor ofrece sus servicios o tarifas a TrackFlow (señales: for trackflow, trackflow's, become one of).",
+      "source": "rules",
+      "confidence": 0.8,
+      "document_type": "vendor_pitch"
+    }
+  },
+  "metadata": null,
+  "ready_for_drafting": false,
+  "handoff": null,
+  "run": null
+}

@@ -1,0 +1,211 @@
+{
+  "ticket_id": 1,
+  "original_filename": "trackflow-request-1.pdf",
+  "status": "analisis_completo",
+  "stage": "completado",
+  "error_stage": null,
+  "error_message": null,
+  "classification": {
+    "is_rfp": true,
+    "reason": "ModaViva solicita formalmente propuestas para almacenamiento y gestión de devoluciones cerca de Zaragoza.",
+    "source": "llm",
+    "confidence": 0.99,
+    "document_type": "formal_rfp",
+    "second_opinion": {
+      "is_rfp": true,
+      "reason": "Pide una propuesta (request for proposal, rfp) para: warehousing, reverse_logistics.",
+      "source": "rules",
+      "confidence": 0.75,
+      "document_type": "formal_rfp"
+    }
+  },
+  "metadata": {
+    "client_name": "ModaViva",
+    "client_reference": "MV-LOG-2026-03",
+    "client_country": "Spain",
+    "currency": "EUR",
+    "services_requested": [
+      "warehousing",
+      "reverse_logistics"
+    ],
+    "monthly_volume": null,
+    "deadline_text": "August 28, 2026",
+    "budget_range": null,
+    "contact": {
+      "name": "Elena Bosch",
+      "role": "Directora de Operaciones",
+      "email": null
+    },
+    "departments_needed": [
+      "warehouse",
+      "reverse"
+    ],
+    "warnings": [],
+    "deadline": "2026-08-28",
+    "source": "llm",
+    "readability": {
+      "dense": false,
+      "source": "py-readability-metrics",
+      "language": "es",
+      "cost_tier": "bajo",
+      "characters": 1371,
+      "word_count": 196,
+      "gunning_fog": 11.13,
+      "sentence_count": 47,
+      "estimated_tokens": 343,
+      "fernandez_huerta": 52.89,
+      "flesch_reading_ease": 17.64,
+      "flesch_kincaid_grade": 14.38,
+      "avg_syllables_per_word": 2.16,
+      "avg_words_per_sentence": 4.17,
+      "estimated_llm_input_tokens": 1029
+    }
+  },
+  "ready_for_drafting": true,
+  "handoff": {
+    "client": {
+      "name": "ModaViva",
+      "contact": {
+        "name": "Elena Bosch",
+        "role": "Directora de Operaciones",
+        "email": null
+      },
+      "country": "Spain",
+      "currency": "EUR",
+      "reference": "MV-LOG-2026-03"
+    },
+    "rfp_id": "b393753c-35d4-477e-9f58-c7fb0afdb353",
+    "summary": "ModaViva, una marca española de moda con ventas online en España y Portugal, solicita almacenamiento y logística inversa; conservará su propio transportista para la última milla. La cotización debe prepararse en EUR y la RFP vence el 28 de agosto de 2026. Ana Whitfield, de Operaciones de Almacén, debe abordar almacenamiento, ubicación cercana a Zaragoza y la integración ERP vía API; Sofía Ramos, de Logística Inversa, debe definir el alcance de las devoluciones y cómo llegan al almacén. Faltan el volumen mensual, la capacidad y el volumen de almacenamiento, los requisitos de integración y los detalles de devoluciones, transporte, tarifas y onboarding; Miguel Torres tiene asignada la solicitud sobre la integración ERP.",
+    "contract": "trackflow.rfp_intake.handoff/v1",
+    "deadline": "2026-08-28",
+    "conflicts": [],
+    "ticket_id": 1,
+    "departments": [
+      {
+        "ask": "Pedir a Ana Whitfield (Warehouse Operations): Número de SKUs, Ubicación Zaragoza, Capacidad del almacén, Integración ERP, Servicios solicitados, Fecha límite RFP — 6 preguntas abiertas para el cliente.",
+        "key_aspects": [
+          {
+            "topic": "Número de SKUs",
+            "detail": "La propuesta debe contemplar almacenamiento para aproximadamente 15.000 SKUs.",
+            "evidence": "Almacenamiento de aproximadamente 15.000 SKUs en un centro cercano a Zaragoza"
+          },
+          {
+            "topic": "Ubicación Zaragoza",
+            "detail": "Se solicita un centro de almacenamiento cercano a Zaragoza.",
+            "evidence": "Almacenamiento de aproximadamente 15.000 SKUs en un centro cercano a Zaragoza"
+          },
+          {
+            "topic": "Capacidad del almacén",
+            "detail": "Hay que confirmar la capacidad disponible para atender la necesidad de almacenamiento indicada.",
+            "evidence": "Capacidad y ubicación del almacén"
+          },
+          {
+            "topic": "Integración ERP",
+            "detail": "La solución debe considerar la integración con el ERP del cliente vía API.",
+            "evidence": "Integración con nuestro ERP vía API"
+          },
+          {
+            "topic": "Servicios solicitados",
+            "detail": "La RFP solicita almacenamiento y logística inversa; el cliente conserva su transportista de última milla.",
+            "evidence": "Buscamos un partner logístico para almacenamiento y gestión de devoluciones; mantenemos nuestro propio transportista para el reparto de última milla."
+          },
+          {
+            "topic": "Fecha límite RFP",
+            "detail": "La fecha límite compartida para la RFP es el 28 de agosto de 2026.",
+            "evidence": "\"deadline_text\": \"August 28, 2026\""
+          }
+        ],
+        "responsible": "Ana Whitfield",
+        "department_id": "warehouse",
+        "open_questions": [
+          "¿Cuántos pedidos al mes habrá que preparar? La RFP no indica el volumen mensual.",
+          "¿Cuántos pallets o qué volumen en m³ hay que almacenar?",
+          "¿Qué tarifas por pallet y por SKU debemos cotizar?",
+          "¿Qué capacidad concreta y qué ubicación del almacén cercano a Zaragoza se pueden ofrecer?",
+          "¿Qué requisitos técnicos y alcance tiene la integración del ERP vía API?",
+          "¿Cuál es la fecha objetivo de onboarding y qué requisitos o tiempos de incorporación debemos considerar?"
+        ],
+        "department_name": "Warehouse Operations"
+      },
+      {
+        "ask": "Pedir a Sofía Ramos (Reverse Logistics): Alcance de devoluciones, Mercados atendidos, Transporte de última milla, Fecha límite RFP — 6 preguntas abiertas para el cliente.",
+        "key_aspects": [
+          {
+            "topic": "Alcance de devoluciones",
+            "detail": "La propuesta debe contemplar inspección, reacondicionamiento y reposición de inventario.",
+            "evidence": "Gestión de devoluciones: inspección, reacondicionamiento y restock"
+          },
+          {
+            "topic": "Mercados atendidos",
+            "detail": "La operación de devoluciones corresponde a ventas online en España y Portugal.",
+            "evidence": "ModaViva es una marca de moda española con venta online en España y Portugal."
+          },
+          {
+            "topic": "Transporte de última milla",
+            "detail": "ModaViva mantiene su propio transportista para la entrega de última milla; falta confirmar cómo se trasladan las devoluciones.",
+            "evidence": "mantenemos nuestro propio transportista para el reparto de última milla."
+          },
+          {
+            "topic": "Fecha límite RFP",
+            "detail": "La propuesta debe considerar la fecha límite indicada para la RFP.",
+            "evidence": "August 28, 2026"
+          }
+        ],
+        "responsible": "Sofía Ramos",
+        "department_id": "reverse",
+        "open_questions": [
+          "¿Qué volumen o tasa de devoluciones espera el cliente?",
+          "¿Qué plazo de procesamiento de devoluciones espera? (TrackFlow nunca promete menos de 48 h.)",
+          "¿Qué criterios de inspección y clasificación debemos aplicar?",
+          "¿Qué trabajos de reacondicionamiento se requieren y con qué frecuencia?",
+          "¿Qué productos deben reponerse, devolverse al cliente o destruirse según su estado?",
+          "¿Cómo se gestionará el transporte de las devoluciones hasta nuestras instalaciones?"
+        ],
+        "department_name": "Reverse Logistics"
+      }
+    ],
+    "next_status": "generando_borrador",
+    "readability": {
+      "dense": false,
+      "source": "py-readability-metrics",
+      "language": "es",
+      "cost_tier": "bajo",
+      "characters": 1371,
+      "word_count": 196,
+      "gunning_fog": 11.13,
+      "sentence_count": 47,
+      "estimated_tokens": 343,
+      "fernandez_huerta": 52.89,
+      "flesch_reading_ease": 17.64,
+      "flesch_kincaid_grade": 14.38,
+      "avg_syllables_per_word": 2.16,
+      "avg_words_per_sentence": 4.17,
+      "estimated_llm_input_tokens": 1029
+    },
+    "budget_range": null,
+    "generated_at": "2026-11-23T13:14:33.703626+00:00",
+    "deadline_text": "August 28, 2026",
+    "monthly_volume": null,
+    "summary_source": "llm",
+    "ready_for_drafting": true,
+    "services_requested": [
+      "warehousing",
+      "reverse_logistics"
+    ],
+    "unassigned_requests": [
+      {
+        "ask": "Miguel Torres",
+        "topic": "Integración con el ERP mediante API",
+        "evidence": "Integración con nuestro ERP vía API"
+      }
+    ],
+    "inactive_departments": [
+      {
+        "reason": "excluido explícitamente en la RFP",
+        "evidence": "mantenemos nuestro propio transportista para el reparto de última milla",
+        "department_id": "lastmile"
+      }
+    ]
+  },
+  "run": null
+}
