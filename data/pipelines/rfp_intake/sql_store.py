@@ -9,8 +9,12 @@ API también las crea si faltan, sin los checks):
   clasificación, error, handoff y la bandera `ready_for_drafting` que lee la Parte 2).
 - `rfp_metadata`: metadatos de la RFP (BRIEFING §2.3) y métricas de legibilidad.
 - `rfp_department_sections`: una fila por departamento activo con `key_aspects`;
-  `draft_content`, `evaluation_results`, `approval_status`, `approver` y
-  `approved_at` quedan a `NULL` para las Partes 2 y 3.
+  la Parte 2 rellena `draft_content`, `evaluation_results` (último
+  `EvaluationResult`), `draft_status`, `iterations`, `evaluation_history` y
+  `draft_source`; `approval_status`, `approver` y `approved_at` son de la Parte 3.
+
+Parte 2 (`services/sql/004_rfp_drafting.sql`): `rfp_tickets.drafting_handoff`
+(contrato `trackflow.rfp_drafting.handoff/v1`) y la bandera `ready_for_approval`.
 
 Las horas se calculan en Python (UTC), como en `services/job_runner.py`, para que
 el mismo código funcione en Supabase y en el SQLite en memoria de los tests.
@@ -26,7 +30,8 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Field, Session, SQLModel, select
 
 from . import config
-from .store import TicketNotFound, utc_now
+from .drafting import config as drafting_config
+from .store import SECTION_DRAFT_DEFAULTS, NotDraftable, TicketNotFound, drafting_refusal, utc_now
 
 
 class RfpTicket(SQLModel, table=True):
@@ -49,6 +54,9 @@ class RfpTicket(SQLModel, table=True):
     error_message: Optional[str] = Field(default=None, sa_column=Column(Text))
     handoff: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     ready_for_drafting: bool = Field(default=False, index=True)
+    # Parte 2: handoff a la Parte 3 y su bandera de cola.
+    drafting_handoff: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    ready_for_approval: bool = Field(default=False)
     created_at: datetime = Field(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), nullable=False))
     updated_at: datetime = Field(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), nullable=False))
 
@@ -93,6 +101,11 @@ class RfpDepartmentSectionRow(SQLModel, table=True):
     # Partes 2 y 3 (BRIEFING §2.3): vacíos en la Parte 1.
     draft_content: Optional[str] = Field(default=None, sa_column=Column(Text))
     evaluation_results: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    # Parte 2: estado de la sección en el ciclo generador-evaluador.
+    draft_status: Optional[str] = None
+    iterations: int = Field(default=0)
+    evaluation_history: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    draft_source: Optional[str] = None
     approval_status: Optional[str] = None
     approver: Optional[str] = None
     approved_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
@@ -107,7 +120,8 @@ _METADATA_FIELDS = (
 )
 _SECTION_FIELDS = (
     "department_id", "department_name", "responsible", "key_aspects", "open_questions", "excerpts", "source",
-    "warnings", "draft_content", "evaluation_results", "approval_status", "approver", "approved_at",
+    "warnings", "draft_content", "evaluation_results", "draft_status", "iterations", "evaluation_history",
+    "draft_source", "approval_status", "approver", "approved_at",
 )
 
 
@@ -194,6 +208,8 @@ class SqlRfpStore:
             row.error_message = None
             row.handoff = None
             row.ready_for_drafting = False
+            row.drafting_handoff = None
+            row.ready_for_approval = False
             row.updated_at = utc_now()
             session.add(row)
             session.commit()
@@ -275,3 +291,79 @@ class SqlRfpStore:
             self._update(ticket_id, stage=config.STAGE_ERROR, error_stage=stage, error_message=message[:2000])
         except TicketNotFound:
             pass
+
+    # ------------------------------------------------------------------ #
+    # Parte 2 · generación y evaluación de borradores
+    # ------------------------------------------------------------------ #
+    def list_ready_for_drafting(self, limit=50):
+        """La cola de la Parte 2 (índice parcial `rfp_tickets_ready_for_drafting_idx`)."""
+        with Session(self.engine) as session:
+            rows = session.exec(
+                select(RfpTicket)
+                .where(RfpTicket.ready_for_drafting, RfpTicket.status == config.STATUS_ANALYSIS_COMPLETE)
+                .order_by(RfpTicket.ticket_id)
+                .limit(limit)
+            ).all()
+            return [_ticket_dict(row) for row in rows]
+
+    def claim_for_drafting(self, ticket_id, *, force=False):
+        """Toma el ticket de la cola de forma atómica (`SELECT … FOR UPDATE` en PostgreSQL)."""
+        with Session(self.engine) as session:
+            row = session.exec(select(RfpTicket).where(RfpTicket.ticket_id == ticket_id).with_for_update()).first()
+            if row is None:
+                raise TicketNotFound(ticket_id)
+            reason = drafting_refusal(_ticket_dict(row), force=force)
+            if reason:
+                raise NotDraftable(reason)
+            row.status = drafting_config.STATUS_GENERATING
+            row.stage = drafting_config.STAGE_GENERATING
+            row.ready_for_drafting = False
+            row.drafting_handoff = None
+            row.ready_for_approval = False
+            row.error_stage = None
+            row.error_message = None
+            row.updated_at = utc_now()
+            session.add(row)
+            for section in session.exec(
+                select(RfpDepartmentSectionRow).where(RfpDepartmentSectionRow.ticket_id == ticket_id)
+            ).all():
+                for field, value in SECTION_DRAFT_DEFAULTS.items():
+                    setattr(section, field, list(value) if isinstance(value, list) else value)
+                session.add(section)
+            session.commit()
+            session.refresh(row)
+            return _ticket_dict(row)
+
+    def set_drafting_progress(self, ticket_id, status, stage):
+        self._update(ticket_id, status=status, stage=stage)
+
+    def save_section_draft(self, ticket_id, department_id, **changes):
+        entry = changes.pop("history_entry", None)
+        with Session(self.engine) as session:
+            ticket = self._get(session, ticket_id)
+            section = session.exec(
+                select(RfpDepartmentSectionRow).where(
+                    RfpDepartmentSectionRow.ticket_id == ticket_id,
+                    RfpDepartmentSectionRow.department_id == department_id,
+                )
+            ).first()
+            if section is None:
+                raise KeyError(f"El ticket {ticket_id} no tiene sección {department_id}")
+            for field, value in changes.items():
+                setattr(section, field, value)
+            if entry is not None:
+                # Lista nueva: SQLAlchemy no detecta cambios dentro de una columna JSON mutada en sitio.
+                section.evaluation_history = [*(section.evaluation_history or []), entry]
+            session.add(section)
+            ticket.updated_at = utc_now()
+            session.add(ticket)
+            session.commit()
+
+    def complete_drafting(self, ticket_id, output):
+        self._update(
+            ticket_id,
+            status=output["status"],
+            stage=drafting_config.STAGE_DRAFTS_READY,
+            drafting_handoff=output,
+            ready_for_approval=bool(output.get("ready_for_approval")),
+        )
