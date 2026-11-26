@@ -99,7 +99,8 @@ host="$1"; key="$2"
 opts=(-i "$key" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
       -o ConnectTimeout=5 -o LogLevel=ERROR)
 for user in root trackflow-ops; do
-    if out="$(ssh "${opts[@]}" "$user@$host" id 2>&1)"; then
+    # -n: ssh no lee stdin (que es este mismo script); sin él, el login de root se lo come.
+    if out="$(ssh -n "${opts[@]}" "$user@$host" id 2>&1)"; then
         echo "ENTRA     ssh -i $key $user@$host id → $out"
     else
         echo "DENEGADO  ssh -i $key $user@$host id → $(tail -1 <<<"$out")"
