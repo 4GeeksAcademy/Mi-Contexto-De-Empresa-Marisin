@@ -7,7 +7,8 @@
    cualquier análisis anterior (reprocesar es idempotente).
 2. Recorre el grafo con `stream_mode="updates"` y guarda lo que emite cada nodo
    **en cuanto termina**: Markdown, clasificación, metadatos y métricas, una
-   sección por worker y, al final, el handoff.
+   sección por worker y, al final, el handoff. Al guardar los metadatos (RFP
+   válida, todavía `analizando`) emite `rfp_ticket_created` (`events.py`).
 3. Estado final: `descartado` (lo decidió el clasificador), `analisis_completo`
    (terminó el synthesizer) o, si algo falla, sigue en `analizando` con
    `stage = error`, `error_stage` y `error_message`: el ticket nunca dice que
@@ -26,7 +27,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from . import config
+from . import config, events
 from .approval.trace import record_safely, runner_entry, utc_iso
 from .intake import resolve_pdf_path
 from .llm import LLM
@@ -108,6 +109,7 @@ def process_ticket(ticket_id: int, store: RfpStore, *, llm: LLM | None = None, g
                 elif node == "extract_metadata":
                     store.save_metadata(ticket_id, output["metadata"], output["readability"])
                     stage = config.STAGE_ORCHESTRATING
+                    _notify_ticket_created(store, ticket_id)
                 elif node == "orchestrate":
                     expected_sections = len(output.get("workstreams") or [])
                     stage = config.STAGE_DEPARTMENTS if expected_sections else config.STAGE_SYNTHESIZING
@@ -133,6 +135,16 @@ def process_ticket(ticket_id: int, store: RfpStore, *, llm: LLM | None = None, g
     result = RunResult(ticket_id, outcome, stage, _elapsed(started), None, executed)
     logger.info("Ticket RFP %s → %s en %d ms (%s)", ticket_id, outcome, result.duration_ms, " → ".join(executed))
     return result
+
+
+def _notify_ticket_created(store: RfpStore, ticket_id: int) -> None:
+    """`rfp_ticket_created`: RFP válida, ya con metadatos y aún en `analizando` (nunca rompe el pipeline)."""
+    try:
+        ticket = store.get_ticket(ticket_id)
+        if ticket is not None:
+            events.emit(events.EVENT_RFP_TICKET_CREATED, events.ticket_created_payload(ticket))
+    except Exception:
+        logger.exception("No se pudo notificar el ticket RFP %s", ticket_id)
 
 
 def _elapsed(started: float) -> int:
