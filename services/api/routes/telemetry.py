@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session
 
 from .. import database
-from ..security import get_current_user
+from ..security import require_staff
 from ..cache import CACHE_ENABLED, TELEMETRY_REPORT_TTL, telemetry_report_cache
 from ..database import get_db
 from ..telemetry_ingest import (
@@ -86,7 +86,7 @@ def receive_telemetry_events(
 
 @router.get("/report", response_model=TelemetryReport)
 def get_telemetry_report(
-    _: Annotated[dict, Depends(get_current_user)],
+    _: Annotated[dict, Depends(require_staff)],  # solo personal (D8); POST /events sigue público
     start_date: Annotated[
         datetime | None,
         Query(description="Inicio inclusivo, ISO 8601. Sin zona horaria se interpreta como UTC."),

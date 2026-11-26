@@ -12,18 +12,19 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 try:
     # API arrancada desde la raíz del repo: `uvicorn services.api.main:app`.
-    from services.api.security import get_current_user
+    from services.api.security import get_current_user, require_staff
 except ModuleNotFoundError as exc:
     if exc.name not in {"services", "services.api"}:
         raise
     # Contenedor de Docker: /app es `services/`, así que el paquete es `api`.
-    from api.security import get_current_user
+    from api.security import get_current_user, require_staff
 
 from data.pipelines import rag as rag_pipeline
 
 from .schemas import KnowledgeQueryRequest, KnowledgeQueryResponse
 
-router = APIRouter(prefix="/knowledge", tags=["knowledge"])
+# Solo personal de TrackFlow (D8): un cliente (`user`) recibe 403 en todo el router.
+router = APIRouter(prefix="/knowledge", tags=["knowledge"], dependencies=[Depends(require_staff)])
 logger = logging.getLogger("api.knowledge")
 
 ASSISTANT_UNAVAILABLE = "El asistente comercial no está disponible en este momento."

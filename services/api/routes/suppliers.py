@@ -10,9 +10,10 @@ from ..models import (
     SupplierUpdateRate,
     SupplierUpdateStatus,
 )
-from ..security import get_current_user
+from ..security import get_current_user, require_staff
 
-router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
+# Solo personal de TrackFlow (D8): un cliente (`user`) recibe 403 en todo el router.
+router = APIRouter(prefix="/suppliers", tags=["Suppliers"], dependencies=[Depends(require_staff)])
 
 
 @router.get("", response_model=list[SupplierListItem])
