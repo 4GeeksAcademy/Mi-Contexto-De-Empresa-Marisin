@@ -25,6 +25,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..approval.trace import record_safely, runner_entry
 from ..llm import LLM
 from ..store import NotDraftable, RfpStore, TicketNotFound
 from . import config
@@ -57,7 +58,14 @@ class StoreReporter:
             self.ticket_id, department_id, draft_status=config.SECTION_GENERATING, iterations=iteration
         )
 
+    def _trace(self, node, agent, department_id, input=None, output=None):
+        record_safely(self.store, runner_entry(graph=config.GRAPH_NAME, node=node, agent=agent,
+                                               ticket_id=self.ticket_id, department_id=department_id,
+                                               input=input, output=output))
+
     def drafted(self, department_id, draft):
+        self._trace("generate", f"{department_id}_generator", department_id, {"iteration": draft["iteration"]},
+                    {"source": draft["source"], "content": draft["content"]})
         self.store.save_section_draft(
             self.ticket_id,
             department_id,
@@ -72,11 +80,17 @@ class StoreReporter:
                 self.store.set_drafting_progress(self.ticket_id, config.STATUS_EVALUATING, config.STAGE_EVALUATING)
 
     def evaluated(self, department_id, evaluation, history_entry):
+        self._trace("judge", "evaluators (legibilidad, pertinencia, cumplimiento) + judge", department_id,
+                    {"iteration": evaluation.get("iteration")},
+                    {"overall_pass": evaluation.get("overall_pass"), "violations": history_entry.get("violations"),
+                     "missing_aspects": history_entry.get("missing_aspects")})
         self.store.save_section_draft(
             self.ticket_id, department_id, evaluation_results=evaluation, history_entry=history_entry
         )
 
     def finished(self, department_id, section):
+        self._trace("finalize", "drafting_coordinator", department_id, {"iterations": section["iterations"]},
+                    {"draft_status": section["draft_status"]})
         self.store.save_section_draft(
             self.ticket_id,
             department_id,

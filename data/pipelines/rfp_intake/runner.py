@@ -27,11 +27,24 @@ from typing import Any
 from uuid import uuid4
 
 from . import config
+from .approval.trace import record_safely, runner_entry, utc_iso
 from .intake import resolve_pdf_path
 from .llm import LLM
 from .store import InMemoryRfpStore, RfpStore, TicketNotFound
 
 logger = logging.getLogger("rfp_intake.runner")
+
+# Agente de cada nodo del grafo `rfp_intake` (traza `rfp_trace_events`, Parte 3).
+NODE_AGENTS = {
+    "convert_document": "converter (MarkItDown)",
+    "classify_document": "classifier",
+    "discard_document": "intake_coordinator",
+    "extract_metadata": "metadata_agent",
+    "orchestrate": "orchestrator",
+    "department_worker": "department_worker",
+    "synthesize": "synthesizer",
+}
+TRACE_OUTPUT_KEYS = ("classification", "metadata", "readability", "workstreams", "sections", "handoff")
 
 
 @dataclass
@@ -63,12 +76,24 @@ def process_ticket(ticket_id: int, store: RfpStore, *, llm: LLM | None = None, g
         "pdf_path": str(resolve_pdf_path(ticket["raw_pdf_path"])),
         "sections": [],
     }
+    previous = utc_iso()
     try:
         compiled = graph or build_graph(llm)
         for update in compiled.stream(initial, stream_mode="updates"):
             for node, output in (update or {}).items():
                 output = output or {}
                 executed.append(node)
+                departments = [s.get("department_id") for s in output.get("sections") or []]
+                record_safely(store, runner_entry(
+                    graph=config.GRAPH_NAME, node=node, ticket_id=ticket_id,
+                    agent=f"{departments[0]}_worker" if node == "department_worker" and departments else NODE_AGENTS.get(node, node),
+                    department_id=departments[0] if node == "department_worker" and departments else None,
+                    input={"after": executed[-2] if len(executed) > 1 else "START"},
+                    output={k: output[k] for k in TRACE_OUTPUT_KEYS if k in output}
+                    | ({"markdown_chars": len(output["markdown"])} if output.get("markdown") else {}),
+                    started_at=previous,
+                ))
+                previous = utc_iso()
                 if node == "convert_document":
                     store.save_markdown(ticket_id, output["markdown"])
                     stage = config.STAGE_CLASSIFYING
