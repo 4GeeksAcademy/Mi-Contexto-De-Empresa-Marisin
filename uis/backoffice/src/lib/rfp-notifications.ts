@@ -122,7 +122,11 @@ export function useRfpNotifications({ onTicket, onResync, enabled = true }: UseR
         handlers.current.onResync(payload as ResyncEvent);
       }
     };
-    void connectSse({ path: REALTIME_EVENTS_PATH, onEvent, onStatus: setConnection, signal: controller.signal });
+    // Una conexión ya abortada (desmontaje, doble montaje en desarrollo) no pisa el estado de la nueva.
+    const onStatus = (info: SseStatusInfo) => {
+      if (!controller.signal.aborted) setConnection(info);
+    };
+    void connectSse({ path: REALTIME_EVENTS_PATH, onEvent, onStatus, signal: controller.signal });
     return () => controller.abort();
   }, [enabled]);
 
