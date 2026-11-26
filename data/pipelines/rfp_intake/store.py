@@ -16,6 +16,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
 from . import config
+from .approval import config as approval_config
 from .drafting import config as drafting_config
 
 TICKET_FIELDS = (
@@ -27,6 +28,11 @@ TICKET_FIELDS = (
 SECTION_DRAFT_DEFAULTS = {
     "draft_content": None, "evaluation_results": None, "draft_status": None, "iterations": 0,
     "evaluation_history": [], "draft_source": None,
+}
+# Campos de la Parte 3 en cada sección (vacíos hasta que la rama pide aprobación).
+SECTION_APPROVAL_DEFAULTS = {
+    "approval_status": None, "approver": None, "approved_at": None, "approval_round": 0,
+    "approval_comment": None, "approval_requested_at": None, "approval_history": [],
 }
 # Estados en los que hay un pipeline trabajando (Parte 1 o Parte 2).
 WORKING_STATUSES = (config.STATUS_ANALYZING, drafting_config.STATUS_GENERATING, drafting_config.STATUS_EVALUATING)
@@ -77,10 +83,23 @@ class RfpStore(Protocol):
     def set_drafting_progress(self, ticket_id: int, status: str, stage: str) -> None: ...
     def save_section_draft(self, ticket_id: int, department_id: str, **changes: Any) -> None: ...
     def complete_drafting(self, ticket_id: int, output: dict[str, Any]) -> None: ...
+    # Parte 3 · aprobación humana, arbitraje y documento final
+    def list_ready_for_approval(self, limit: int = 50) -> list[dict[str, Any]]: ...
+    def claim_for_approval(self, ticket_id: int, *, force: bool = False) -> dict[str, Any]: ...
+    def set_approval_progress(self, ticket_id: int, stage: str, status: str = ...) -> None: ...
+    def save_section_approval(self, ticket_id: int, department_id: str, **changes: Any) -> None: ...
+    def save_final_document(self, ticket_id: int, document: dict[str, Any]) -> None: ...
+    def get_final_document(self, ticket_id: int) -> dict[str, Any] | None: ...
+    def append_trace(self, ticket_id: int, entry: dict[str, Any]) -> None: ...
+    def list_trace(self, ticket_id: int, limit: int = 2000) -> list[dict[str, Any]]: ...
 
 
 class TicketNotFound(LookupError):
     pass
+
+
+class NotApprovable(ValueError):
+    """El ticket no puede pasar a la Parte 3 (sin borradores, generándose, ya terminado…)."""
 
 
 class NotDraftable(ValueError):
@@ -112,6 +131,32 @@ def drafting_refusal(ticket: dict[str, Any], *, force: bool = False) -> str | No
     return None
 
 
+def approval_refusal(ticket: dict[str, Any], *, force: bool = False) -> str | None:
+    """Motivo por el que el ticket no puede (re)abrir la aprobación humana, o `None` si puede.
+
+    Sin `force` solo entra lo que está en la cola de la Parte 2 (`ready_for_approval`
+    con `stage = borradores_listos`). Con `force` (botón o CLI) también un ticket ya en
+    `esperando_aprobación` —p. ej. con una sección rechazada—, que se reinicia desde cero.
+    """
+    status = ticket.get("status")
+    output = ticket.get("drafting_handoff") or {}
+    if status == approval_config.STATUS_DONE:
+        return "el ticket ya está terminado: su documento final está generado"
+    if status == approval_config.STATUS_AWAITING:
+        if not output.get("sections"):
+            return "el ticket no tiene borradores de la Parte 2"
+        return None if force else "el ticket ya está esperando aprobación: reinícialo de forma explícita"
+    if status not in approval_config.APPROVABLE_STATUSES:
+        return f"el ticket está en «{status}»: la Parte 3 parte de los borradores evaluados de la Parte 2"
+    if ticket.get("stage") != drafting_config.STAGE_DRAFTS_READY:
+        return "los borradores de este ticket aún no están listos"
+    if not output.get("sections"):
+        return "el ticket no tiene handoff de la Parte 2 con secciones"
+    if not ticket.get("ready_for_approval") and not force:
+        return "el ticket no está en la cola de aprobación (ready_for_approval = false)"
+    return None
+
+
 class InMemoryRfpStore:
     """Misma semántica que `SqlRfpStore`, en diccionarios (tests y dry-run)."""
 
@@ -122,6 +167,9 @@ class InMemoryRfpStore:
         self.markdown: dict[int, str] = {}
         self.metadata: dict[int, dict[str, Any]] = {}
         self.sections: dict[int, dict[str, dict[str, Any]]] = {}
+        self.final_documents: dict[int, dict[str, Any]] = {}
+        self.trace: dict[int, list[dict[str, Any]]] = {}
+        self._trace_seq = 0
 
     def _ticket(self, ticket_id: int) -> dict[str, Any]:
         try:
@@ -177,6 +225,7 @@ class InMemoryRfpStore:
             ticket = self._ticket(ticket_id)
             self.metadata.pop(ticket_id, None)
             self.sections.pop(ticket_id, None)
+            self.final_documents.pop(ticket_id, None)
             self._touch(ticket, status=config.STATUS_ANALYZING, stage=config.STAGE_CONVERTING, classification=None,
                         error_stage=None, error_message=None, handoff=None, ready_for_drafting=False,
                         drafting_handoff=None, ready_for_approval=False)
@@ -213,7 +262,7 @@ class InMemoryRfpStore:
             self._ticket(ticket_id)
             self.sections.setdefault(ticket_id, {})[section["department_id"]] = {
                 **copy.deepcopy(section), **copy.deepcopy(SECTION_DRAFT_DEFAULTS),
-                "approval_status": None, "approver": None, "approved_at": None,
+                **copy.deepcopy(SECTION_APPROVAL_DEFAULTS),
             }
             self._touch(self._ticket(ticket_id), stage=config.STAGE_DEPARTMENTS)
 
@@ -250,6 +299,8 @@ class InMemoryRfpStore:
                         error_stage=None, error_message=None)
             for section in self.sections.get(ticket_id, {}).values():
                 section.update(copy.deepcopy(SECTION_DRAFT_DEFAULTS))
+                section.update(copy.deepcopy(SECTION_APPROVAL_DEFAULTS))
+            self.final_documents.pop(ticket_id, None)
             return copy.deepcopy(ticket)
 
     def set_drafting_progress(self, ticket_id, status, stage):
@@ -272,3 +323,64 @@ class InMemoryRfpStore:
         with self._lock:
             self._touch(self._ticket(ticket_id), status=output["status"], stage=drafting_config.STAGE_DRAFTS_READY,
                         drafting_handoff=copy.deepcopy(output), ready_for_approval=bool(output.get("ready_for_approval")))
+
+    # ------------------------------------------------------------------ #
+    # Parte 3
+    # ------------------------------------------------------------------ #
+    def list_ready_for_approval(self, limit=50):
+        with self._lock:
+            ready = [
+                copy.deepcopy(t) for t in sorted(self.tickets.values(), key=lambda t: t["ticket_id"])
+                if t["ready_for_approval"] and t["status"] in approval_config.APPROVABLE_STATUSES
+                and t["stage"] == drafting_config.STAGE_DRAFTS_READY
+            ]
+            return ready[:limit]
+
+    def claim_for_approval(self, ticket_id, *, force=False):
+        with self._lock:
+            ticket = self._ticket(ticket_id)
+            reason = approval_refusal(ticket, force=force)
+            if reason:
+                raise NotApprovable(reason)
+            self._touch(ticket, status=approval_config.STATUS_AWAITING, stage=approval_config.STAGE_AWAITING,
+                        ready_for_approval=False, error_stage=None, error_message=None)
+            for section in self.sections.get(ticket_id, {}).values():
+                section.update(copy.deepcopy(SECTION_APPROVAL_DEFAULTS))
+            self.final_documents.pop(ticket_id, None)
+            return copy.deepcopy(ticket)
+
+    def set_approval_progress(self, ticket_id, stage, status=approval_config.STATUS_AWAITING):
+        with self._lock:
+            self._touch(self._ticket(ticket_id), status=status, stage=stage)
+
+    def save_section_approval(self, ticket_id, department_id, **changes):
+        with self._lock:
+            ticket = self._ticket(ticket_id)
+            section = self.sections.get(ticket_id, {}).get(department_id)
+            if section is None:
+                raise KeyError(f"El ticket {ticket_id} no tiene sección {department_id}")
+            entry = changes.pop("decision_entry", None)
+            section.update(copy.deepcopy(changes))
+            if entry is not None:
+                section["approval_history"] = [*(section.get("approval_history") or []), copy.deepcopy(entry)]
+            self._touch(ticket)
+
+    def save_final_document(self, ticket_id, document):
+        with self._lock:
+            ticket = self._ticket(ticket_id)
+            self.final_documents[ticket_id] = copy.deepcopy(document)
+            self._touch(ticket, status=approval_config.STATUS_DONE, stage=approval_config.STAGE_DONE)
+
+    def get_final_document(self, ticket_id):
+        with self._lock:
+            document = self.final_documents.get(ticket_id)
+            return copy.deepcopy(document) if document is not None else None
+
+    def append_trace(self, ticket_id, entry):
+        with self._lock:
+            self._trace_seq += 1
+            self.trace.setdefault(ticket_id, []).append({**copy.deepcopy(entry), "id": self._trace_seq})
+
+    def list_trace(self, ticket_id, limit=2000):
+        with self._lock:
+            return copy.deepcopy(self.trace.get(ticket_id, [])[:limit])
