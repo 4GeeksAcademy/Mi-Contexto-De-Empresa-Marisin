@@ -75,9 +75,17 @@ class StoreApprovalReporter:
         # Tras una reescritura (humana o del árbitro) el ticket vuelve a esperar los vistos buenos.
         self.store.set_approval_progress(ticket_id, config.STAGE_AWAITING)
 
-    def revising(self, ticket_id, department_id, *, round_number, feedback):
+    def revising(self, ticket_id, department_id, *, round_number, feedback, decision=None):
+        # La petición de cambios del responsable queda en el historial de la sección (las del árbitro las
+        # registra `arbitration`): así `approval_history` tiene todas las decisiones, no solo el sign-off final.
+        entry = None
+        if decision:
+            entry = {"approval_status": config.APPROVAL_CHANGES, "decision": decision["decision"],
+                     "approver": decision["approver"], "comment": decision.get("comment") or "",
+                     "round": round_number, "decided_at": decision.get("decided_at")}
         self.store.save_section_approval(
             ticket_id, department_id, approval_status=config.APPROVAL_CHANGES, approval_comment=feedback[:2000],
+            decision_entry=entry,
         )
         self.store.set_approval_progress(ticket_id, config.STAGE_REVISING)
 

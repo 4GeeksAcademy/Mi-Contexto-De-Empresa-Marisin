@@ -15,7 +15,8 @@ from typing import Any, Protocol
 class ApprovalReporter(Protocol):
     def approval_requested(self, ticket_id: int, department_id: str, section: dict[str, Any], *,
                            round_number: int, requested_at: str) -> None: ...
-    def revising(self, ticket_id: int, department_id: str, *, round_number: int, feedback: str) -> None: ...
+    def revising(self, ticket_id: int, department_id: str, *, round_number: int, feedback: str,
+                 decision: dict[str, Any] | None = None) -> None: ...
     def revision_progress(self, ticket_id: int, department_id: str, **changes: Any) -> None: ...
     def signoff(self, ticket_id: int, department_id: str, event: dict[str, Any]) -> None: ...
     def arbitration(self, ticket_id: int, decisions: list[dict[str, Any]], rejected: dict[str, str]) -> None: ...
@@ -29,7 +30,7 @@ class NullApprovalReporter:
     def approval_requested(self, ticket_id, department_id, section, *, round_number, requested_at):
         pass
 
-    def revising(self, ticket_id, department_id, *, round_number, feedback):
+    def revising(self, ticket_id, department_id, *, round_number, feedback, decision=None):
         pass
 
     def revision_progress(self, ticket_id, department_id, **changes):
@@ -63,7 +64,7 @@ class RecordingApprovalReporter(NullApprovalReporter):
     def approval_requested(self, ticket_id, department_id, section, *, round_number, requested_at):
         self.events.append(("approval_requested", department_id, round_number))
 
-    def revising(self, ticket_id, department_id, *, round_number, feedback):
+    def revising(self, ticket_id, department_id, *, round_number, feedback, decision=None):
         self.events.append(("revising", department_id, round_number))
 
     def signoff(self, ticket_id, department_id, event):

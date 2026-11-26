@@ -133,6 +133,9 @@ def test_request_changes_goes_back_to_the_part2_generator_and_pauses_again(store
     saved = section(store, ticket_id, "warehouse")
     assert saved["approval_status"] == config.APPROVAL_PENDING and saved["approval_round"] == 1
     assert store.get_ticket(ticket_id)["stage"] == config.STAGE_AWAITING  # no se queda en revisando_secciones
+    requested = saved["approval_history"][0]  # la petición de cambios también queda en el historial
+    assert (requested["decision"], requested["approver"], requested["round"]) == ("request_changes", "Ana Whitfield", 1)
+    assert "Indica el plazo de onboarding" in requested["comment"]
     assert any(entry.get("phase") == "approval" for entry in saved["evaluation_history"])  # reevaluada en la Parte 3
     nodes_run = [e["node"] for e in part3_trace(store, ticket_id) if e["department_id"] == "warehouse"]
     assert nodes_run[-4:] == [nodes.NODE_HUMAN, nodes.NODE_REVISE, nodes.NODE_REQUEST, nodes.NODE_HUMAN]

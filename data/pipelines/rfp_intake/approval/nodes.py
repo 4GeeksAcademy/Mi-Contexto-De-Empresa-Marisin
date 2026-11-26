@@ -143,7 +143,9 @@ def revise_section(state: dict[str, Any], deps: Deps) -> dict[str, Any]:
     model = DraftingInput.model_validate(context)
     section = state["section"]
     feedback = revision_feedback(state)
-    deps.reporter.revising(state.get("ticket_id"), department_id, round_number=round_number, feedback=feedback)
+    decision = state.get("decision") or {}
+    deps.reporter.revising(state.get("ticket_id"), department_id, round_number=round_number, feedback=feedback,
+                           decision=decision if decision.get("decision") == config.DECISION_CHANGES else None)
     loop = build_section_graph(deps.llm, _RevisionDrafts(deps.reporter, state.get("ticket_id")), checkpointer=False)
     result = loop.invoke(
         {
