@@ -855,6 +855,8 @@ export default function RfpIntakePage() {
   const ticketsRef = useRef<RfpTicketSummary[]>([]);
   const liveRef = useRef<Map<number, RfpTicketCreatedEvent>>(new Map());
   const loadedRef = useRef(false);
+  // Último error que puso una carga de la lista: se borra en cuanto otra carga va bien.
+  const loadErrorRef = useRef<string | null>(null);
 
   useEffect(() => {
     ticketsRef.current = tickets;
@@ -867,13 +869,21 @@ export default function RfpIntakePage() {
       setTickets(list);
       loadedRef.current = true;
       if (selectedId !== null) setDetail(await getRfpTicket(selectedId));
+      // Recuperada la conexión: fuera el «Failed to fetch» / «Error 500» del polling,
+      // pero no un error de otra acción (validación del PDF, aprobación…).
+      const stale = loadErrorRef.current;
+      loadErrorRef.current = null;
+      if (stale !== null) setError((current) => (current === stale ? null : current));
       return list;
     } catch (reason: unknown) {
-      if (reason instanceof ApiError && reason.status === 503) {
-        setError("La recepción de RFPs no está disponible (¿falta DATABASE_URL en la API?).");
-      } else {
-        setError(reason instanceof Error ? reason.message : "No se pudieron cargar los tickets.");
-      }
+      const message =
+        reason instanceof ApiError && reason.status === 503
+          ? "La recepción de RFPs no está disponible (¿falta DATABASE_URL en la API?)."
+          : reason instanceof Error
+            ? reason.message
+            : "No se pudieron cargar los tickets.";
+      loadErrorRef.current = message;
+      setError(message);
       return null;
     }
   }, [selectedId]);
