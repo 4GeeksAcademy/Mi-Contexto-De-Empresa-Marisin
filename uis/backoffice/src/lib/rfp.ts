@@ -1,8 +1,9 @@
 import { fetchWithAuth } from "./api";
 
-// Contrato de /rfp/tickets (Hito 9 · Partes 1 y 2 — recepción, enrutamiento y borradores).
+// Contrato de /rfp/tickets (Hito 9 · Partes 1-3 — recepción, borradores y aprobación).
 // El POST responde 202 al momento; el pipeline corre en segundo plano y la UI
-// consulta el estado con GET mientras haya trabajo en curso (análisis o borradores).
+// consulta el estado con GET mientras haya trabajo en curso (análisis, borradores o
+// aprobaciones pendientes). Cada responsable registra su decisión en su sección.
 
 export type RfpStatus =
   | "analizando"
@@ -11,6 +12,8 @@ export type RfpStatus =
   | "generando_borrador"
   | "en_evaluación"
   | "needs_human_review"
+  | "esperando_aprobación"
+  | "terminado"
   | string;
 
 export const MAX_PDF_BYTES = 10 * 1024 * 1024;
@@ -62,6 +65,76 @@ export interface DepartmentSection {
   iterations?: number;
   evaluation_results?: EvaluationResult | null;
   evaluation_history?: EvaluationHistoryEntry[];
+  // Parte 3: aprobación humana de la sección (BRIEFING §2.3).
+  approval_status?: ApprovalStatus | null;
+  approver?: string | null;
+  approved_at?: string | null;
+  approval_round?: number;
+  approval_comment?: string | null;
+  approval_requested_at?: string | null;
+  approval_history?: Record<string, unknown>[];
+}
+
+export type ApprovalStatus = "pendiente" | "cambios_solicitados" | "aprobada" | "rechazada";
+export type ApprovalDecision = "approve" | "reject" | "request_changes";
+
+// Payload del interrupt() de una rama: lo mínimo para decidir sin releer todo.
+export interface ApprovalRequest {
+  ticket_id: number;
+  department_id: string;
+  department_name: string;
+  responsible: string;
+  round: number;
+  max_rounds: number;
+  client_name: string | null;
+  currency: string | null;
+  draft_status: string | null;
+  provisional: boolean;
+  iterations: number;
+  overall_pass: boolean | null;
+  violations: string[];
+  missing_aspects: string[];
+  arbitration_notes: string[];
+  last_comment: string | null;
+  allowed_decisions: ApprovalDecision[];
+}
+
+export interface TraceEvent {
+  id: number;
+  graph: string;
+  thread_id: string | null;
+  department_id: string | null;
+  node: string;
+  agent: string;
+  status: "ok" | "interrupted" | "error";
+  input: Record<string, unknown>;
+  output: Record<string, unknown>;
+  started_at: string | null;
+  finished_at: string;
+  duration_ms: number | null;
+}
+
+export interface FinalDocumentSection {
+  department_id: string;
+  department_name: string;
+  responsible: string;
+  approver: string;
+  approved_at: string;
+  approval_rounds: number;
+  approval_minutes: number | null;
+}
+
+export interface FinalDocument {
+  contract: string;
+  ticket_id: number;
+  client_name: string | null;
+  currency: string | null;
+  sections: FinalDocumentSection[];
+  arbitrations: { round: number; trigger: string; arbiter: string; action: string; departments: string[]; detail: string }[];
+  metrics: Record<string, unknown>;
+  delivered_to: string;
+  markdown: string;
+  generated_at: string;
 }
 
 export type DraftStatus = "generando_borrador" | "en_evaluación" | "evaluacion_superada" | "needs_human_review";
@@ -95,6 +168,8 @@ export interface EvaluationHistoryEntry {
   violations: string[];
   missing_aspects: string[];
   feedback_for_generator: string;
+  // Parte 3: "approval" en las iteraciones de una reescritura pedida durante la aprobación.
+  phase?: string;
 }
 
 export interface DraftingHandoff {
@@ -176,6 +251,8 @@ export interface RfpTicketDetail extends Omit<RfpTicketSummary, "client_name"> {
   sections: DepartmentSection[];
   handoff: Handoff | null;
   drafting_handoff?: DraftingHandoff | null;
+  approval_requests?: ApprovalRequest[];
+  final_document_available?: boolean;
   error_message: string | null;
 }
 
@@ -186,6 +263,21 @@ export const STATUS_LABELS: Record<string, string> = {
   generando_borrador: "Generando borrador",
   "en_evaluación": "En evaluación",
   needs_human_review: "Revisión humana",
+  "esperando_aprobación": "Esperando aprobación",
+  terminado: "Terminado",
+};
+
+export const APPROVAL_STATUS_LABELS: Record<string, string> = {
+  pendiente: "Pendiente de aprobación",
+  cambios_solicitados: "Reescribiendo (cambios pedidos)",
+  aprobada: "Aprobada",
+  rechazada: "Rechazada",
+};
+
+export const DECISION_LABELS: Record<ApprovalDecision, string> = {
+  approve: "Aprobar",
+  request_changes: "Pedir cambios",
+  reject: "Rechazar",
 };
 
 export const DRAFT_STATUS_LABELS: Record<string, string> = {
@@ -218,6 +310,12 @@ export const STAGE_LABELS: Record<string, string> = {
   generando_secciones: "Generando las secciones de la propuesta",
   evaluando_secciones: "Evaluando las secciones (legibilidad, pertinencia, cumplimiento)",
   borradores_listos: "Borradores listos",
+  esperando_aprobaciones: "Esperando el visto bueno de cada responsable",
+  arbitrando: "Arbitrando un conflicto entre secciones",
+  revisando_secciones: "Reescribiendo secciones con los cambios pedidos",
+  generando_documento: "Generando el documento final",
+  seccion_rechazada: "Sección rechazada: hay que regenerar los borradores",
+  documento_final: "Documento final generado",
 };
 
 export const SERVICE_LABELS: Record<string, string> = {
@@ -242,8 +340,25 @@ export function isAnalyzing(ticket: Pick<RfpTicketSummary, "status" | "stage" | 
   return ticket.status === "analizando" && ticket.stage !== "error" && !ticket.stale;
 }
 
+// Aprobaciones en curso: una rama se está reescribiendo o el ticket está cerrando/arbitrando.
+export function isApprovalBusy(ticket: Pick<RfpTicketDetail, "status" | "stage" | "sections">): boolean {
+  return (
+    ticket.status === "esperando_aprobación" &&
+    ticket.stage !== "seccion_rechazada" &&
+    ticket.stage !== "error" &&
+    (["arbitrando", "revisando_secciones", "generando_documento"].includes(ticket.stage) ||
+      ticket.sections.some((section) => section.approval_status === "cambios_solicitados"))
+  );
+}
+
+export function canStartApproval(ticket: Pick<RfpTicketDetail, "status" | "stage" | "drafting_handoff">): boolean {
+  const ready = ["en_evaluación", "needs_human_review"].includes(ticket.status) && ticket.stage === "borradores_listos";
+  const restart = ticket.status === "esperando_aprobación" && ["seccion_rechazada", "error"].includes(ticket.stage);
+  return Boolean(ticket.drafting_handoff) && (ready || restart);
+}
+
 export function canRegenerateDrafts(ticket: Pick<RfpTicketDetail, "status" | "stage" | "stale" | "handoff">): boolean {
-  const draftable = ["analisis_completo", "generando_borrador", "en_evaluación", "needs_human_review"];
+  const draftable = ["analisis_completo", "generando_borrador", "en_evaluación", "needs_human_review", "esperando_aprobación"];
   return draftable.includes(ticket.status) && Boolean(ticket.handoff?.departments?.length) && !isWorking(ticket);
 }
 
@@ -270,4 +385,43 @@ export async function regenerateDrafts(ticketId: number): Promise<{ ticket_id: n
     status: string;
     stage: string;
   };
+}
+
+export async function startApproval(ticketId: number): Promise<{ ticket_id: number; status: string; stage: string }> {
+  return (await fetchWithAuth(`/rfp/tickets/${ticketId}/approvals`, { method: "POST" })) as {
+    ticket_id: number;
+    status: string;
+    stage: string;
+  };
+}
+
+export interface ApprovalAccepted {
+  ticket_id: number;
+  department_id: string;
+  decision: ApprovalDecision;
+  approval_status: ApprovalStatus | null;
+  status: string;
+  stage: string;
+  resumed: boolean;
+}
+
+export async function submitApproval(
+  ticketId: number,
+  departmentId: string,
+  body: { decision: ApprovalDecision; approver: string; comment: string },
+): Promise<ApprovalAccepted> {
+  return (await fetchWithAuth(`/rfp/tickets/${ticketId}/approvals/${departmentId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })) as ApprovalAccepted;
+}
+
+export async function getRfpTrace(ticketId: number): Promise<TraceEvent[]> {
+  const data = (await fetchWithAuth(`/rfp/tickets/${ticketId}/trace`)) as { events?: TraceEvent[] };
+  return Array.isArray(data.events) ? data.events : [];
+}
+
+export async function getFinalDocument(ticketId: number): Promise<FinalDocument> {
+  return (await fetchWithAuth(`/rfp/tickets/${ticketId}/document`)) as FinalDocument;
 }

@@ -1,9 +1,11 @@
-"""Endpoints de recepción de RFPs (`services/rfp/router.py`, Hito 9 · Partes 1 y 2).
+"""Endpoints de recepción de RFPs (`services/rfp/router.py`, Hito 9 · Partes 1, 2 y 3).
 
 El `POST` responde 202 sin esperar a los agentes; el pipeline se dispara en
 segundo plano (el `TestClient` ejecuta la tarea de fondo al terminar la
 petición). Se usa un almacén en memoria y un directorio temporal para el PDF.
-La Parte 2 se encadena tras la Parte 1 y se relanza con `POST /rfp/tickets/{id}/drafts`.
+La Parte 2 se encadena tras la Parte 1 y se relanza con `POST /rfp/tickets/{id}/drafts`;
+la Parte 3 se abre tras la Parte 2 y cada responsable decide con
+`POST /rfp/tickets/{id}/approvals/{department_id}`.
 """
 
 from pathlib import Path
@@ -13,6 +15,8 @@ from fastapi.testclient import TestClient
 
 from data.pipelines.rfp_intake import config as rfp_config
 from data.pipelines.rfp_intake import runner
+from data.pipelines.rfp_intake.approval import config as approval_config
+from data.pipelines.rfp_intake.approval import runner as approval_runner
 from data.pipelines.rfp_intake.drafting import config as drafting_config
 from data.pipelines.rfp_intake.drafting import runner as drafting_runner
 from data.pipelines.rfp_intake.store import InMemoryRfpStore
@@ -211,6 +215,7 @@ def test_the_background_pipeline_chains_part1_and_part2(client, store, monkeypat
     from data.pipelines.rfp_intake import convert
 
     monkeypatch.setattr(drafting_config, "AUTO_DRAFT", True)
+    monkeypatch.setattr(approval_config, "AUTO_APPROVAL", False)  # solo hasta la Parte 2
     markdown = (Path(__file__).parent / "pipelines" / "fixtures" / "rfp" / "trackflow-request-1.md").read_text(encoding="utf-8")
     monkeypatch.setattr(convert, "pdf_to_markdown", lambda path: markdown)
 
@@ -228,3 +233,110 @@ def test_the_background_pipeline_chains_part1_and_part2(client, store, monkeypat
         assert set(section["evaluation_results"]) >= {
             "readability", "relevance", "compliance", "overall_pass", "feedback_for_generator",
         }
+
+
+# --------------------------------------------------------------------------- #
+# Parte 3: aprobación humana por departamento y documento final
+# --------------------------------------------------------------------------- #
+def upload_through_part3(client, monkeypatch, fixture="trackflow-request-2.md"):
+    """POST de la RFP → Partes 1, 2 y 3 en las tareas de fondo (sin LLM) → ticket esperando aprobación."""
+    pytest.importorskip("langgraph")
+    from data.pipelines.rfp_intake import convert
+
+    monkeypatch.setattr(drafting_config, "AUTO_DRAFT", True)
+    monkeypatch.setattr(approval_config, "AUTO_APPROVAL", True)
+    markdown = (Path(__file__).parent / "pipelines" / "fixtures" / "rfp" / fixture).read_text(encoding="utf-8")
+    monkeypatch.setattr(convert, "pdf_to_markdown", lambda path: markdown)
+    return upload(client, filename=fixture.replace(".md", ".pdf")).json()["ticket_id"]
+
+
+def decide(client, ticket_id, department_id, decision="approve", approver=None, comment=""):
+    approver = approver or rfp_config.DEPARTMENTS[department_id].responsible
+    return client.post(f"/rfp/tickets/{ticket_id}/approvals/{department_id}",
+                       json={"decision": decision, "approver": approver, "comment": comment})
+
+
+def test_upload_queues_part3_after_part2(client, store, calls, monkeypatch):
+    chained = []
+    monkeypatch.setattr(drafting_runner, "draft_if_ready_safely", lambda ticket_id, store, **kw: chained.append(("p2", ticket_id)))
+    monkeypatch.setattr(approval_runner, "start_if_ready_safely", lambda ticket_id, store, **kw: chained.append(("p3", ticket_id)))
+
+    ticket_id = upload(client).json()["ticket_id"]
+
+    assert chained == [("p2", ticket_id), ("p3", ticket_id)]  # Parte 1 → 2 → 3, en orden
+
+
+def test_the_three_parts_chain_and_each_responsible_approves_independently(client, store, monkeypatch):
+    """Recorrido real por la API: RFP subida → esperando_aprobación → B aprobada con A en pausa → terminado."""
+    ticket_id = upload_through_part3(client, monkeypatch)
+
+    detail = client.get(f"/rfp/tickets/{ticket_id}").json()
+    assert detail["status"] == "esperando_aprobación"
+    assert [r["department_id"] for r in detail["approval_requests"]] == ["warehouse", "lastmile"]
+    assert {s["approval_status"] for s in detail["sections"]} == {"pendiente"}
+
+    accepted = decide(client, ticket_id, "lastmile")
+    assert accepted.status_code == 202
+    assert accepted.json()["approval_status"] == "aprobada" and accepted.json()["resumed"] is True
+    detail = client.get(f"/rfp/tickets/{ticket_id}").json()
+    assert [r["department_id"] for r in detail["approval_requests"]] == ["warehouse"]  # A sigue en pausa
+    assert detail["status"] == "esperando_aprobación" and detail["final_document_available"] is False
+    assert client.get(f"/rfp/tickets/{ticket_id}/document").status_code == 404
+
+    assert decide(client, ticket_id, "warehouse").status_code == 202
+
+    detail = client.get(f"/rfp/tickets/{ticket_id}").json()
+    assert (detail["status"], detail["stage"], detail["final_document_available"]) == ("terminado", "documento_final", True)
+    document = client.get(f"/rfp/tickets/{ticket_id}/document").json()
+    assert document["currency"] == "USD" and [s["approver"] for s in document["sections"]] == ["Ana Whitfield", "Carlos Vega"]
+    assert document["markdown"].startswith("# Propuesta económica de TrackFlow para Luna Cosmetics")
+    events = client.get(f"/rfp/tickets/{ticket_id}/trace").json()["events"]
+    assert [e["graph"] for e in events][0] == "rfp_intake" and events[-1]["node"] == "close_document"
+
+
+def test_a_decision_is_validated_before_it_resumes_the_branch(client, store, monkeypatch):
+    ticket_id = upload_through_part3(client, monkeypatch)
+
+    wrong_approver = decide(client, ticket_id, "warehouse", approver="Carlos Vega")
+    no_reason = decide(client, ticket_id, "warehouse", decision="reject")
+    bad_shape = client.post(f"/rfp/tickets/{ticket_id}/approvals/warehouse", json={"decision": "yes", "approver": "x"})
+    not_active = decide(client, ticket_id, "reverse")
+
+    assert wrong_approver.status_code == 422 and "solo Ana Whitfield" in wrong_approver.json()["detail"]
+    assert no_reason.status_code == 422 and "motivo" in no_reason.json()["detail"]
+    assert bad_shape.status_code == 422
+    assert not_active.status_code == 409
+    detail = client.get(f"/rfp/tickets/{ticket_id}").json()
+    assert {s["approval_status"] for s in detail["sections"]} == {"pendiente"}  # nada entró al grafo
+
+
+def test_request_changes_answers_202_and_rewrites_in_background(client, store, monkeypatch):
+    ticket_id = upload_through_part3(client, monkeypatch)
+
+    response = decide(client, ticket_id, "warehouse", "request_changes", comment="Pon el onboarding en la primera línea.")
+
+    assert response.status_code == 202 and response.json()["resumed"] is False
+    section = next(s for s in client.get(f"/rfp/tickets/{ticket_id}").json()["sections"] if s["department_id"] == "warehouse")
+    assert section["approval_status"] == "pendiente" and section["approval_round"] == 1  # reescrita y otra vez en pausa
+    assert decide(client, ticket_id, "lastmile").status_code == 202
+
+
+def test_start_approval_route_and_its_refusals(client, store, monkeypatch):
+    started = []
+    monkeypatch.setattr(approval_runner, "start_safely", lambda ticket_id, store, **kw: started.append((ticket_id, kw)))
+    ticket_id = ready_for_drafting(store)
+
+    refused = client.post(f"/rfp/tickets/{ticket_id}/approvals")
+    assert refused.status_code == 409 and "borradores" in refused.json()["detail"]  # aún sin Parte 2
+    assert client.post("/rfp/tickets/999/approvals").status_code == 404
+    store.claim_for_drafting(ticket_id)
+    store.complete_drafting(ticket_id, {"status": "en_evaluación", "ready_for_approval": True,
+                                        "sections": [{"department_id": "warehouse"}]})
+
+    response = client.post(f"/rfp/tickets/{ticket_id}/approvals")
+
+    assert response.status_code == 202
+    assert response.json()["status"] == "esperando_aprobación"
+    assert started == [(ticket_id, {"claimed": True})]
+    assert client.get(f"/rfp/tickets/{ticket_id}/trace").json() == {"ticket_id": ticket_id, "events": []}
+    assert client.get(f"/rfp/tickets/{ticket_id}/document").status_code == 404

@@ -43,7 +43,8 @@ def _bind(node, llm: LLM | None, reporter: Reporter | None):
     return run
 
 
-def build_section_graph(llm: LLM | None = None, reporter: Reporter | None = None):
+def build_section_graph(llm: LLM | None = None, reporter: Reporter | None = None, checkpointer=None):
+    """`checkpointer=False` cuando lo ejecuta un nodo de un grafo con checkpointer (Parte 3)."""
     builder = StateGraph(SectionState)
     builder.add_node(nodes.NODE_GENERATE, _bind(nodes.generate, llm, reporter))
     builder.add_node(nodes.NODE_READABILITY, _bind(nodes.evaluate_readability, llm, reporter))
@@ -62,7 +63,7 @@ def build_section_graph(llm: LLM | None = None, reporter: Reporter | None = None
         {nodes.NODE_GENERATE: nodes.NODE_GENERATE, nodes.NODE_FINALIZE: nodes.NODE_FINALIZE},
     )
     builder.add_edge(nodes.NODE_FINALIZE, END)
-    return builder.compile(name=config.SECTION_GRAPH_NAME)
+    return builder.compile(checkpointer=checkpointer, name=config.SECTION_GRAPH_NAME)
 
 
 def build_graph(llm: LLM | None = None, reporter: Reporter | None = None):

@@ -8,6 +8,9 @@
   como un LLM caído, salvo que el test las sustituya. Así la suite es determinista.
 * Lo mismo para los agentes del flujo de RFPs (`data/pipelines/rfp_intake/`): sin
   un doble explícito, todos caen a sus reglas deterministas.
+* La Parte 3 de RFPs usa en los tests un checkpointer en memoria nuevo en cada test:
+  ninguna prueba escribe `data/checkpoints/rfp_approval.sqlite` (las que prueban la
+  persistencia en SQLite usan un fichero temporal propio).
 """
 
 import pytest
@@ -49,3 +52,18 @@ def no_live_llm_in_rfp_intake(monkeypatch):
         raise RuntimeError("sin LLM en los tests")
 
     monkeypatch.setattr(rfp_llm, "complete", offline)
+
+
+@pytest.fixture(autouse=True)
+def in_memory_rfp_checkpointer():
+    try:
+        from langgraph.checkpoint.memory import InMemorySaver
+    except ModuleNotFoundError:
+        yield None
+        return
+    from data.pipelines.rfp_intake.approval import checkpoint
+
+    saver = InMemorySaver()
+    checkpoint.set_checkpointer(saver)
+    yield saver
+    checkpoint.set_checkpointer(None)

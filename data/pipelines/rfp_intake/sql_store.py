@@ -16,6 +16,11 @@ API también las crea si faltan, sin los checks):
 Parte 2 (`services/sql/004_rfp_drafting.sql`): `rfp_tickets.drafting_handoff`
 (contrato `trackflow.rfp_drafting.handoff/v1`) y la bandera `ready_for_approval`.
 
+Parte 3 (`services/sql/005_rfp_approval.sql`): en cada sección `approval_round`,
+`approval_comment`, `approval_requested_at` y `approval_history` (además de
+`approval_status`, `approver` y `approved_at` del BRIEFING); `rfp_final_documents`
+(FinalDocument) y `rfp_trace_events` (traza de cada nodo: agente, input, output, hora).
+
 Las horas se calculan en Python (UTC), como en `services/job_runner.py`, para que
 el mismo código funcione en Supabase y en el SQLite en memoria de los tests.
 """
@@ -30,8 +35,12 @@ from sqlalchemy.engine import Engine
 from sqlmodel import Field, Session, SQLModel, select
 
 from . import config
+from .approval import config as approval_config
 from .drafting import config as drafting_config
-from .store import SECTION_DRAFT_DEFAULTS, NotDraftable, TicketNotFound, drafting_refusal, utc_now
+from .store import (
+    SECTION_APPROVAL_DEFAULTS, SECTION_DRAFT_DEFAULTS, NotApprovable, NotDraftable, TicketNotFound,
+    approval_refusal, drafting_refusal, utc_now,
+)
 
 
 class RfpTicket(SQLModel, table=True):
@@ -109,10 +118,55 @@ class RfpDepartmentSectionRow(SQLModel, table=True):
     approval_status: Optional[str] = None
     approver: Optional[str] = None
     approved_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
+    # Parte 3: rondas de revisión, último comentario, cuándo pidió aprobación (KPI) e historial de decisiones.
+    approval_round: int = Field(default=0)
+    approval_comment: Optional[str] = Field(default=None, sa_column=Column(Text))
+    approval_requested_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
+    approval_history: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
     created_at: datetime = Field(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), nullable=False))
 
 
-RFP_TABLES = [RfpTicket.__table__, RfpMetadataRow.__table__, RfpDepartmentSectionRow.__table__]
+class RfpFinalDocumentRow(SQLModel, table=True):
+    """FinalDocument (BRIEFING §2.3): ticket_id, sections, currency, generated_at (+ Markdown para Ventas)."""
+
+    __tablename__ = "rfp_final_documents"
+
+    ticket_id: int = Field(foreign_key="rfp_tickets.ticket_id", primary_key=True)
+    contract: str = approval_config.DOCUMENT_CONTRACT
+    client_name: Optional[str] = None
+    currency: Optional[str] = None
+    sections: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    arbitrations: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    metrics: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    markdown: str = Field(sa_column=Column(Text, nullable=False))
+    delivered_to: str
+    generated_at: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
+
+
+class RfpTraceEventRow(SQLModel, table=True):
+    """Una ejecución de nodo de cualquiera de las tres partes, en orden (`id`)."""
+
+    __tablename__ = "rfp_trace_events"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    ticket_id: int = Field(foreign_key="rfp_tickets.ticket_id", index=True)
+    graph: str
+    thread_id: Optional[str] = None
+    department_id: Optional[str] = None
+    node: str
+    agent: str
+    status: str = "ok"
+    input: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    output: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    started_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
+    finished_at: datetime = Field(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), nullable=False))
+    duration_ms: Optional[int] = None
+
+
+RFP_TABLES = [
+    RfpTicket.__table__, RfpMetadataRow.__table__, RfpDepartmentSectionRow.__table__,
+    RfpFinalDocumentRow.__table__, RfpTraceEventRow.__table__,
+]
 
 _METADATA_FIELDS = (
     "client_name", "client_reference", "client_country", "currency", "services_requested", "monthly_volume",
@@ -121,7 +175,8 @@ _METADATA_FIELDS = (
 _SECTION_FIELDS = (
     "department_id", "department_name", "responsible", "key_aspects", "open_questions", "excerpts", "source",
     "warnings", "draft_content", "evaluation_results", "draft_status", "iterations", "evaluation_history",
-    "draft_source", "approval_status", "approver", "approved_at",
+    "draft_source", "approval_status", "approver", "approved_at", "approval_round", "approval_comment",
+    "approval_requested_at", "approval_history",
 )
 
 
@@ -139,6 +194,25 @@ def _metadata_dict(row: RfpMetadataRow) -> dict[str, Any]:
 
 def _section_dict(row: RfpDepartmentSectionRow) -> dict[str, Any]:
     return {field: getattr(row, field) for field in _SECTION_FIELDS}
+
+
+def _as_datetime(value: Any) -> Any:
+    if isinstance(value, str):
+        return datetime.fromisoformat(value)
+    return value
+
+
+def _iso(value: Any) -> Any:
+    return value.isoformat() if isinstance(value, datetime) else value
+
+
+_TRACE_FIELDS = ("graph", "thread_id", "department_id", "node", "agent", "status", "input", "output", "duration_ms")
+
+
+def _trace_dict(row: RfpTraceEventRow) -> dict[str, Any]:
+    data = {field: getattr(row, field) for field in _TRACE_FIELDS}
+    return {"id": row.id, "ticket_id": row.ticket_id, **data,
+            "started_at": _iso(row.started_at), "finished_at": _iso(row.finished_at)}
 
 
 class SqlRfpStore:
@@ -199,6 +273,7 @@ class SqlRfpStore:
     def start_processing(self, ticket_id):
         with Session(self.engine) as session:
             row = self._get(session, ticket_id)
+            session.execute(delete(RfpFinalDocumentRow).where(RfpFinalDocumentRow.ticket_id == ticket_id))
             session.execute(delete(RfpDepartmentSectionRow).where(RfpDepartmentSectionRow.ticket_id == ticket_id))
             session.execute(delete(RfpMetadataRow).where(RfpMetadataRow.ticket_id == ticket_id))
             row.status = config.STATUS_ANALYZING
@@ -327,9 +402,10 @@ class SqlRfpStore:
             for section in session.exec(
                 select(RfpDepartmentSectionRow).where(RfpDepartmentSectionRow.ticket_id == ticket_id)
             ).all():
-                for field, value in SECTION_DRAFT_DEFAULTS.items():
+                for field, value in {**SECTION_DRAFT_DEFAULTS, **SECTION_APPROVAL_DEFAULTS}.items():
                     setattr(section, field, list(value) if isinstance(value, list) else value)
                 session.add(section)
+            session.execute(delete(RfpFinalDocumentRow).where(RfpFinalDocumentRow.ticket_id == ticket_id))
             session.commit()
             session.refresh(row)
             return _ticket_dict(row)
@@ -367,3 +443,132 @@ class SqlRfpStore:
             drafting_handoff=output,
             ready_for_approval=bool(output.get("ready_for_approval")),
         )
+
+    # ------------------------------------------------------------------ #
+    # Parte 3 · aprobación humana, arbitraje y documento final
+    # ------------------------------------------------------------------ #
+    def list_ready_for_approval(self, limit=50):
+        """La cola de la Parte 3 (índice parcial `rfp_tickets_ready_for_approval_idx`)."""
+        with Session(self.engine) as session:
+            rows = session.exec(
+                select(RfpTicket)
+                .where(
+                    RfpTicket.ready_for_approval,
+                    RfpTicket.status.in_(approval_config.APPROVABLE_STATUSES),
+                    RfpTicket.stage == drafting_config.STAGE_DRAFTS_READY,
+                )
+                .order_by(RfpTicket.ticket_id)
+                .limit(limit)
+            ).all()
+            return [_ticket_dict(row) for row in rows]
+
+    def claim_for_approval(self, ticket_id, *, force=False):
+        """Toma el ticket de la cola de la Parte 3 de forma atómica (`SELECT … FOR UPDATE`)."""
+        with Session(self.engine) as session:
+            row = session.exec(select(RfpTicket).where(RfpTicket.ticket_id == ticket_id).with_for_update()).first()
+            if row is None:
+                raise TicketNotFound(ticket_id)
+            reason = approval_refusal(_ticket_dict(row), force=force)
+            if reason:
+                raise NotApprovable(reason)
+            row.status = approval_config.STATUS_AWAITING
+            row.stage = approval_config.STAGE_AWAITING
+            row.ready_for_approval = False
+            row.error_stage = None
+            row.error_message = None
+            row.updated_at = utc_now()
+            session.add(row)
+            for section in session.exec(
+                select(RfpDepartmentSectionRow).where(RfpDepartmentSectionRow.ticket_id == ticket_id)
+            ).all():
+                for field, value in SECTION_APPROVAL_DEFAULTS.items():
+                    setattr(section, field, list(value) if isinstance(value, list) else value)
+                session.add(section)
+            session.execute(delete(RfpFinalDocumentRow).where(RfpFinalDocumentRow.ticket_id == ticket_id))
+            session.commit()
+            session.refresh(row)
+            return _ticket_dict(row)
+
+    def set_approval_progress(self, ticket_id, stage, status=approval_config.STATUS_AWAITING):
+        self._update(ticket_id, status=status, stage=stage)
+
+    def save_section_approval(self, ticket_id, department_id, **changes):
+        entry = changes.pop("decision_entry", None)
+        with Session(self.engine) as session:
+            ticket = self._get(session, ticket_id)
+            section = session.exec(
+                select(RfpDepartmentSectionRow).where(
+                    RfpDepartmentSectionRow.ticket_id == ticket_id,
+                    RfpDepartmentSectionRow.department_id == department_id,
+                )
+            ).first()
+            if section is None:
+                raise KeyError(f"El ticket {ticket_id} no tiene sección {department_id}")
+            for field, value in changes.items():
+                if field in ("approved_at", "approval_requested_at"):
+                    value = _as_datetime(value)
+                setattr(section, field, value)
+            if entry is not None:
+                section.approval_history = [*(section.approval_history or []), entry]
+            session.add(section)
+            ticket.updated_at = utc_now()
+            session.add(ticket)
+            session.commit()
+
+    def save_final_document(self, ticket_id, document):
+        with Session(self.engine) as session:
+            ticket = self._get(session, ticket_id)
+            session.merge(
+                RfpFinalDocumentRow(
+                    ticket_id=ticket_id,
+                    contract=document.get("contract") or approval_config.DOCUMENT_CONTRACT,
+                    client_name=document.get("client_name"),
+                    currency=document.get("currency"),
+                    sections=document.get("sections") or [],
+                    arbitrations=document.get("arbitrations") or [],
+                    metrics=document.get("metrics") or {},
+                    markdown=document["markdown"],
+                    delivered_to=document.get("delivered_to") or "",
+                    generated_at=_as_datetime(document["generated_at"]),
+                )
+            )
+            ticket.status = approval_config.STATUS_DONE
+            ticket.stage = approval_config.STAGE_DONE
+            ticket.updated_at = utc_now()
+            session.add(ticket)
+            session.commit()
+
+    def get_final_document(self, ticket_id):
+        with Session(self.engine) as session:
+            row = session.get(RfpFinalDocumentRow, ticket_id)
+            if row is None:
+                return None
+            ticket = session.get(RfpTicket, ticket_id)
+            return {
+                "contract": row.contract, "ticket_id": row.ticket_id, "rfp_id": ticket.rfp_id if ticket else None,
+                "client_name": row.client_name, "currency": row.currency, "sections": row.sections,
+                "arbitrations": row.arbitrations, "metrics": row.metrics, "markdown": row.markdown,
+                "delivered_to": row.delivered_to, "generated_at": _iso(row.generated_at),
+            }
+
+    def append_trace(self, ticket_id, entry):
+        with Session(self.engine) as session:
+            session.add(
+                RfpTraceEventRow(
+                    ticket_id=ticket_id,
+                    **{field: entry.get(field) for field in _TRACE_FIELDS if field not in ("input", "output")},
+                    input=entry.get("input") or {},
+                    output=entry.get("output") or {},
+                    started_at=_as_datetime(entry.get("started_at")),
+                    finished_at=_as_datetime(entry.get("finished_at")) or utc_now(),
+                )
+            )
+            session.commit()
+
+    def list_trace(self, ticket_id, limit=2000):
+        with Session(self.engine) as session:
+            rows = session.exec(
+                select(RfpTraceEventRow).where(RfpTraceEventRow.ticket_id == ticket_id)
+                .order_by(RfpTraceEventRow.id).limit(limit)
+            ).all()
+            return [_trace_dict(row) for row in rows]

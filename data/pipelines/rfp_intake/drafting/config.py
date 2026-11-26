@@ -24,10 +24,12 @@ STATUS_GENERATING = "generando_borrador"
 STATUS_EVALUATING = "en_evaluación"
 STATUS_NEEDS_REVIEW = "needs_human_review"
 PART2_STATUSES = (STATUS_GENERATING, STATUS_EVALUATING, STATUS_NEEDS_REVIEW)
-# Desde dónde se puede (re)generar: el handoff de la Parte 1 o un estado de la Parte 2.
-DRAFTABLE_STATUSES = (STATUS_ANALYSIS_COMPLETE, *PART2_STATUSES)
 # Estado que la Parte 3 escribirá al tomar el handoff (solo se nombra, no se escribe).
 NEXT_STATUS = "esperando_aprobación"
+# Desde dónde se puede (re)generar: el handoff de la Parte 1, un estado de la Parte 2 o,
+# de forma explícita, un ticket de la Parte 3 que espera aprobación (p. ej. con una
+# sección rechazada: un rechazo pide una nueva ejecución de los borradores).
+DRAFTABLE_STATUSES = (STATUS_ANALYSIS_COMPLETE, *PART2_STATUSES, NEXT_STATUS)
 
 # Etapas internas del ticket durante la Parte 2 (columna `stage`).
 STAGE_GENERATING = "generando_secciones"

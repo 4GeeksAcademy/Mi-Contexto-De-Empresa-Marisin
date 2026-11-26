@@ -1,0 +1,998 @@
+{
+  "ticket_id": 2,
+  "original_filename": "trackflow-request-2.pdf",
+  "status": "terminado",
+  "stage": "documento_final",
+  "error_stage": null,
+  "error_message": null,
+  "approval": {
+    "ticket_id": 2,
+    "status": "terminado",
+    "stage": "documento_final",
+    "thread_id": "rfp-2",
+    "ticket_waiting": false,
+    "pending": [],
+    "outcome": "terminado",
+    "branches": {
+      "warehouse": {
+        "thread_id": "rfp-2:warehouse",
+        "waiting": false,
+        "approval_status": "aprobada"
+      },
+      "lastmile": {
+        "thread_id": "rfp-2:lastmile",
+        "waiting": false,
+        "approval_status": "aprobada"
+      }
+    }
+  },
+  "approval_requests": [],
+  "sections": [
+    {
+      "department_id": "warehouse",
+      "responsible": "Ana Whitfield",
+      "draft_status": "evaluacion_superada",
+      "iterations": 1,
+      "approval_status": "aprobada",
+      "approver": "Ana Whitfield",
+      "approved_at": "2026-11-26 14:43:05.715670+00:00",
+      "approval_round": 1,
+      "approval_comment": null,
+      "approval_requested_at": "2026-11-26 14:13:45.800932+00:00",
+      "approval_history": [
+        {
+          "reason": "human",
+          "rounds": 1,
+          "comment": "",
+          "approver": "Ana Whitfield",
+          "decided_at": "2026-11-26T14:43:05.715670+00:00",
+          "approval_status": "aprobada"
+        }
+      ]
+    },
+    {
+      "department_id": "lastmile",
+      "responsible": "Carlos Vega",
+      "draft_status": "evaluacion_superada",
+      "iterations": 2,
+      "approval_status": "aprobada",
+      "approver": "Carlos Vega",
+      "approved_at": "2026-11-26 13:57:17.584043+00:00",
+      "approval_round": 0,
+      "approval_comment": null,
+      "approval_requested_at": "2026-11-26 13:31:47.430026+00:00",
+      "approval_history": [
+        {
+          "reason": "human",
+          "rounds": 0,
+          "comment": "",
+          "approver": "Carlos Vega",
+          "decided_at": "2026-11-26T13:57:17.584043+00:00",
+          "approval_status": "aprobada"
+        }
+      ]
+    }
+  ],
+  "final_document": {
+    "contract": "trackflow.rfp_final_document/v1",
+    "ticket_id": 2,
+    "rfp_id": "45dfb957-f359-48c6-971e-1ae428f5d4ab",
+    "client_name": "Luna Cosmetics",
+    "currency": "USD",
+    "sections": [
+      {
+        "content": "Onboarding: 10 días hábiles desde la firma.\n\n## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics indica 5.000 pedidos al mes. Esto sitúa los pedidos en el tramo de descuento de 5.000 a 9.999.\n- **Ubicación del cliente:** La marca está en Los Ángeles. El servicio de almacenamiento se ofrece desde el almacén de Los Ángeles; falta confirmar si esa ubicación es la preferida.\n- **Alcance geográfico:** Solicita almacenamiento y envíos en todo Estados Unidos. TrackFlow gestiona la última milla en Estados Unidos.\n- **Plazo de onboarding:** Busca estar operativa alrededor del 24 de agosto. El onboarding tarda 10 días hábiles desde la firma; el año de la fecha objetivo está pendiente.\n\n### Precios\n\n| Concepto | Precio |\n|---|---:|\n| Almacenamiento por m³ ocupado al mes | 18 USD |\n| Primeros 30 días de cada producto nuevo | 0 USD |\n| Preparación y empaquetado por pedido | 1,40 USD |\n| Inventario sin movimiento desde el día 181 | 150 % de la tarifa de almacenamiento |\n\nLa capacidad de almacenamiento no puede cotizarse sin conocer el volumen ocupado.\n\n### Descuentos por volumen\n\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nAplica el tramo de **5.000 a 9.999 pedidos al mes: 5 %** sobre cargos por pedido, envío y devolución.\n\n### Condiciones de servicio\n- El SLA es de **90 % de entregas a tiempo al mes**, medido por país.\n- Si el resultado queda por debajo del 90 % durante dos meses consecutivos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n- El servicio de almacenamiento se presta desde Los Ángeles.\n- El onboarding tarda 10 días hábiles desde la firma.\n- Con más de 50 m³ de media mensual, puede negociarse una tarifa de almacenamiento preferente con Miguel Torres.\n- No se indica un precio de onboarding o integración en el tarifario.\n\n### Datos pendientes del cliente\n- ¿Cuántos SKUs, pallets o m³ hay que almacenar?\n- ¿Qué inventario inicial prevén, en pallets o m³?\n- ¿Prefieren un almacén en Los Ángeles o Zaragoza?\n- ¿Qué ERP utilizan y qué integraciones ERP/API necesitan?\n- ¿A qué año corresponde el 24 de agosto como fecha objetivo de onboarding?",
+        "approver": "Ana Whitfield",
+        "approved_at": "2026-11-26T14:43:05.715670+00:00",
+        "responsible": "Ana Whitfield",
+        "draft_status": "evaluacion_superada",
+        "department_id": "warehouse",
+        "approval_rounds": 1,
+        "approval_status": "aprobada",
+        "department_name": "Warehouse Operations",
+        "approval_minutes": 29.33
+      },
+      {
+        "content": "## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Cobertura nacional:** Luna Cosmetics solicita envíos a todo Estados Unidos. Para evaluar destinos y costes, falta el desglose de zonas.\n- **Selección de transportista:** El cliente no tiene relaciones con transportistas. TrackFlow elige el transportista según destino, peso, tipo de producto y urgencia.\n- **Volumen mensual:** Luna Cosmetics indica 5.000 al mes. Falta confirmar cuántos corresponden a envíos y su distribución por destino.\n- **Puesta en marcha:** El cliente espera estar operativo dentro de las próximas tres semanas, alrededor del 24 de agosto. Falta confirmar la fecha exacta.\n\n### Precios\n| Servicio | Peso del paquete | Precio final por envío |\n|---|---:|---:|\n| Envío estándar | Hasta 2 kg | 6,90 USD |\n| Envío estándar | De 2 a 5 kg | 8,90 USD |\n| Envío estándar | Más de 5 kg | 12,50 USD |\n\n### Descuentos por volumen\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nEl tramo aplicable depende del número de pedidos mensuales. Si los 5.000 indicados son pedidos, corresponde el tramo de 5.000 a 9.999: 5 %.\n\n### Condiciones de servicio\n- El envío estándar dentro del mismo país tarda de 3 a 5 días hábiles.\n- TrackFlow se compromete a un **90 % de entregas a tiempo al mes**, medido por país.\n- Si el porcentaje baja del 90 % durante dos meses consecutivos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n- El sistema elige el transportista de cada envío según destino, peso, tipo de producto y urgencia.\n- En periodos de alta demanda, los plazos pueden alargarse. TrackFlow avisa con antelación; no se garantiza el SLA durante esas fechas.\n- La cobertura nacional y los costes requieren confirmar los destinos o zonas.\n\n### Datos pendientes del cliente\n- ¿Cuál es el peso y tamaño medio de los paquetes?\n- ¿Qué plazo de entrega o SLA espera el cliente?\n- ¿A qué destinos o zonas de Estados Unidos se envían los pedidos y en qué proporción?\n- ¿Cuántos envíos mensuales prevén y cómo se distribuyen por destino?\n- ¿Qué plazos de entrega o niveles de servicio necesitan y qué urgencia tienen los envíos?\n- ¿Qué fecha exacta esperan para la puesta en marcha?",
+        "approver": "Carlos Vega",
+        "approved_at": "2026-11-26T13:57:17.584043+00:00",
+        "responsible": "Carlos Vega",
+        "draft_status": "evaluacion_superada",
+        "department_id": "lastmile",
+        "approval_rounds": 0,
+        "approval_status": "aprobada",
+        "department_name": "Last Mile and Carrier Management",
+        "approval_minutes": 25.5
+      }
+    ],
+    "arbitrations": [],
+    "metrics": {
+      "sections": 2,
+      "arbitrations": 0,
+      "proposal_hours": 73.45,
+      "approval_rounds": 1,
+      "approval_minutes": {
+        "lastmile": 25.5,
+        "warehouse": 29.33
+      },
+      "max_approval_minutes": 29.33
+    },
+    "markdown": "# Propuesta económica de TrackFlow para Luna Cosmetics\n\n**Cliente:** Luna Cosmetics (EE. UU.) · **Moneda:** USD · **Ticket:** #2 · **RFP:** `45dfb957-f359-48c6-971e-1ae428f5d4ab`\n**Generado:** 2026-11-26T14:43:06.594754+00:00 · **Para:** Ventas (Miguel Torres)\n\nDocumento consolidado automáticamente tras el visto bueno de cada responsable de departamento (BRIEFING §6). Cada sección se reproduce tal y como la aprobó su responsable.\n\n---\n\nOnboarding: 10 días hábiles desde la firma.\n\n## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics indica 5.000 pedidos al mes. Esto sitúa los pedidos en el tramo de descuento de 5.000 a 9.999.\n- **Ubicación del cliente:** La marca está en Los Ángeles. El servicio de almacenamiento se ofrece desde el almacén de Los Ángeles; falta confirmar si esa ubicación es la preferida.\n- **Alcance geográfico:** Solicita almacenamiento y envíos en todo Estados Unidos. TrackFlow gestiona la última milla en Estados Unidos.\n- **Plazo de onboarding:** Busca estar operativa alrededor del 24 de agosto. El onboarding tarda 10 días hábiles desde la firma; el año de la fecha objetivo está pendiente.\n\n### Precios\n\n| Concepto | Precio |\n|---|---:|\n| Almacenamiento por m³ ocupado al mes | 18 USD |\n| Primeros 30 días de cada producto nuevo | 0 USD |\n| Preparación y empaquetado por pedido | 1,40 USD |\n| Inventario sin movimiento desde el día 181 | 150 % de la tarifa de almacenamiento |\n\nLa capacidad de almacenamiento no puede cotizarse sin conocer el volumen ocupado.\n\n### Descuentos por volumen\n\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nAplica el tramo de **5.000 a 9.999 pedidos al mes: 5 %** sobre cargos por pedido, envío y devolución.\n\n### Condiciones de servicio\n- El SLA es de **90 % de entregas a tiempo al mes**, medido por país.\n- Si el resultado queda por debajo del 90 % durante dos meses consecutivos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n- El servicio de almacenamiento se presta desde Los Ángeles.\n- El onboarding tarda 10 días hábiles desde la firma.\n- Con más de 50 m³ de media mensual, puede negociarse una tarifa de almacenamiento preferente con Miguel Torres.\n- No se indica un precio de onboarding o integración en el tarifario.\n\n### Datos pendientes del cliente\n- ¿Cuántos SKUs, pallets o m³ hay que almacenar?\n- ¿Qué inventario inicial prevén, en pallets o m³?\n- ¿Prefieren un almacén en Los Ángeles o Zaragoza?\n- ¿Qué ERP utilizan y qué integraciones ERP/API necesitan?\n- ¿A qué año corresponde el 24 de agosto como fecha objetivo de onboarding?\n\n> ✅ Aprobada por **Ana Whitfield** (Warehouse Operations) el 2026-11-26T14:43:05.715670+00:00.\n\n---\n\n## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Cobertura nacional:** Luna Cosmetics solicita envíos a todo Estados Unidos. Para evaluar destinos y costes, falta el desglose de zonas.\n- **Selección de transportista:** El cliente no tiene relaciones con transportistas. TrackFlow elige el transportista según destino, peso, tipo de producto y urgencia.\n- **Volumen mensual:** Luna Cosmetics indica 5.000 al mes. Falta confirmar cuántos corresponden a envíos y su distribución por destino.\n- **Puesta en marcha:** El cliente espera estar operativo dentro de las próximas tres semanas, alrededor del 24 de agosto. Falta confirmar la fecha exacta.\n\n### Precios\n| Servicio | Peso del paquete | Precio final por envío |\n|---|---:|---:|\n| Envío estándar | Hasta 2 kg | 6,90 USD |\n| Envío estándar | De 2 a 5 kg | 8,90 USD |\n| Envío estándar | Más de 5 kg | 12,50 USD |\n\n### Descuentos por volumen\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nEl tramo aplicable depende del número de pedidos mensuales. Si los 5.000 indicados son pedidos, corresponde el tramo de 5.000 a 9.999: 5 %.\n\n### Condiciones de servicio\n- El envío estándar dentro del mismo país tarda de 3 a 5 días hábiles.\n- TrackFlow se compromete a un **90 % de entregas a tiempo al mes**, medido por país.\n- Si el porcentaje baja del 90 % durante dos meses consecutivos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n- El sistema elige el transportista de cada envío según destino, peso, tipo de producto y urgencia.\n- En periodos de alta demanda, los plazos pueden alargarse. TrackFlow avisa con antelación; no se garantiza el SLA durante esas fechas.\n- La cobertura nacional y los costes requieren confirmar los destinos o zonas.\n\n### Datos pendientes del cliente\n- ¿Cuál es el peso y tamaño medio de los paquetes?\n- ¿Qué plazo de entrega o SLA espera el cliente?\n- ¿A qué destinos o zonas de Estados Unidos se envían los pedidos y en qué proporción?\n- ¿Cuántos envíos mensuales prevén y cómo se distribuyen por destino?\n- ¿Qué plazos de entrega o niveles de servicio necesitan y qué urgencia tienen los envíos?\n- ¿Qué fecha exacta esperan para la puesta en marcha?\n\n> ✅ Aprobada por **Carlos Vega** (Last Mile and Carrier Management) el 2026-11-26T13:57:17.584043+00:00.\n\n---\n\n## Registro de aprobaciones\n\n| Departamento | Responsable | Estado | Aprobada el | Rondas de revisión | Tiempo de aprobación (min) |\n|---|---|---|---|---|---|\n| Warehouse Operations | Ana Whitfield | aprobada | 2026-11-26T14:43:05.715670+00:00 | 1 | 29.33 |\n| Last Mile and Carrier Management | Carlos Vega | aprobada | 2026-11-26T13:57:17.584043+00:00 | 0 | 25.5 |\n\n_Tiempo de armado de la propuesta (KPI §3): 73.45 h desde la carga de la RFP._\n",
+    "delivered_to": "Ventas (Miguel Torres)",
+    "generated_at": "2026-11-26T14:43:06.594754+00:00"
+  },
+  "trace": [
+    {
+      "id": 1,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "load_drafts",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "rfp_id": "45dfb957-f359-48c6-971e-1ae428f5d4ab",
+        "ticket_id": 2
+      },
+      "output": {
+        "phase": "opening",
+        "client": {
+          "name": "Luna Cosmetics",
+          "country": "United States",
+          "currency": "USD"
+        },
+        "forced": {},
+        "blocked": [],
+        "outcome": null,
+        "pending": [],
+        "currency": "USD",
+        "rejected": {},
+        "sections": {
+          "lastmile": {
+            "iterations": 2,
+            "provisional": false,
+            "responsible": "Carlos Vega",
+            "draft_source": "llm",
+            "draft_status": "evaluacion_superada",
+            "draft_content": "## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Cobertura nacional:** Luna Cosmetics solicita envíos a todo Estados Unidos. Para evaluar destinos y costes, falta el desglose de zonas.\n- **Selección de transportista:** El cliente no tie… (2318 caracteres)",
+            "department_name": "Last Mile and Carrier Management",
+            "evaluation_result": "<dict>"
+          },
+          "warehouse": {
+            "iterations": 1,
+            "provisional": false,
+            "responsible": "Ana Whitfield",
+            "draft_source": "llm",
+            "draft_status": "evaluacion_superada",
+            "draft_content": "## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics indica 5.000 pedidos al mes. Esto sitúa los pedidos en el tramo de descuento de 5.000 a 9.999.\n- **Ubicación del cliente:** La marca está en Los Ángeles. El servicio… (2237 caracteres)",
+            "department_name": "Warehouse Operations",
+            "evaluation_result": "<dict>"
+          }
+        },
+        "signoffs": {},
+        "conflicts": [],
+        "overrides": {},
+        "departments": [
+          "warehouse",
+          "lastmile"
+        ],
+        "final_document": null,
+        "monthly_volume": 5000,
+        "arbitration_round": 0
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:31:46.965843+00:00",
+      "finished_at": "2026-11-26T13:31:46.965942+00:00"
+    },
+    {
+      "id": 2,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "detect_conflicts",
+      "agent": "conflict_detector",
+      "status": "ok",
+      "input": {
+        "phase": "opening",
+        "currency": "USD",
+        "overrides": {},
+        "monthly_volume": 5000
+      },
+      "output": {
+        "conflicts": []
+      },
+      "duration_ms": 11,
+      "started_at": "2026-11-26T13:31:47.113591+00:00",
+      "finished_at": "2026-11-26T13:31:47.125471+00:00"
+    },
+    {
+      "id": 3,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "prepare_review",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "round": 0,
+        "forced": [],
+        "department_id": "warehouse"
+      },
+      "output": {
+        "round": 0,
+        "outcome": null,
+        "signoff": null,
+        "decision": null,
+        "max_rounds": 3
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:31:47.287778+00:00",
+      "finished_at": "2026-11-26T13:31:47.287816+00:00"
+    },
+    {
+      "id": 4,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:lastmile",
+      "department_id": "lastmile",
+      "node": "prepare_review",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "round": 0,
+        "forced": [],
+        "department_id": "lastmile"
+      },
+      "output": {
+        "round": 0,
+        "outcome": null,
+        "signoff": null,
+        "decision": null,
+        "max_rounds": 3
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:31:47.294049+00:00",
+      "finished_at": "2026-11-26T13:31:47.294084+00:00"
+    },
+    {
+      "id": 5,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "request_approval",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "round": 0,
+        "department_id": "warehouse"
+      },
+      "output": {
+        "decision": null,
+        "approval_requested_at": "2026-11-26T13:31:47.418259+00:00"
+      },
+      "duration_ms": 186,
+      "started_at": "2026-11-26T13:31:47.418237+00:00",
+      "finished_at": "2026-11-26T13:31:47.604719+00:00"
+    },
+    {
+      "id": 6,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:lastmile",
+      "department_id": "lastmile",
+      "node": "request_approval",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "round": 0,
+        "department_id": "lastmile"
+      },
+      "output": {
+        "decision": null,
+        "approval_requested_at": "2026-11-26T13:31:47.430026+00:00"
+      },
+      "duration_ms": 189,
+      "started_at": "2026-11-26T13:31:47.430005+00:00",
+      "finished_at": "2026-11-26T13:31:47.619091+00:00"
+    },
+    {
+      "id": 7,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "human_approval",
+      "agent": "humano: Ana Whitfield",
+      "status": "interrupted",
+      "input": {
+        "round": 0,
+        "department_id": "warehouse",
+        "approval_requested_at": "2026-11-26T13:31:47.418259+00:00"
+      },
+      "output": {
+        "waiting_for": [
+          {
+            "round": 0,
+            "currency": "USD",
+            "ticket_id": 2,
+            "iterations": 1,
+            "max_rounds": 3,
+            "violations": "<list>",
+            "client_name": "Luna Cosmetics",
+            "provisional": false,
+            "responsible": "Ana Whitfield",
+            "draft_status": "evaluacion_superada",
+            "last_comment": null,
+            "overall_pass": true,
+            "department_id": "warehouse",
+            "department_name": "Warehouse Operations",
+            "missing_aspects": "<list>",
+            "allowed_decisions": "<list>",
+            "arbitration_notes": "<list>"
+          }
+        ]
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:31:47.745424+00:00",
+      "finished_at": "2026-11-26T13:31:47.745596+00:00"
+    },
+    {
+      "id": 8,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:lastmile",
+      "department_id": "lastmile",
+      "node": "human_approval",
+      "agent": "humano: Carlos Vega",
+      "status": "interrupted",
+      "input": {
+        "round": 0,
+        "department_id": "lastmile",
+        "approval_requested_at": "2026-11-26T13:31:47.430026+00:00"
+      },
+      "output": {
+        "waiting_for": [
+          {
+            "round": 0,
+            "currency": "USD",
+            "ticket_id": 2,
+            "iterations": 2,
+            "max_rounds": 3,
+            "violations": "<list>",
+            "client_name": "Luna Cosmetics",
+            "provisional": false,
+            "responsible": "Carlos Vega",
+            "draft_status": "evaluacion_superada",
+            "last_comment": null,
+            "overall_pass": true,
+            "department_id": "lastmile",
+            "department_name": "Last Mile and Carrier Management",
+            "missing_aspects": "<list>",
+            "allowed_decisions": "<list>",
+            "arbitration_notes": "<list>"
+          }
+        ]
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:31:47.753191+00:00",
+      "finished_at": "2026-11-26T13:31:47.754133+00:00"
+    },
+    {
+      "id": 9,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "open_branches",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "phase": "opening",
+        "forced": {},
+        "departments": [
+          "warehouse",
+          "lastmile"
+        ]
+      },
+      "output": {
+        "phase": "opening",
+        "forced": {},
+        "pending": [
+          "warehouse",
+          "lastmile"
+        ],
+        "signoffs": {}
+      },
+      "duration_ms": 807,
+      "started_at": "2026-11-26T13:31:47.264976+00:00",
+      "finished_at": "2026-11-26T13:31:48.072627+00:00"
+    },
+    {
+      "id": 10,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "await_signoffs",
+      "agent": "signoff_gate",
+      "status": "interrupted",
+      "input": {
+        "pending": [
+          "warehouse",
+          "lastmile"
+        ]
+      },
+      "output": {
+        "waiting_for": [
+          {
+            "ticket_id": 2,
+            "waiting_for": "<list>"
+          }
+        ]
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:31:48.220707+00:00",
+      "finished_at": "2026-11-26T13:31:48.220788+00:00"
+    },
+    {
+      "id": 11,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:lastmile",
+      "department_id": "lastmile",
+      "node": "human_approval",
+      "agent": "humano: Carlos Vega",
+      "status": "ok",
+      "input": {
+        "round": 0,
+        "department_id": "lastmile",
+        "approval_requested_at": "2026-11-26T13:31:47.430026+00:00"
+      },
+      "output": {
+        "decision": {
+          "round": 0,
+          "comment": "",
+          "approver": "Carlos Vega",
+          "decision": "approve",
+          "decided_at": "2026-11-26T13:57:17.584043+00:00"
+        },
+        "decisions": [
+          {
+            "round": 0,
+            "comment": "",
+            "approver": "Carlos Vega",
+            "decision": "approve",
+            "decided_at": "2026-11-26T13:57:17.584043+00:00"
+          }
+        ]
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:57:17.583937+00:00",
+      "finished_at": "2026-11-26T13:57:17.584059+00:00"
+    },
+    {
+      "id": 12,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:lastmile",
+      "department_id": "lastmile",
+      "node": "record_signoff",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "round": 0,
+        "decision": {
+          "round": 0,
+          "comment": "",
+          "approver": "Carlos Vega",
+          "decision": "approve",
+          "decided_at": "2026-11-26T13:57:17.584043+00:00"
+        },
+        "department_id": "lastmile"
+      },
+      "output": {
+        "forced": [],
+        "outcome": "aprobada",
+        "signoff": {
+          "reason": "human",
+          "rounds": 0,
+          "comment": "",
+          "approver": "Carlos Vega",
+          "decided_at": "2026-11-26T13:57:17.584043+00:00",
+          "iterations": 2,
+          "draft_status": "evaluacion_superada",
+          "department_id": "lastmile",
+          "draft_content": "## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Cobertura nacional:** Luna Cosmetics solicita envíos a todo Estados Unidos. Para evaluar destinos y costes, falta el desglose de zonas.\n- **Selección de transportista:** El cliente no tie… (2318 caracteres)",
+          "approval_status": "aprobada",
+          "approval_requested_at": "2026-11-26T13:31:47.430026+00:00"
+        }
+      },
+      "duration_ms": 190,
+      "started_at": "2026-11-26T13:57:17.705064+00:00",
+      "finished_at": "2026-11-26T13:57:17.895717+00:00"
+    },
+    {
+      "id": 13,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "await_signoffs",
+      "agent": "signoff_gate",
+      "status": "ok",
+      "input": {
+        "pending": [
+          "warehouse",
+          "lastmile"
+        ]
+      },
+      "output": {
+        "pending": [
+          "warehouse"
+        ],
+        "signoffs": {
+          "lastmile": {
+            "reason": "human",
+            "rounds": 0,
+            "comment": "",
+            "approver": "Carlos Vega",
+            "decided_at": "2026-11-26T13:57:17.584043+00:00",
+            "iterations": 2,
+            "draft_status": "evaluacion_superada",
+            "department_id": "lastmile",
+            "draft_content": "## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Cobertura nacional:** Luna Cosmetics solicita envíos a todo Estados Unidos. Para evaluar destinos y costes, falta el desglose de zonas.\n- **Selección de transportista:** El cliente no tie… (2318 caracteres)",
+            "approval_status": "aprobada",
+            "approval_requested_at": "2026-11-26T13:31:47.430026+00:00"
+          }
+        }
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:57:18.036327+00:00",
+      "finished_at": "2026-11-26T13:57:18.036450+00:00"
+    },
+    {
+      "id": 14,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "await_signoffs",
+      "agent": "signoff_gate",
+      "status": "interrupted",
+      "input": {
+        "pending": [
+          "warehouse"
+        ]
+      },
+      "output": {
+        "waiting_for": [
+          {
+            "ticket_id": 2,
+            "waiting_for": "<list>"
+          }
+        ]
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T13:57:18.172515+00:00",
+      "finished_at": "2026-11-26T13:57:18.172595+00:00"
+    },
+    {
+      "id": 15,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "human_approval",
+      "agent": "humano: Ana Whitfield",
+      "status": "ok",
+      "input": {
+        "round": 0,
+        "department_id": "warehouse",
+        "approval_requested_at": "2026-11-26T13:31:47.418259+00:00"
+      },
+      "output": {
+        "decision": {
+          "round": 0,
+          "comment": "Añade en la primera línea que el onboarding dura 10 días hábiles.",
+          "approver": "Ana Whitfield",
+          "decision": "request_changes",
+          "decided_at": "2026-11-26T14:13:33.097381+00:00"
+        },
+        "decisions": [
+          {
+            "round": 0,
+            "comment": "Añade en la primera línea que el onboarding dura 10 días hábiles.",
+            "approver": "Ana Whitfield",
+            "decision": "request_changes",
+            "decided_at": "2026-11-26T14:13:33.097381+00:00"
+          }
+        ]
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T14:13:33.097242+00:00",
+      "finished_at": "2026-11-26T14:13:33.097406+00:00"
+    },
+    {
+      "id": 16,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "revise_section",
+      "agent": "warehouse_generator + evaluadores (Parte 2)",
+      "status": "ok",
+      "input": {
+        "round": 0,
+        "forced": [],
+        "decision": {
+          "round": 0,
+          "comment": "Añade en la primera línea que el onboarding dura 10 días hábiles.",
+          "approver": "Ana Whitfield",
+          "decision": "request_changes",
+          "decided_at": "2026-11-26T14:13:33.097381+00:00"
+        },
+        "department_id": "warehouse"
+      },
+      "output": {
+        "round": 1,
+        "forced": [],
+        "context": {
+          "ask": "Pedir a Ana Whitfield (Warehouse Operations): Volumen mensual, Ubicación del cliente, Alcance geográfico, Plazo de onboarding — 5 preguntas abiertas para el cliente.",
+          "currency": "USD",
+          "deadline": null,
+          "conflicts": [],
+          "knowledge": [
+            "<dict>",
+            "<dict>"
+          ],
+          "reference": "TARIFARIO DE REFERENCIA (USD) — warehouse\n| Concepto | Precio |\n|---|---|\n| Almacenamiento (por m³ ocupado al mes) | 18 USD |\n| Primeros 30 días de cada producto nuevo | 0 USD (periodo de gracia) |\n| Preparación y empaquetado (por pedido) | 1,40 USD |\n| Inventario sin movimiento desde el día 181 | 1… (1012 caracteres)",
+          "ticket_id": 2,
+          "client_name": "Luna Cosmetics",
+          "key_aspects": [
+            "<dict>",
+            "<dict>",
+            "<dict>",
+            "<dict>"
+          ],
+          "responsible": "Ana Whitfield",
+          "budget_range": null,
+          "deadline_text": "within the next 3 weeks (around August 24th)",
+          "department_id": "warehouse",
+          "client_country": "United States",
+          "monthly_volume": 5000,
+          "open_questions": [
+            "¿Cuántos SKUs, pallets o m³ hay que almacenar?",
+            "¿Qué inventario inicial prevén, en pallets o m³?",
+            "¿Prefieren un almacén en Los Ángeles o Zaragoza?",
+            "¿Qué ERP utilizan y qué integraciones ERP/API necesitan?",
+            "¿A qué año corresponde el 24 de agosto como fecha objetivo de onboarding?"
+          ],
+          "department_name": "Warehouse Operations",
+          "client_reference": null,
+          "services_requested": [
+            "warehousing",
+            "last_mile"
+          ]
+        },
+        "section": {
+          "iterations": 1,
+          "provisional": false,
+          "draft_source": "llm",
+          "draft_status": "evaluacion_superada",
+          "draft_content": "Onboarding: 10 días hábiles desde la firma.\n\n## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics indica 5.000 pedidos al mes. Esto sitúa los pedidos en el tramo de descuento de 5.000 a 9.999.\n- **Ubicación del cliente… (2282 caracteres)",
+          "evaluation_result": {
+            "iteration": 1,
+            "relevance": "<dict>",
+            "compliance": "<dict>",
+            "section_id": "2:warehouse",
+            "readability": "<dict>",
+            "evaluated_at": "2026-11-26T14:13:44.283714+00:00",
+            "overall_pass": true,
+            "department_id": "warehouse",
+            "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+          }
+        },
+        "revisions": [
+          {
+            "at": "2026-11-26T14:13:45.665339+00:00",
+            "round": 1,
+            "feedback": "- Ana Whitfield (responsable de warehouse) pide cambios: Añade en la primera línea que el onboarding dura 10 días hábiles.",
+            "triggers": "<list>",
+            "iterations": 1,
+            "overall_pass": true,
+            "requested_by": "<list>"
+          }
+        ],
+        "arbitration_notes": []
+      },
+      "duration_ms": 12413,
+      "started_at": "2026-11-26T14:13:33.251862+00:00",
+      "finished_at": "2026-11-26T14:13:45.665494+00:00"
+    },
+    {
+      "id": 17,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "request_approval",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "round": 1,
+        "department_id": "warehouse"
+      },
+      "output": {
+        "decision": null,
+        "approval_requested_at": "2026-11-26T14:13:45.800932+00:00"
+      },
+      "duration_ms": 181,
+      "started_at": "2026-11-26T14:13:45.800907+00:00",
+      "finished_at": "2026-11-26T14:13:45.982674+00:00"
+    },
+    {
+      "id": 18,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "human_approval",
+      "agent": "humano: Ana Whitfield",
+      "status": "interrupted",
+      "input": {
+        "round": 1,
+        "department_id": "warehouse",
+        "approval_requested_at": "2026-11-26T14:13:45.800932+00:00"
+      },
+      "output": {
+        "waiting_for": [
+          {
+            "round": 1,
+            "currency": "USD",
+            "ticket_id": 2,
+            "iterations": 1,
+            "max_rounds": 3,
+            "violations": "<list>",
+            "client_name": "Luna Cosmetics",
+            "provisional": false,
+            "responsible": "Ana Whitfield",
+            "draft_status": "evaluacion_superada",
+            "last_comment": "Añade en la primera línea que el onboarding dura 10 días hábiles.",
+            "overall_pass": true,
+            "department_id": "warehouse",
+            "department_name": "Warehouse Operations",
+            "missing_aspects": "<list>",
+            "allowed_decisions": "<list>",
+            "arbitration_notes": "<list>"
+          }
+        ]
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T14:13:46.107141+00:00",
+      "finished_at": "2026-11-26T14:13:46.107308+00:00"
+    },
+    {
+      "id": 19,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "human_approval",
+      "agent": "humano: Ana Whitfield",
+      "status": "ok",
+      "input": {
+        "round": 1,
+        "department_id": "warehouse",
+        "approval_requested_at": "2026-11-26T14:13:45.800932+00:00"
+      },
+      "output": {
+        "decision": {
+          "round": 1,
+          "comment": "",
+          "approver": "Ana Whitfield",
+          "decision": "approve",
+          "decided_at": "2026-11-26T14:43:05.715670+00:00"
+        },
+        "decisions": [
+          {
+            "round": 1,
+            "comment": "",
+            "approver": "Ana Whitfield",
+            "decision": "approve",
+            "decided_at": "2026-11-26T14:43:05.715670+00:00"
+          }
+        ]
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T14:43:05.715512+00:00",
+      "finished_at": "2026-11-26T14:43:05.715722+00:00"
+    },
+    {
+      "id": 20,
+      "ticket_id": 2,
+      "graph": "rfp_department_approval",
+      "thread_id": "rfp-2:warehouse",
+      "department_id": "warehouse",
+      "node": "record_signoff",
+      "agent": "approval_coordinator",
+      "status": "ok",
+      "input": {
+        "round": 1,
+        "decision": {
+          "round": 1,
+          "comment": "",
+          "approver": "Ana Whitfield",
+          "decision": "approve",
+          "decided_at": "2026-11-26T14:43:05.715670+00:00"
+        },
+        "department_id": "warehouse"
+      },
+      "output": {
+        "forced": [],
+        "outcome": "aprobada",
+        "signoff": {
+          "reason": "human",
+          "rounds": 1,
+          "comment": "",
+          "approver": "Ana Whitfield",
+          "decided_at": "2026-11-26T14:43:05.715670+00:00",
+          "iterations": 1,
+          "draft_status": "evaluacion_superada",
+          "department_id": "warehouse",
+          "draft_content": "Onboarding: 10 días hábiles desde la firma.\n\n## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics indica 5.000 pedidos al mes. Esto sitúa los pedidos en el tramo de descuento de 5.000 a 9.999.\n- **Ubicación del cliente… (2282 caracteres)",
+          "approval_status": "aprobada",
+          "approval_requested_at": "2026-11-26T14:13:45.800932+00:00"
+        }
+      },
+      "duration_ms": 176,
+      "started_at": "2026-11-26T14:43:05.860604+00:00",
+      "finished_at": "2026-11-26T14:43:06.037124+00:00"
+    },
+    {
+      "id": 21,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "await_signoffs",
+      "agent": "signoff_gate",
+      "status": "ok",
+      "input": {
+        "pending": [
+          "warehouse"
+        ]
+      },
+      "output": {
+        "phase": "closing",
+        "pending": [],
+        "signoffs": {
+          "lastmile": {
+            "reason": "human",
+            "rounds": 0,
+            "comment": "",
+            "approver": "Carlos Vega",
+            "decided_at": "2026-11-26T13:57:17.584043+00:00",
+            "iterations": 2,
+            "draft_status": "evaluacion_superada",
+            "department_id": "lastmile",
+            "draft_content": "## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Cobertura nacional:** Luna Cosmetics solicita envíos a todo Estados Unidos. Para evaluar destinos y costes, falta el desglose de zonas.\n- **Selección de transportista:** El cliente no tie… (2318 caracteres)",
+            "approval_status": "aprobada",
+            "approval_requested_at": "2026-11-26T13:31:47.430026+00:00"
+          },
+          "warehouse": {
+            "reason": "human",
+            "rounds": 1,
+            "comment": "",
+            "approver": "Ana Whitfield",
+            "decided_at": "2026-11-26T14:43:05.715670+00:00",
+            "iterations": 1,
+            "draft_status": "evaluacion_superada",
+            "department_id": "warehouse",
+            "draft_content": "Onboarding: 10 días hábiles desde la firma.\n\n## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics indica 5.000 pedidos al mes. Esto sitúa los pedidos en el tramo de descuento de 5.000 a 9.999.\n- **Ubicación del cliente… (2282 caracteres)",
+            "approval_status": "aprobada",
+            "approval_requested_at": "2026-11-26T14:13:45.800932+00:00"
+          }
+        }
+      },
+      "duration_ms": 0,
+      "started_at": "2026-11-26T14:43:06.163761+00:00",
+      "finished_at": "2026-11-26T14:43:06.163887+00:00"
+    },
+    {
+      "id": 22,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "detect_conflicts",
+      "agent": "conflict_detector",
+      "status": "ok",
+      "input": {
+        "phase": "closing",
+        "currency": "USD",
+        "overrides": {},
+        "monthly_volume": 5000
+      },
+      "output": {
+        "conflicts": []
+      },
+      "duration_ms": 12,
+      "started_at": "2026-11-26T14:43:06.286128+00:00",
+      "finished_at": "2026-11-26T14:43:06.298416+00:00"
+    },
+    {
+      "id": 23,
+      "ticket_id": 2,
+      "graph": "rfp_approval",
+      "thread_id": "rfp-2",
+      "department_id": null,
+      "node": "close_document",
+      "agent": "ultimate_document_synthesizer",
+      "status": "ok",
+      "input": {
+        "signoffs": {
+          "lastmile": {
+            "reason": "human",
+            "rounds": 0,
+            "comment": "",
+            "approver": "Carlos Vega",
+            "decided_at": "2026-11-26T13:57:17.584043+00:00",
+            "iterations": 2,
+            "draft_status": "evaluacion_superada",
+            "department_id": "lastmile",
+            "draft_content": "## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Cobertura nacional:** Luna Cosmetics solicita envíos a todo Estados Unidos. Para evaluar destinos y costes, falta el desglose de zonas.\n- **Selección de transportista:** El cliente no tie… (2318 caracteres)",
+            "approval_status": "aprobada",
+            "approval_requested_at": "2026-11-26T13:31:47.430026+00:00"
+          },
+          "warehouse": {
+            "reason": "human",
+            "rounds": 1,
+            "comment": "",
+            "approver": "Ana Whitfield",
+            "decided_at": "2026-11-26T14:43:05.715670+00:00",
+            "iterations": 1,
+            "draft_status": "evaluacion_superada",
+            "department_id": "warehouse",
+            "draft_content": "Onboarding: 10 días hábiles desde la firma.\n\n## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics indica 5.000 pedidos al mes. Esto sitúa los pedidos en el tramo de descuento de 5.000 a 9.999.\n- **Ubicación del cliente… (2282 caracteres)",
+            "approval_status": "aprobada",
+            "approval_requested_at": "2026-11-26T14:13:45.800932+00:00"
+          }
+        }
+      },
+      "output": {
+        "outcome": "terminado",
+        "final_document": {
+          "rfp_id": "45dfb957-f359-48c6-971e-1ae428f5d4ab",
+          "metrics": {
+            "sections": 2,
+            "arbitrations": 0,
+            "proposal_hours": 73.45,
+            "approval_rounds": 1,
+            "approval_minutes": "<dict>",
+            "max_approval_minutes": 29.33
+          },
+          "contract": "trackflow.rfp_final_document/v1",
+          "currency": "USD",
+          "markdown": "# Propuesta económica de TrackFlow para Luna Cosmetics\n\n**Cliente:** Luna Cosmetics (EE. UU.) · **Moneda:** USD · **Ticket:** #2 · **RFP:** `45dfb957-f359-48c6-971e-1ae428f5d4ab`\n**Generado:** 2026-11-26T14:43:06.594754+00:00 · **Para:** Ventas (Miguel Torres)\n\nDocumento consolidado automáticamente … (5702 caracteres)",
+          "sections": [
+            "<dict>",
+            "<dict>"
+          ],
+          "ticket_id": 2,
+          "client_name": "Luna Cosmetics",
+          "arbitrations": [],
+          "delivered_to": "Ventas (Miguel Torres)",
+          "generated_at": "2026-11-26T14:43:06.594754+00:00",
+          "client_country": "United States"
+        }
+      },
+      "duration_ms": 349,
+      "started_at": "2026-11-26T14:43:06.440765+00:00",
+      "finished_at": "2026-11-26T14:43:06.790385+00:00"
+    }
+  ]
+}

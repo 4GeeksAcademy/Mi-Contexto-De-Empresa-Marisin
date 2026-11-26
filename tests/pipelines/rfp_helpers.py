@@ -104,3 +104,20 @@ def ticket_ready_for_drafting(store, fixture: str) -> int:
         })
     store.complete(ticket_id, handoff)
     return ticket_id
+
+
+def ticket_ready_for_approval(store, fixture: str, llm=None) -> int:
+    """Ticket como lo deja la Parte 2: borradores evaluados + `drafting_handoff` + `ready_for_approval`."""
+    from data.pipelines.rfp_intake.drafting import runner as drafting_runner
+
+    ticket_id = ticket_ready_for_drafting(store, fixture)
+    drafting_runner.draft_ticket(ticket_id, store, llm=llm or offline_llm)
+    return ticket_id
+
+
+def approve(service, ticket_id: int, department_id: str, decision: str = "approve", comment: str = "", approver=None):
+    """Decisión simulada del responsable del BRIEFING (o de `approver`): validar + `Command(resume=…)`."""
+    from data.pipelines.rfp_intake import config
+
+    approver = approver or config.DEPARTMENTS[department_id].responsible
+    return service.decide(ticket_id, department_id, {"decision": decision, "approver": approver, "comment": comment})

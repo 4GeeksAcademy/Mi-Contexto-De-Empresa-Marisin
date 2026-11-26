@@ -56,4 +56,8 @@ jobs:
           tests/pipelines/test_rfp_drafting_graph.py
           tests/pipelines/test_rfp_drafting_runner.py
           tests/pipelines/test_rfp_drafting_sql_store.py
+          tests/pipelines/test_rfp_approval_rules.py
+          tests/pipelines/test_rfp_approval_graph.py
+          tests/pipelines/test_rfp_approval_e2e.py
+          tests/pipelines/test_rfp_approval_sql_store.py
           tests/mcps/test_trackflow_mcp.py
