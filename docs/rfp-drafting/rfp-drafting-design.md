@@ -69,7 +69,7 @@ usa su plantilla determinista, que cumple el BRIEFING.
 | Evaluador | Recibe | Pasa si |
 |---|---|---|
 | Legibilidad | solo el texto | prosa (sin tablas ni citas del cliente) con Fernández Huerta ≥ 40 en español (Flesch-Kincaid ≤ 14 en inglés), ≤ 25 palabras por frase de media y 60–900 palabras en la sección. `py-readability-metrics` cuando hay ≥ 100 palabras de prosa; si no, las mismas fórmulas en `metrics.py` |
-| Pertinencia | texto + aspectos clave y preguntas abiertas del departamento + nombre del cliente | cubre cada aspecto (raíces del tema ≥ 50 % o del detalle ≥ 40 %), recoge cada pregunta abierta (≥ 60 %), nombra al cliente, habla de su alcance y tiene precios |
+| Pertinencia | texto + aspectos clave y preguntas abiertas del departamento + nombre del cliente | cubre cada aspecto (lo nombra tal cual, o raíces del tema ≥ 50 % o del detalle ≥ 40 %), recoge cada pregunta abierta (≥ 60 %), nombra al cliente, habla de su alcance y tiene precios |
 | Cumplimiento | texto + moneda del país + fuentes de anclaje (handoff, tarifario, políticas) | ninguna violación de las seis reglas de §1 |
 
 **Juez.** Une los tres resultados en el `EvaluationResult` y escribe un feedback **accionable por fallo**: la regla,

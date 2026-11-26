@@ -165,7 +165,12 @@ def evaluate_relevance(
     for aspect in key_aspects:
         topic = aspect.get("topic", "")
         topic_stems = stems(topic) - GENERIC_TOPICS
-        topic_ok = bool(topic_stems) and len(topic_stems & found) / len(topic_stems) >= MIN_TOPIC_COVERAGE
+        # Nombrar el aspecto tal cual (lo que pide el prompt del generador) siempre cuenta, también
+        # para temas genéricos como «Requisito de la RFP», que no tienen raíces propias.
+        named = bool(fold(topic).strip()) and fold(topic).strip() in folded
+        topic_ok = named or (
+            bool(topic_stems) and len(topic_stems & found) / len(topic_stems) >= MIN_TOPIC_COVERAGE
+        )
         detail_ok = _coverage(aspect.get("detail", ""), found) >= MIN_DETAIL_COVERAGE
         if topic_ok or detail_ok:
             covered.append(topic)
