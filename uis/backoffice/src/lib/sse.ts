@@ -1,7 +1,7 @@
 import { getAuthToken } from "./api";
 
-// Cliente SSE con `fetch` + `ReadableStream` (no `EventSource`: no permite enviar
-// `Authorization: Bearer`). Lo usa el hook de notificaciones de RFP contra
+// Cliente SSE con `fetch` + `ReadableStream` (el cliente SSE nativo del navegador
+// no permite enviar `Authorization: Bearer`). Lo usa el hook de notificaciones de RFP contra
 // `GET /realtime/events`, a través del mismo proxy `/api/backend` que `api.ts`.
 //
 // Recuperación: guarda el último `id:` recibido y lo reenvía como `Last-Event-ID`
@@ -9,8 +9,8 @@ import { getAuthToken } from "./api";
 // Backoff 1 s, 2 s, 4 s, 8 s, 16 s, máx. 30 s, con jitter ±20 %; vuelve a 1 s tras
 // abrir bien. Un 401 no reintenta. Si en 45 s no llega ni un byte (el servidor
 // manda `: keep-alive` cada 15 s) o el navegador pasa a offline, se corta y se
-// reconecta. El `retry:` del servidor es para clientes `EventSource` (curl,
-// otros); aquí manda el backoff.
+// reconecta. El `retry:` del servidor es para clientes SSE nativos;
+// aquí manda el backoff.
 
 const API_URL = "/api/backend"; // proxy de next.config.ts (el mismo que usa api.ts)
 
