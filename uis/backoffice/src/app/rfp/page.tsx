@@ -1,17 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { ApiError } from "@/lib/api";
 import {
+  COMPLIANCE_RULE_LABELS,
+  DRAFT_STATUS_LABELS,
   MAX_PDF_BYTES,
   POLL_INTERVAL_MS,
   SERVICE_LABELS,
   STAGE_LABELS,
   STATUS_LABELS,
+  canRegenerateDrafts,
   getRfpTicket,
   isAnalyzing,
+  isWorking,
   listRfpTickets,
+  regenerateDrafts,
   uploadRfp,
+  type DepartmentSection,
   type RfpTicketDetail,
   type RfpTicketSummary,
 } from "@/lib/rfp";
@@ -23,7 +29,19 @@ const STATUS_STYLES: Record<string, string> = {
   analizando: "bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200",
   descartado: "bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
   analisis_completo: "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200",
+  generando_borrador: "bg-sky-100 text-sky-900 dark:bg-sky-900/40 dark:text-sky-200",
+  "en_evaluación": "bg-indigo-100 text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-200",
+  needs_human_review: "bg-orange-100 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200",
 };
+
+const DRAFT_STATUS_STYLES: Record<string, string> = {
+  generando_borrador: STATUS_STYLES.generando_borrador,
+  "en_evaluación": STATUS_STYLES["en_evaluación"],
+  evaluacion_superada: STATUS_STYLES.analisis_completo,
+  needs_human_review: STATUS_STYLES.needs_human_review,
+};
+
+const DRAFTING_STAGES = new Set(["generando_secciones", "evaluando_secciones", "borradores_listos"]);
 
 function StatusBadge({ ticket }: { ticket: Pick<RfpTicketSummary, "status" | "stage" | "stale"> }) {
   const failed = ticket.stage === "error";
@@ -49,7 +67,205 @@ function Field({ label, value }: { label: string; value: string | number | null 
   );
 }
 
-function TicketDetail({ ticket }: { ticket: RfpTicketDetail }) {
+// Render mínimo del Markdown que escriben los generadores: títulos, viñetas, tablas y negritas.
+function inline(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
+    part.startsWith("**") && part.endsWith("**") ? <strong key={index}>{part.slice(2, -2)}</strong> : part,
+  );
+}
+
+function DraftMarkdown({ content }: { content: string }) {
+  const lines = content.split("\n");
+  const blocks: ReactNode[] = [];
+  let index = 0;
+  while (index < lines.length) {
+    const line = lines[index].trim();
+    if (line.startsWith("|")) {
+      const rows: string[][] = [];
+      while (index < lines.length && lines[index].trim().startsWith("|")) {
+        const cells = lines[index].trim().replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim());
+        if (!cells.every((cell) => /^:?-+:?$/.test(cell))) rows.push(cells);
+        index += 1;
+      }
+      const [head, ...body] = rows;
+      blocks.push(
+        <table key={`t${index}`} className="my-2 w-full border-collapse text-xs">
+          <thead>
+            <tr>{head?.map((cell, i) => <th key={i} className="border border-gray-300 px-2 py-1 text-left dark:border-gray-700">{inline(cell)}</th>)}</tr>
+          </thead>
+          <tbody>
+            {body.map((row, r) => (
+              <tr key={r}>{row.map((cell, i) => <td key={i} className="border border-gray-300 px-2 py-1 dark:border-gray-700">{inline(cell)}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>,
+      );
+      continue;
+    }
+    if (line.startsWith("#")) {
+      const text = line.replace(/^#+\s*/, "");
+      blocks.push(
+        line.startsWith("###")
+          ? <h5 key={index} className="mt-3 text-sm font-semibold">{inline(text)}</h5>
+          : <h4 key={index} className="mt-2 text-base font-semibold">{inline(text)}</h4>,
+      );
+    } else if (/^[-*]\s+/.test(line)) {
+      blocks.push(<li key={index} className="ml-4 list-disc text-sm">{inline(line.replace(/^[-*]\s+/, ""))}</li>);
+    } else if (line) {
+      blocks.push(<p key={index} className="text-sm">{inline(line)}</p>);
+    }
+    index += 1;
+  }
+  return <div className="space-y-1">{blocks}</div>;
+}
+
+function Check({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <span className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${ok ? DRAFT_STATUS_STYLES.evaluacion_superada : "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-200"}`}>
+      {ok ? "✓" : "✗"} {label}
+    </span>
+  );
+}
+
+function DraftSectionCard({ section }: { section: DepartmentSection }) {
+  const evaluation = section.evaluation_results;
+  const status = section.draft_status ?? "generando_borrador";
+  const provisional = status === "needs_human_review";
+  return (
+    <article className={`${CARD} space-y-3 ${provisional ? "border-orange-300 dark:border-orange-800" : ""}`}>
+      <header className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className={`text-xs uppercase tracking-wide ${MUTED}`}>
+            {section.department_name} · <code>{section.department_id}</code>
+          </p>
+          <p className="text-base font-semibold">{section.responsible}</p>
+        </div>
+        <div className="text-right">
+          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${DRAFT_STATUS_STYLES[status] ?? ""}`}>
+            {DRAFT_STATUS_LABELS[status] ?? status}
+          </span>
+          <p className={`mt-1 text-xs ${MUTED}`}>
+            Iteración {section.iterations ?? 0} · {section.draft_source === "llm" ? "LLM" : section.draft_source === "rules" ? "plantilla" : "—"}
+          </p>
+        </div>
+      </header>
+
+      {provisional && (
+        <p role="alert" className="rounded-md border border-orange-300 bg-orange-50 p-2 text-sm text-orange-900 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-200">
+          Borrador provisional: no superó la evaluación tras {section.iterations} iteraciones. Revísalo antes de
+          enviarlo; abajo está lo que falla.
+        </p>
+      )}
+
+      {evaluation && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <Check label={`Legibilidad ${evaluation.readability.score ?? "—"}`} ok={evaluation.readability.pass} />
+            <Check label="Pertinencia" ok={evaluation.relevance.pass} />
+            <Check label="Cumplimiento" ok={evaluation.compliance.pass} />
+          </div>
+          {evaluation.compliance.violations.length > 0 && (
+            <ul className="ml-4 list-disc text-xs text-red-800 dark:text-red-200">
+              {evaluation.compliance.violations.map((violation, index) => (
+                <li key={`${violation.rule_id}-${index}`}>
+                  <span className="font-medium">{COMPLIANCE_RULE_LABELS[violation.rule_id] ?? violation.rule_id}:</span> {violation.detail}
+                  {violation.evidence && <span className="italic"> — «{violation.evidence}»</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+          {evaluation.relevance.missing_aspects.length > 0 && (
+            <p className="text-xs text-red-800 dark:text-red-200">Sin responder: {evaluation.relevance.missing_aspects.join("; ")}</p>
+          )}
+          {!evaluation.overall_pass && (
+            <details className={`text-xs ${MUTED}`}>
+              <summary>Feedback para el generador</summary>
+              <pre className="whitespace-pre-wrap">{evaluation.feedback_for_generator}</pre>
+            </details>
+          )}
+        </div>
+      )}
+
+      {section.draft_content ? (
+        <div className="rounded-md border border-gray-200 p-3 dark:border-gray-800">
+          <DraftMarkdown content={section.draft_content} />
+        </div>
+      ) : (
+        <p className={`text-sm ${MUTED}`}>El generador está escribiendo la sección…</p>
+      )}
+
+      {(section.evaluation_history?.length ?? 0) > 1 && (
+        <details className={`text-xs ${MUTED}`}>
+          <summary>Historial del ciclo generador-evaluador ({section.evaluation_history?.length} iteraciones)</summary>
+          <ol className="ml-4 list-decimal">
+            {section.evaluation_history?.map((entry) => (
+              <li key={entry.iteration}>
+                Iteración {entry.iteration}: {entry.overall_pass ? "pasa" : "no pasa"}
+                {entry.violations.length > 0 && ` · reglas: ${entry.violations.join(", ")}`}
+                {entry.missing_aspects.length > 0 && ` · sin responder: ${entry.missing_aspects.length}`}
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+    </article>
+  );
+}
+
+function DraftsPanel({
+  ticket,
+  onRegenerate,
+  regenerating,
+}: {
+  ticket: RfpTicketDetail;
+  onRegenerate: () => void;
+  regenerating: boolean;
+}) {
+  const drafted = ticket.sections.filter((section) => section.draft_status);
+  const handoff = ticket.drafting_handoff;
+  const canRegenerate = canRegenerateDrafts(ticket);
+  if (drafted.length === 0 && !canRegenerate) return null;
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-semibold">Borrador de la propuesta económica</h3>
+        {canRegenerate && (
+          <button
+            type="button"
+            onClick={onRegenerate}
+            disabled={regenerating}
+            className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:hover:bg-gray-800"
+          >
+            {regenerating ? "Relanzando…" : drafted.length ? "Regenerar borradores" : "Generar borradores"}
+          </button>
+        )}
+      </div>
+      {handoff && (
+        <p className={`text-xs ${MUTED}`}>
+          Handoff <code>{handoff.contract}</code> · {handoff.metrics.sections} secciones, media de{" "}
+          {handoff.metrics.avg_iterations} iteraciones (máximo {handoff.metrics.max_iterations}),{" "}
+          {handoff.metrics.first_pass_sections} a la primera
+          {handoff.needs_human_review.length > 0 && ` · revisión humana: ${handoff.needs_human_review.join(", ")}`}
+        </p>
+      )}
+      {drafted.length > 0 && (
+        <div className="grid gap-3 xl:grid-cols-2">
+          {drafted.map((section) => <DraftSectionCard key={section.department_id} section={section} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TicketDetail({
+  ticket,
+  onRegenerate,
+  regenerating,
+}: {
+  ticket: RfpTicketDetail;
+  onRegenerate: () => void;
+  regenerating: boolean;
+}) {
   const metadata = ticket.metadata;
   const handoff = ticket.handoff;
   const readability = metadata?.readability;
@@ -69,9 +285,9 @@ function TicketDetail({ ticket }: { ticket: RfpTicketDetail }) {
           <code className="text-xs">{ticket.raw_pdf_path}</code>
           {ticket.markdown_chars ? ` · Markdown de ${ticket.markdown_chars.toLocaleString("es-ES")} caracteres` : ""}
         </p>
-        {isAnalyzing(ticket) && (
+        {isWorking(ticket) && (
           <p role="status" aria-live="polite" className="text-sm text-amber-800 dark:text-amber-200">
-            Analizando: {STAGE_LABELS[ticket.stage] ?? ticket.stage}… (se actualiza solo)
+            {isAnalyzing(ticket) ? "Analizando" : "Redactando"}: {STAGE_LABELS[ticket.stage] ?? ticket.stage}… (se actualiza solo)
           </p>
         )}
       </div>
@@ -79,18 +295,27 @@ function TicketDetail({ ticket }: { ticket: RfpTicketDetail }) {
       {ticket.stage === "error" && (
         <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           <p className="font-medium">
-            El análisis falló en la etapa «{STAGE_LABELS[ticket.error_stage ?? ""] ?? ticket.error_stage}».
+            {DRAFTING_STAGES.has(ticket.error_stage ?? "") ? "La generación de borradores" : "El análisis"} falló en la
+            etapa «{STAGE_LABELS[ticket.error_stage ?? ""] ?? ticket.error_stage}».
           </p>
           <p className="break-words">{ticket.error_message}</p>
           <p className="mt-2">
-            Reprocesar: <code>python scripts/rfp_intake_run.py --ticket-id {ticket.ticket_id}</code>
+            {DRAFTING_STAGES.has(ticket.error_stage ?? "") ? (
+              <>Relanza con «Regenerar borradores» o <code>python scripts/rfp_drafting_run.py --ticket-id {ticket.ticket_id} --force</code></>
+            ) : (
+              <>Reprocesar: <code>python scripts/rfp_intake_run.py --ticket-id {ticket.ticket_id}</code></>
+            )}
           </p>
         </div>
       )}
       {ticket.stale && ticket.stage !== "error" && (
         <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           El ticket lleva un rato sin avanzar: el proceso pudo detenerse. Reprocesa con{" "}
-          <code>python scripts/rfp_intake_run.py --ticket-id {ticket.ticket_id}</code>.
+          <code>
+            {ticket.status === "analizando"
+              ? `python scripts/rfp_intake_run.py --ticket-id ${ticket.ticket_id}`
+              : `python scripts/rfp_drafting_run.py --ticket-id ${ticket.ticket_id} --force`}
+          </code>.
         </div>
       )}
 
@@ -200,6 +425,8 @@ function TicketDetail({ ticket }: { ticket: RfpTicketDetail }) {
         </div>
       )}
 
+      <DraftsPanel ticket={ticket} onRegenerate={onRegenerate} regenerating={regenerating} />
+
       {handoff && (handoff.inactive_departments.length > 0 || handoff.unassigned_requests.length > 0 || handoff.conflicts.length > 0) && (
         <div className={`${CARD} space-y-2 text-sm`}>
           {handoff.inactive_departments.length > 0 && (
@@ -243,14 +470,16 @@ function TicketDetail({ ticket }: { ticket: RfpTicketDetail }) {
   );
 }
 
-// Recepción de RFPs (Hito 9 · Parte 1): Ventas sube el PDF, se crea un ticket y la
-// página consulta su estado hasta que el pipeline termina (descartado o análisis completo).
+// Recepción de RFPs (Hito 9 · Partes 1 y 2): Ventas sube el PDF, se crea un ticket y la
+// página consulta su estado mientras el pipeline trabaja: análisis (descartado o análisis
+// completo) y, después, borradores por departamento con su evaluación.
 export default function RfpIntakePage() {
   const [tickets, setTickets] = useState<RfpTicketSummary[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [detail, setDetail] = useState<RfpTicketDetail | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -273,12 +502,28 @@ export default function RfpIntakePage() {
     void refresh();
   }, [refresh]);
 
-  const polling = tickets.some(isAnalyzing) || (detail !== null && isAnalyzing(detail));
+  const polling = tickets.some(isWorking) || (detail !== null && isWorking(detail));
   useEffect(() => {
     if (!polling) return;
     const timer = window.setInterval(() => void refresh(), POLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [polling, refresh]);
+
+  async function handleRegenerate() {
+    if (selectedId === null || regenerating) return;
+    setRegenerating(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await regenerateDrafts(selectedId);
+      setMessage(`Ticket #${selectedId}: generando de nuevo los borradores…`);
+      await refresh();
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "No se pudieron relanzar los borradores.");
+    } finally {
+      setRegenerating(false);
+    }
+  }
 
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const chosen = event.target.files?.[0] ?? null;
@@ -324,7 +569,8 @@ export default function RfpIntakePage() {
           <p className={`text-sm ${MUTED}`}>
             Sube la RFP del cliente en PDF. Se crea un ticket, el documento se convierte a Markdown, el clasificador
             decide si es una RFP y, si lo es, cada departamento (Warehouse, Last Mile, Reverse) recibe solo lo que le
-            toca. Al terminar verás qué pedir a quién sin abrir el PDF.
+            toca. Al terminar verás qué pedir a quién sin abrir el PDF y, en seguida, el borrador de la propuesta
+            económica de cada departamento, revisado por los evaluadores.
           </p>
         </div>
 
@@ -395,7 +641,7 @@ export default function RfpIntakePage() {
 
           <div>
             {detail ? (
-              <TicketDetail ticket={detail} />
+              <TicketDetail ticket={detail} onRegenerate={() => void handleRegenerate()} regenerating={regenerating} />
             ) : (
               <p className={`${CARD} text-sm ${MUTED}`}>Selecciona un ticket para ver su análisis.</p>
             )}

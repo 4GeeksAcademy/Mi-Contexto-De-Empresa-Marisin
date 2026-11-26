@@ -6,8 +6,15 @@
 * `GET /rfp/tickets` — tickets recientes (la UI hace poll mientras alguno está
   en `analizando`).
 * `GET /rfp/tickets/{ticket_id}` — estado, clasificación, metadatos, secciones
-  por departamento y handoff para la Parte 2.
+  por departamento (con borrador y `EvaluationResult` desde la Parte 2), handoff
+  para la Parte 2 y `drafting_handoff` para la Parte 3.
+* `POST /rfp/tickets/{ticket_id}/drafts` — (Parte 2) relanza la generación y
+  evaluación de borradores de un ticket con análisis completo (o ya redactado,
+  con error o parado). Responde **202**; 409 si no se puede (descartado, sin
+  handoff o generándose ahora mismo).
 
+Tras la Parte 1, la Parte 2 se encadena sola en segundo plano si el ticket
+queda en la cola (`ready_for_drafting`; desactivable con `RFP_AUTO_DRAFT=0`).
 El router no contiene lógica de agentes ni el grafo: importa y dispara
 `data/pipelines/rfp_intake/`. Errores: PDF no válido → 415/413/422; sin
 `DATABASE_URL` → 503; ticket inexistente → 404.
@@ -32,10 +39,11 @@ except ModuleNotFoundError as exc:
 
 from data.pipelines.rfp_intake import config as rfp_config
 from data.pipelines.rfp_intake import intake, runner
+from data.pipelines.rfp_intake.drafting import runner as drafting_runner
 from data.pipelines.rfp_intake.sql_store import SqlRfpStore
-from data.pipelines.rfp_intake.store import RfpStore, is_stale
+from data.pipelines.rfp_intake.store import NotDraftable, RfpStore, TicketNotFound, is_stale
 
-from .schemas import RfpTicketAccepted, RfpTicketDetail, RfpTicketList, RfpTicketSummary
+from .schemas import RfpDraftingAccepted, RfpTicketAccepted, RfpTicketDetail, RfpTicketList, RfpTicketSummary
 
 router = APIRouter(prefix="/rfp", tags=["rfp"])
 logger = logging.getLogger("api.rfp")
@@ -60,6 +68,7 @@ def _summary(ticket: dict[str, Any]) -> RfpTicketSummary:
         client_name=ticket.get("client_name"),
         error_stage=ticket.get("error_stage"),
         ready_for_drafting=bool(ticket.get("ready_for_drafting")),
+        ready_for_approval=bool(ticket.get("ready_for_approval")),
         stale=is_stale(ticket),
         created_at=ticket["created_at"],
         updated_at=ticket["updated_at"],
@@ -97,6 +106,8 @@ async def upload_rfp(
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="No se pudo registrar la RFP.")
 
     background_tasks.add_task(runner.process_ticket_safely, ticket["ticket_id"], store)
+    # Parte 2: las tareas de fondo corren en orden; solo arranca si la Parte 1 dejó el ticket en la cola.
+    background_tasks.add_task(drafting_runner.draft_if_ready_safely, ticket["ticket_id"], store)
     logger.info("RFP recibida: ticket %s (%s, %d bytes)", ticket["ticket_id"], ticket["original_filename"], len(content))
     return RfpTicketAccepted(
         ticket_id=ticket["ticket_id"],
@@ -140,9 +151,35 @@ def get_rfp_ticket(
         sections=ticket.get("sections") or [],
         handoff=ticket.get("handoff"),
         ready_for_drafting=bool(ticket.get("ready_for_drafting")),
+        drafting_handoff=ticket.get("drafting_handoff"),
+        ready_for_approval=bool(ticket.get("ready_for_approval")),
         error_stage=ticket.get("error_stage"),
         error_message=ticket.get("error_message"),
         stale=is_stale(ticket),
         created_at=ticket["created_at"],
         updated_at=ticket["updated_at"],
+    )
+
+
+@router.post("/tickets/{ticket_id}/drafts", response_model=RfpDraftingAccepted, status_code=status.HTTP_202_ACCEPTED)
+def regenerate_rfp_drafts(
+    ticket_id: int,
+    background_tasks: BackgroundTasks,
+    _: Annotated[dict, Depends(get_current_user)],
+    store: Annotated[RfpStore, Depends(get_rfp_store)],
+) -> RfpDraftingAccepted:
+    """Parte 2: toma el ticket (atómico) y genera + evalúa sus secciones en segundo plano."""
+    try:
+        ticket = store.claim_for_drafting(ticket_id, force=True)
+    except TicketNotFound:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No existe ese ticket de RFP.")
+    except NotDraftable as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"No se pueden generar los borradores: {exc}.")
+    background_tasks.add_task(drafting_runner.draft_ticket_safely, ticket_id, store, claimed=True)
+    logger.info("Borradores del ticket RFP %s relanzados", ticket_id)
+    return RfpDraftingAccepted(
+        ticket_id=ticket["ticket_id"],
+        status=ticket["status"],
+        stage=ticket["stage"],
+        status_url=f"/rfp/tickets/{ticket['ticket_id']}",
     )

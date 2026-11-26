@@ -51,4 +51,9 @@ jobs:
           tests/pipelines/test_rfp_intake_orchestration.py
           tests/pipelines/test_rfp_intake_graph.py
           tests/pipelines/test_rfp_intake_sql_store.py
+          tests/pipelines/test_rfp_drafting_generators.py
+          tests/pipelines/test_rfp_drafting_evaluators.py
+          tests/pipelines/test_rfp_drafting_graph.py
+          tests/pipelines/test_rfp_drafting_runner.py
+          tests/pipelines/test_rfp_drafting_sql_store.py
           tests/mcps/test_trackflow_mcp.py

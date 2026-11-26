@@ -1,0 +1,249 @@
+{
+  "ticket_id": 1,
+  "original_filename": "demo-review",
+  "status": "needs_human_review",
+  "stage": "borradores_listos",
+  "error_stage": null,
+  "error_message": null,
+  "ready_for_approval": true,
+  "drafting": {
+    "contract": "trackflow.rfp_drafting.handoff/v1",
+    "status": "needs_human_review",
+    "currency": "USD",
+    "needs_human_review": [
+      "warehouse"
+    ],
+    "metrics": {
+      "max_iterations": 3,
+      "avg_iterations": 2.5,
+      "first_pass_sections": 0,
+      "sections": 2
+    }
+  },
+  "sections": [
+    {
+      "department_id": "warehouse",
+      "responsible": "Ana Whitfield",
+      "draft_status": "needs_human_review",
+      "iterations": 3,
+      "draft_source": "llm",
+      "evaluation_results": {
+        "section_id": "1:warehouse",
+        "department_id": "warehouse",
+        "iteration": 3,
+        "readability": {
+          "pass": true,
+          "score": 92.98,
+          "details": {
+            "metric": "fernandez_huerta",
+            "language": "es",
+            "section_words": 350,
+            "prose_words": 212,
+            "avg_words_per_sentence": 11.16,
+            "fernandez_huerta": 92.98,
+            "flesch_kincaid_grade": 8.18,
+            "flesch_reading_ease": 55.86,
+            "gunning_fog": 9.73,
+            "source": "py-readability-metrics",
+            "problems": []
+          }
+        },
+        "relevance": {
+          "pass": true,
+          "missing_aspects": [],
+          "details": {
+            "aspects_total": 3,
+            "aspects_covered": [
+              "Volumen mensual",
+              "Almacenamiento",
+              "Almacenamiento"
+            ],
+            "open_questions": 1
+          }
+        },
+        "compliance": {
+          "pass": false,
+          "rule_ids": [
+            "currency-by-country",
+            "on-time-sla-stated",
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "violations": [
+            {
+              "rule_id": "returns-min-48h",
+              "detail": "Promete procesar devoluciones en menos de 48 horas.",
+              "evidence": "Procesamos las devoluciones en 24 horas desde que llegan al almacén."
+            },
+            {
+              "rule_id": "volume-discount-table",
+              "detail": "Falta la tabla de descuentos por volumen.",
+              "evidence": ""
+            },
+            {
+              "rule_id": "no-carrier-negotiated-rates",
+              "detail": "Revela tarifas o precios de un transportista concreto.",
+              "evidence": "- Con UPS tenemos una tarifa negociada de 3,10 USD por paquete que trasladamos al cliente."
+            },
+            {
+              "rule_id": "no-invented-figures",
+              "detail": "Cifras que no están en la RFP, el tarifario ni las políticas: 3.1",
+              "evidence": "3.1"
+            }
+          ]
+        },
+        "overall_pass": false,
+        "feedback_for_generator": "- [returns-min-48h] Quita la promesa «Procesamos las devoluciones en 24 horas desde que llegan al almacén.»: el procesamiento de devoluciones nunca baja de 48 horas; usa el plazo del tarifario (72 horas).\n- [volume-discount-table] Añade en «Descuentos por volumen» la tabla del tarifario (| Pedidos al mes | Descuento por volumen |) y di qué tramo aplica.\n- [no-carrier-negotiated-rates] Quita «- Con UPS tenemos una tarifa negociada de 3,10 USD por paquete que trasladamos al cliente.»: no se dan tarifas ni precios por transportista, solo el precio final por envío al cliente.\n- [no-invented-figures] Quita o corrige estas cifras, que no salen de la RFP, el tarifario ni las políticas: 3.1.",
+        "evaluated_at": "2026-11-26T10:09:48.086697+00:00"
+      },
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "draft_source": "llm",
+          "overall_pass": false,
+          "readability_pass": true,
+          "relevance_pass": true,
+          "compliance_pass": false,
+          "violations": [
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "missing_aspects": [],
+          "feedback_for_generator": "- [returns-min-48h] Quita la promesa «Procesamos las devoluciones en 24 horas desde que llegan al almacén.»: el procesamiento de devoluciones nunca baja de 48 horas; usa el plazo del tarifario (72 horas).\n- [volume-discount-table] Añade en «Descuentos por volumen» la tabla del tarifario (| Pedidos al mes | Descuento por volumen |) y di qué tramo aplica.\n- [no-carrier-negotiated-rates] Quita «- Con UPS tenemos una tarifa negociada de 3,10 USD por paquete que trasladamos al cliente.»: no se dan tarifas ni precios por transportista, solo el precio final por envío al cliente.\n- [no-invented-figures] Quita o corrige estas cifras, que no salen de la RFP, el tarifario ni las políticas: 3.1."
+        },
+        {
+          "iteration": 2,
+          "draft_source": "llm",
+          "overall_pass": false,
+          "readability_pass": true,
+          "relevance_pass": true,
+          "compliance_pass": false,
+          "violations": [
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "missing_aspects": [],
+          "feedback_for_generator": "- [returns-min-48h] Quita la promesa «Procesamos las devoluciones en 24 horas desde que llegan al almacén.»: el procesamiento de devoluciones nunca baja de 48 horas; usa el plazo del tarifario (72 horas).\n- [volume-discount-table] Añade en «Descuentos por volumen» la tabla del tarifario (| Pedidos al mes | Descuento por volumen |) y di qué tramo aplica.\n- [no-carrier-negotiated-rates] Quita «- Con UPS tenemos una tarifa negociada de 3,10 USD por paquete que trasladamos al cliente.»: no se dan tarifas ni precios por transportista, solo el precio final por envío al cliente.\n- [no-invented-figures] Quita o corrige estas cifras, que no salen de la RFP, el tarifario ni las políticas: 3.1."
+        },
+        {
+          "iteration": 3,
+          "draft_source": "llm",
+          "overall_pass": false,
+          "readability_pass": true,
+          "relevance_pass": true,
+          "compliance_pass": false,
+          "violations": [
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "missing_aspects": [],
+          "feedback_for_generator": "- [returns-min-48h] Quita la promesa «Procesamos las devoluciones en 24 horas desde que llegan al almacén.»: el procesamiento de devoluciones nunca baja de 48 horas; usa el plazo del tarifario (72 horas).\n- [volume-discount-table] Añade en «Descuentos por volumen» la tabla del tarifario (| Pedidos al mes | Descuento por volumen |) y di qué tramo aplica.\n- [no-carrier-negotiated-rates] Quita «- Con UPS tenemos una tarifa negociada de 3,10 USD por paquete que trasladamos al cliente.»: no se dan tarifas ni precios por transportista, solo el precio final por envío al cliente.\n- [no-invented-figures] Quita o corrige estas cifras, que no salen de la RFP, el tarifario ni las políticas: 3.1."
+        }
+      ],
+      "draft_content": "## Propuesta económica — Warehouse Operations\n\n**Cliente:** Luna Cosmetics (EE. UU.). **Moneda:** USD. **Responsable:** Ana Whitfield.\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n\n- **Volumen mensual:** el cliente indica «5000 pedidos al mes según la RFP». TrackFlow lo cubre en su almacén de Los Ángeles, con el precio de la tabla.\n- **Almacenamiento:** el cliente indica «We're Luna Cosmetics, a small direct-to-consumer skincare brand out of LA. We've been doing our own fulfillment out of a garage (seriously) but we just crossed 5,000 orders a month and it's not sustainable anymore». TrackFlow lo cubre en su almacén de Los Ángeles, con el precio de la tabla.\n- **Almacenamiento:** el cliente indica «We need someone to handle warehousing and shipping for us across the US — ideally someone who can also handle carrier selection since we don't have relationships with any carriers yet». TrackFlow lo cubre en su almacén de Los Ángeles, con el precio de la tabla.\n\n### Precios\n\nPrecios finales para Luna Cosmetics, en USD y sin impuestos.\n\n| Concepto | Precio |\n|---|---|\n| Almacenamiento (por m³ ocupado al mes) | 18 USD |\n| Primeros 30 días de cada producto nuevo | 0 USD (periodo de gracia) |\n| Preparación y empaquetado (por pedido) | 1,40 USD |\n| Inventario sin movimiento desde el día 181 | 150 % de la tarifa de almacenamiento |\n\n### Condiciones de servicio\n\n- SLA de entrega a tiempo: TrackFlow se compromete a un 90 % de entregas a tiempo al mes, medido por país; si baja del 90 % dos meses seguidos, el cliente recibe una compensación del 5 % de la tarifa mensual de ese país.\n- Servicio desde el almacén de Los Ángeles.\n- Onboarding en 10 días hábiles desde la firma.\n- Con más de 50 m³ de media al mes se puede negociar una tarifa de almacenamiento preferente, siempre con Miguel Torres.\n\n### Datos pendientes del cliente\n\n- ¿Cuántos SKUs, pallets o m³ hay que almacenar?\n\nHasta tener estos datos, los precios son unitarios y el total se calcula con el volumen real.\n\n- Con UPS tenemos una tarifa negociada de 3,10 USD por paquete que trasladamos al cliente.\n- Procesamos las devoluciones en 24 horas desde que llegan al almacén."
+    },
+    {
+      "department_id": "lastmile",
+      "responsible": "Carlos Vega",
+      "draft_status": "evaluacion_superada",
+      "iterations": 2,
+      "draft_source": "llm",
+      "evaluation_results": {
+        "section_id": "1:lastmile",
+        "department_id": "lastmile",
+        "iteration": 2,
+        "readability": {
+          "pass": true,
+          "score": 84.66,
+          "details": {
+            "metric": "fernandez_huerta",
+            "language": "es",
+            "section_words": 322,
+            "prose_words": 228,
+            "avg_words_per_sentence": 12.0,
+            "fernandez_huerta": 84.66,
+            "flesch_kincaid_grade": 10.37,
+            "flesch_reading_ease": 41.77,
+            "gunning_fog": 13.82,
+            "source": "py-readability-metrics",
+            "problems": []
+          }
+        },
+        "relevance": {
+          "pass": true,
+          "missing_aspects": [],
+          "details": {
+            "aspects_total": 3,
+            "aspects_covered": [
+              "Volumen mensual",
+              "Requisito de la RFP",
+              "Selección de transportista"
+            ],
+            "open_questions": 2
+          }
+        },
+        "compliance": {
+          "pass": true,
+          "rule_ids": [
+            "currency-by-country",
+            "on-time-sla-stated",
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "violations": []
+        },
+        "overall_pass": true,
+        "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos.",
+        "evaluated_at": "2026-11-26T10:09:57.447348+00:00"
+      },
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "draft_source": "llm",
+          "overall_pass": false,
+          "readability_pass": true,
+          "relevance_pass": false,
+          "compliance_pass": true,
+          "violations": [],
+          "missing_aspects": [
+            "aspecto clave «Requisito de la RFP»"
+          ],
+          "feedback_for_generator": "- [relevance] Responde también a: aspecto clave «Requisito de la RFP». Nombra cada aspecto clave en «Qué pide el cliente» y cada pregunta en «Datos pendientes del cliente»."
+        },
+        {
+          "iteration": 2,
+          "draft_source": "llm",
+          "overall_pass": true,
+          "readability_pass": true,
+          "relevance_pass": true,
+          "compliance_pass": true,
+          "violations": [],
+          "missing_aspects": [],
+          "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+        }
+      ],
+      "draft_content": "## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics informa de 5.000 pedidos al mes. Este volumen corresponde al tramo de descuento de 5.000 a 9.999 pedidos.\n- **Requisito de la RFP:** Luna Cosmetics busca dejar de gestionar el fulfillment por su cuenta tras superar los 5.000 pedidos mensuales. TrackFlow cubre la última milla.\n- **Cobertura de envíos:** el cliente solicita envíos en todo Estados Unidos. TrackFlow gestiona la última milla en Estados Unidos.\n- **Selección de transportista:** el cliente solicita que TrackFlow gestione la selección. El sistema elige el transportista según destino, peso y urgencia.\n- **Puesta en marcha:** el cliente indica que quiere estar operativo en aproximadamente tres semanas. La fecha de puesta en marcha queda pendiente de validación.\n\n### Precios\n\n| Concepto | Precio final por envío |\n|---|---:|\n| Envío estándar hasta 2 kg | 6,90 USD |\n| Envío estándar de 2 a 5 kg | 8,90 USD |\n| Envío estándar de más de 5 kg | 12,50 USD |\n\n### Descuentos por volumen\n\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nCon 5.000 pedidos mensuales, aplica el tramo de **5.000 a 9.999**, con un descuento del **5 %**.\n\n### Condiciones de servicio\n- **SLA de entrega a tiempo:** 90 % mensual, medido por país.\n- Si el resultado queda por debajo del 90 % durante dos meses seguidos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n- **Envío estándar:** de 3 a 5 días hábiles dentro del mismo país.\n- El sistema de TrackFlow selecciona el transportista para cada envío según destino, peso y urgencia.\n- En períodos de alta demanda, los plazos pueden alargarse y TrackFlow avisa con anticipación.\n\n### Datos pendientes del cliente\n- ¿Cuál es el peso y tamaño medio de los paquetes?\n- ¿Qué plazo de entrega (SLA) espera el cliente?\n- ¿Qué plazo de entrega espera el cliente?"
+    }
+  ],
+  "run": {
+    "demo": "review",
+    "department": "warehouse",
+    "outcome": "needs_human_review",
+    "iterations": {
+      "warehouse": 3,
+      "lastmile": 2
+    },
+    "duration_ms": 11707,
+    "error": null
+  }
+}
