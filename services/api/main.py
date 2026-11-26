@@ -56,6 +56,14 @@ except ModuleNotFoundError as exc:
         raise
     from rfp.router import router as rfp_router
 
+try:
+    # Notificaciones SSE (tiempo real · Parte 1): importarlo registra el broker en el pipeline de RFPs.
+    from services.realtime.router import router as realtime_router
+except ModuleNotFoundError as exc:
+    if exc.name not in {"services", "services.realtime"}:
+        raise
+    from realtime.router import router as realtime_router
+
 app = FastAPI(
     title="TrackFlow - Supplier Directory API",
     version="1.0.0",
@@ -147,3 +155,4 @@ app.include_router(tasks_router)
 app.include_router(knowledge_router)
 app.include_router(agent_router)
 app.include_router(rfp_router)
+app.include_router(realtime_router)
