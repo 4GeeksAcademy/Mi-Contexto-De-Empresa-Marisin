@@ -7,15 +7,22 @@ los checkpoints y la respuesta de la API se relacionan con el mismo id.
 Memoria (Hito 8 · Parte 1): con `user`, la corrida pertenece a una conversación
 (`conversation_id`, que se crea si no llega) y activa la memoria del agente. Sin
 `user` (scripts de evals) la memoria no actúa y el grafo se comporta como antes.
+
+Tokens en vivo (chat por WebSocket): con `on_token`, la corrida usa
+`graph.stream(stream_mode=["custom", "values"])`, reenvía cada token que emite
+`generate_answer` y comprueba `cancel_event` entre chunks. Si se cancela, el
+generador se cierra (no se ejecutan más nodos), el trace queda `interrupted` y
+se lanza `AgentRunCancelled`. Sin `on_token`, es el `graph.invoke` de siempre.
 """
 
 from __future__ import annotations
 
 import logging
+import threading
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from .harness import events as guard_events
 from .memory.models import Actor
@@ -61,6 +68,19 @@ class AgentRunError(RuntimeError):
         super().__init__(f"La corrida {run_id} falló en el nodo {failed_node or 'desconocido'}")
         self.run_id = run_id
         self.failed_node = failed_node
+
+
+class AgentRunCancelled(RuntimeError):
+    """La corrida se abortó a petición (`cancel_event`). El trace ya está guardado como `interrupted`."""
+
+    def __init__(self, run_id: str, *, tokens_sent: int = 0, stream_closed: bool = False):
+        super().__init__(f"La corrida {run_id} se canceló tras {tokens_sent} tokens")
+        self.run_id = run_id
+        self.tokens_sent = tokens_sent
+        self.stream_closed = stream_closed
+
+
+CANCELLED_ERROR = "GenerationCancelled"  # nombre de `harness.generation.GenerationCancelled` en el trace
 
 
 def run_config(run_id: str) -> dict[str, Any]:
@@ -135,6 +155,41 @@ def guardrail_summary(final_state: dict[str, Any] | None) -> dict[str, Any] | No
     return {key: guard.get(key) for key in ("category", "action", "failure_type", "rules") if guard.get(key)}
 
 
+def stream_graph(
+    graph,
+    initial: dict[str, Any],
+    config: dict[str, Any],
+    on_token: Callable[[str], None],
+    cancel_event: threading.Event | None,
+    stats: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Recorre el grafo reenviando tokens; devuelve el último estado (`values`).
+
+    Comprueba `cancel_event` antes de cada chunk: un token que llegue después de
+    activarse nunca se reenvía, y al salir del bucle el generador se cierra.
+    """
+    final_state: dict[str, Any] | None = None
+    stream = graph.stream(initial, config, stream_mode=["custom", "values"])
+    try:
+        for mode, chunk in stream:
+            if cancel_event is not None and cancel_event.is_set():
+                stats["cancelled"] = True
+                break
+            if mode == "values":
+                final_state = chunk
+            elif mode == "custom" and isinstance(chunk, dict) and chunk.get("token"):
+                stats["tokens_sent"] += 1
+                on_token(chunk["token"])
+    finally:
+        stream.close()  # espera al nodo en curso, que aborta al ver el evento
+    return final_state
+
+
+def generation_stream_closed(recorder: TraceRecorder) -> bool:
+    """El nodo de generación cerró la respuesta del modelo al cancelarse."""
+    return any((event.get("error") or {}).get("type") == CANCELLED_ERROR for event in recorder.events)
+
+
 def run_agent(
     question: str,
     *,
@@ -142,11 +197,16 @@ def run_agent(
     user: dict[str, Any] | None = None,
     graph=None,
     trace_directory: str | Path | None = None,
+    on_token: Callable[[str], None] | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> AgentResult:
     """Invoca el grafo para `question`, guarda el trace y devuelve el resultado.
 
     Si un nodo falla, el trace se guarda igualmente (con `status = "error"` y el
     nodo que falló) y se lanza `AgentRunError` con el `run_id`.
+
+    Con `on_token`, cada token de la generación se entrega en vivo y
+    `cancel_event` puede abortar la corrida: trace `interrupted` y `AgentRunCancelled`.
     """
     if graph is None:
         from .graph import AGENT_GRAPH  # compilado al importar el módulo
@@ -157,6 +217,9 @@ def run_agent(
     recorder = TraceRecorder(run_id=run_id, question=question)
     final_state: dict[str, Any] | None = None
     error: BaseException | None = None
+    stats: dict[str, Any] = {"tokens_sent": 0, "cancelled": False}
+    if on_token is not None:
+        config["configurable"].update({"stream_tokens": True, "cancel_event": cancel_event})
 
     initial: dict[str, Any] = {"question": question}
     actor = Actor.from_user(user)
@@ -170,10 +233,17 @@ def run_agent(
         run_id=run_id, conversation_id=conversation_id, user_id=actor.user_id if actor else None
     ) as collected_events:
         try:
-            final_state = graph.invoke(initial, config)
+            if on_token is None:
+                final_state = graph.invoke(initial, config)
+            else:
+                final_state = stream_graph(graph, initial, config, on_token, cancel_event, stats)
         except Exception as exc:
-            error = exc
+            if type(exc).__name__ == CANCELLED_ERROR and cancel_event is not None and cancel_event.is_set():
+                stats["cancelled"] = True
+            else:
+                error = exc
 
+    cancelled = bool(stats["cancelled"])
     trace = build_trace(
         recorder,
         graph_name=getattr(graph, "name", None) or "agent",
@@ -183,7 +253,17 @@ def run_agent(
         conversation_id=conversation_id,
         guardrail_events=collected_events,
     )
+    if cancelled:
+        stream_closed = generation_stream_closed(recorder)
+        trace["status"] = "interrupted"
+        trace["cancelled"] = {"tokens_sent": stats["tokens_sent"], "stream_closed": stream_closed}
     path = save_trace(trace, trace_directory)
+    if cancelled:
+        logger.info(
+            "agent run_id=%s cancelled tokens_sent=%d stream_closed=%s path=%s",
+            run_id, stats["tokens_sent"], stream_closed, " → ".join(trace["path"]),
+        )
+        raise AgentRunCancelled(run_id, tokens_sent=stats["tokens_sent"], stream_closed=stream_closed)
     logger.info("agent run_id=%s status=%s path=%s", run_id, trace["status"], " → ".join(trace["path"]))
 
     if error is not None:
