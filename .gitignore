@@ -25,3 +25,6 @@ logs/
 
 # Traces de las corridas del agente LangGraph (runtime; los de los evals viven en tests/pipelines/fixtures/)
 data/agent_traces/
+
+# Checkpoints de LangGraph de la aprobación de RFPs (estado de ejecución, Hito 9 Parte 3)
+data/checkpoints/
