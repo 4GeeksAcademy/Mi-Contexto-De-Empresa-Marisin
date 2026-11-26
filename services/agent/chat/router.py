@@ -24,6 +24,7 @@ import json
 import logging
 from typing import Annotated, Any
 
+import anyio
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect, status
 from pydantic import BaseModel, ValidationError
 from starlette.concurrency import run_in_threadpool
@@ -160,19 +161,25 @@ async def chat_socket(
                     "dueño" if is_owner else "observador", len(snapshot.messages),
                     snapshot.active_generation.message_id if snapshot.active_generation else None)
 
-        sender = asyncio.create_task(forward_events(websocket, subscription, snapshot))
-        receiver = asyncio.create_task(receive_commands(
-            websocket, subscription, session_id=session_id, user=user, is_owner=is_owner,
-            store=store, turn_runner=turn_runner, manager=manager,
-        ))
-        done, pending = await asyncio.wait({sender, receiver}, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
-        await asyncio.gather(*pending, return_exceptions=True)
-        for task in done:
-            error = task.exception()
-            if error is not None and not isinstance(error, WebSocketDisconnect):
-                logger.error("chat session=%s: la conexión terminó con %r", session_id, error)
+        # Task group de anyio (no `asyncio.wait` + `gather`): la cancelación del servidor se
+        # propaga limpia. Cuando uno de los dos lados termina, se cancela el otro.
+        async with anyio.create_task_group() as group:
+
+            async def run(side: str, coroutine: Any) -> None:
+                try:
+                    await coroutine
+                except WebSocketDisconnect:
+                    pass
+                except Exception as error:
+                    logger.error("chat session=%s: %s terminó con %r", session_id, side, error)
+                finally:
+                    group.cancel_scope.cancel()
+
+            group.start_soon(run, "sender", forward_events(websocket, subscription, snapshot))
+            group.start_soon(run, "receiver", receive_commands(
+                websocket, subscription, session_id=session_id, user=user, is_owner=is_owner,
+                store=store, turn_runner=turn_runner, manager=manager,
+            ))
     finally:
         manager.pubsub.unsubscribe(subscription)
         logger.info("chat session=%s desconectado user_id=%s", session_id, user["id"])
