@@ -224,6 +224,11 @@ def _currencies(text: str) -> set[str]:
     return {code for code, pattern in _CURRENCY_PATTERNS.items() if pattern.search(folded)}
 
 
+def currencies_in(text: str) -> set[str]:
+    """Monedas que cita un texto (USD/EUR); también lo usa el detector de conflictos de la Parte 3."""
+    return _currencies(text)
+
+
 def _hours(value: str, unit: str) -> float:
     number = float(value.replace(",", "."))
     return number * 24 if unit.startswith(("dia", "day")) else number
