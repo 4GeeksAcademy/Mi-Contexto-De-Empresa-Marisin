@@ -168,6 +168,8 @@ export interface EvaluationHistoryEntry {
   violations: string[];
   missing_aspects: string[];
   feedback_for_generator: string;
+  // Parte 3: "approval" en las iteraciones de una reescritura pedida durante la aprobación.
+  phase?: string;
 }
 
 export interface DraftingHandoff {

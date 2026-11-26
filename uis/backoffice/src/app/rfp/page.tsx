@@ -341,9 +341,10 @@ function DraftSectionCard({
         <details className={`text-xs ${MUTED}`}>
           <summary>Historial del ciclo generador-evaluador ({section.evaluation_history?.length} iteraciones)</summary>
           <ol className="ml-4 list-decimal">
-            {section.evaluation_history?.map((entry) => (
-              <li key={entry.iteration}>
-                Iteración {entry.iteration}: {entry.overall_pass ? "pasa" : "no pasa"}
+            {section.evaluation_history?.map((entry, index) => (
+              <li key={`${entry.phase ?? "drafting"}-${index}`}>
+                {entry.phase === "approval" ? "Reescritura pedida en la aprobación · iteración" : "Iteración"} {entry.iteration}:{" "}
+                {entry.overall_pass ? "pasa" : "no pasa"}
                 {entry.violations.length > 0 && ` · reglas: ${entry.violations.join(", ")}`}
                 {entry.missing_aspects.length > 0 && ` · sin responder: ${entry.missing_aspects.length}`}
               </li>
