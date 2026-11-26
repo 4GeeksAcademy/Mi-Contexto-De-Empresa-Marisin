@@ -26,7 +26,7 @@ from ..schemas import (
     ProductOrderSummary,
     ProductResponse,
 )
-from ..security import get_current_user
+from ..security import require_staff, require_staff_or_service
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
@@ -67,8 +67,12 @@ def _user_uuid(current_user: dict) -> str:
     return str(identifier)
 
 
-# No JWT or per-user data: this list uses a shared global cache key.
-@router.get("/products", response_model=list[ProductListItem])
+# Staff o servicio MCP (D9); sin datos por usuario: la lista usa una clave de caché global.
+@router.get(
+    "/products",
+    response_model=list[ProductListItem],
+    dependencies=[Depends(require_staff_or_service)],
+)
 def list_products(response: Response, session: Annotated[Session, Depends(get_db)]):
     if CACHE_ENABLED:
         hit, cached = api_cache.get(PRODUCTS_LIST_KEY)
@@ -101,7 +105,7 @@ def list_products(response: Response, session: Annotated[Session, Depends(get_db
 def create_product(
     payload: ProductCreate,
     session: Annotated[Session, Depends(get_db)],
-    _: Annotated[dict, Depends(get_current_user)],
+    _: Annotated[dict, Depends(require_staff)],
 ):
     existing = session.exec(select(SKU).where(SKU.sku == payload.sku)).first()
     if existing:
@@ -114,7 +118,11 @@ def create_product(
     return _product_response(sku_obj, 0)
 
 
-@router.get("/products/{product_id}", response_model=ProductResponse)
+@router.get(
+    "/products/{product_id}",
+    response_model=ProductResponse,
+    dependencies=[Depends(require_staff_or_service)],
+)
 def get_product(
     product_id: int,
     session: Annotated[Session, Depends(get_db)],
@@ -138,7 +146,7 @@ def reject_direct_stock_edit(
     product_id: int,
     payload: DirectStockEditRequest,
     session: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[dict, Depends(get_current_user)],
+    current_user: Annotated[dict, Depends(require_staff)],
 ):
     """Regla de negocio explícita: el stock nunca se edita directamente (D28).
 
@@ -161,7 +169,7 @@ def reject_direct_stock_edit(
 def create_inbound_order(
     payload: InboundOrderCreate,
     session: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[dict, Depends(get_current_user)],
+    current_user: Annotated[dict, Depends(require_staff)],
 ):
     if session.get(SKU, payload.sku_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
@@ -181,7 +189,7 @@ def create_inbound_order(
 def create_outbound_order(
     payload: OutboundOrderCreate,
     session: Annotated[Session, Depends(get_db)],
-    current_user: Annotated[dict, Depends(get_current_user)],
+    current_user: Annotated[dict, Depends(require_staff)],
 ):
     if session.get(SKU, payload.sku_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SKU no encontrado.")
@@ -205,7 +213,11 @@ def create_outbound_order(
     return OutboundOrderResponse.model_validate(order, from_attributes=True)
 
 
-@router.get("/orders", response_model=list[InventoryOrderListItem])
+@router.get(
+    "/orders",
+    response_model=list[InventoryOrderListItem],
+    dependencies=[Depends(require_staff)],
+)
 def list_orders(session: Annotated[Session, Depends(get_db)]):
     inbound_orders = session.exec(select(StockEntry)).all()
     outbound_orders = session.exec(select(StockExit)).all()
