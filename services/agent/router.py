@@ -155,3 +155,9 @@ def agent_guardrails_summary(
     except MemoryUnavailable:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="El registro de guardrails no está disponible.")
     return GuardrailSummaryResponse.model_validate(summary)
+
+
+# Chat del First-line CX agent por WebSocket (Sistemas en tiempo real · Parte 2): `/agent/chat/...`.
+from .chat.router import router as chat_router  # noqa: E402
+
+router.include_router(chat_router)
