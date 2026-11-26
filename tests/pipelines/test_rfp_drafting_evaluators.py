@@ -177,6 +177,21 @@ def test_relevance_reports_the_aspects_the_section_does_not_answer(reverse_es):
     assert any(item.startswith("pregunta abierta") for item in check.missing_aspects)
 
 
+def test_a_generic_aspect_counts_when_the_section_names_it():
+    """Con la Parte 1 sin LLM el tema es genérico («Requisito de la RFP») y el detalle, un extracto en inglés."""
+    aspect = {"topic": "Requisito de la RFP", "detail": "We need someone to handle warehousing and shipping for us"}
+    named = "## Propuesta económica — Last Mile\n- **Requisito de la RFP:** cubierto con envíos a precio final."
+    silent = "## Propuesta económica — Last Mile\n- Envíos a precio final por tramo de peso."
+
+    def missing(content):
+        return evaluators.evaluate_relevance(
+            content, department_id="lastmile", client_name=None, key_aspects=[aspect], open_questions=[],
+        ).missing_aspects
+
+    assert not any("Requisito de la RFP" in item for item in missing(named))
+    assert any("Requisito de la RFP" in item for item in missing(silent))
+
+
 # --------------------------------------------------------------------------- #
 # EvaluationResult y feedback
 # --------------------------------------------------------------------------- #
