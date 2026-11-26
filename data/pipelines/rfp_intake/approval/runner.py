@@ -72,6 +72,8 @@ class StoreApprovalReporter:
             ticket_id, department_id, approval_status=config.APPROVAL_PENDING, approval_round=round_number,
             approval_requested_at=requested_at, approver=None, approved_at=None,
         )
+        # Tras una reescritura (humana o del árbitro) el ticket vuelve a esperar los vistos buenos.
+        self.store.set_approval_progress(ticket_id, config.STAGE_AWAITING)
 
     def revising(self, ticket_id, department_id, *, round_number, feedback):
         self.store.save_section_approval(
