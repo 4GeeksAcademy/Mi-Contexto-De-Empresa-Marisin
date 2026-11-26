@@ -1,5 +1,5 @@
 import pytest
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, APIWebSocketRoute
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
@@ -103,10 +103,34 @@ def _response_keys(value):
             yield from _response_keys(nested)
 
 
+def _websocket_routes(routes):
+    seen = set()
+    pending = list(routes)
+    while pending:
+        route = pending.pop()
+        if id(route) in seen:
+            continue
+        seen.add(id(route))
+        if isinstance(route, APIWebSocketRoute):
+            yield route
+            continue
+        nested_router = getattr(route, "original_router", None)
+        pending.extend(nested_router.routes if nested_router is not None else getattr(route, "routes", ()))
+
+
+def test_the_support_chat_websocket_route_exists_and_does_not_count_as_an_api_route():
+    websockets = {route.name: route for route in _websocket_routes(app.routes)}
+
+    assert set(websockets) == {"chat_socket"}
+    assert app.url_path_for("chat_socket", session_id="chat_0219") == "/agent/chat/sessions/chat_0219/ws"
+    assert "chat_socket" not in {route.name for route in _api_routes(app.routes)}
+    assert app.url_path_for("create_chat_session") == "/agent/chat/sessions"
+
+
 def test_every_api_route_declares_a_response_model_or_documented_204():
     routes = list(_api_routes(app.routes))
 
-    assert len(routes) == 52
+    assert len(routes) == 53  # + POST /agent/chat/sessions (el WebSocket no es un APIRoute)
     for route in routes:
         if route.response_model is None and route.name in DOCUMENTED_STREAM_ENDPOINTS:
             assert route.path == "/realtime/events"
