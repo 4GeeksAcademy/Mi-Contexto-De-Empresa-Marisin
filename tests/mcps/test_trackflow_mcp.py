@@ -152,6 +152,82 @@ def test_backend_client_refuses_any_inventory_write(method):
     assert error.value.code == "READ_ONLY_RESOURCE"
 
 
+# --------------------------------------------------------------------------- #
+# Identidad de servicio ante la API (OWASP D9)
+# --------------------------------------------------------------------------- #
+SERVICE_KEY = "test-service-key-" + "x" * 32
+
+
+def _recording_backend(status_code=200, *, service_key=SERVICE_KEY):
+    seen = []
+
+    def handler(request):
+        seen.append(request.headers.get("X-Service-Key"))
+        return httpx.Response(status_code, json=[] if status_code == 200 else {"detail": "no"})
+
+    return BackendClient("http://api.test", transport=httpx.MockTransport(handler), service_key=service_key), seen
+
+
+def test_backend_client_sends_the_service_key_on_every_request():
+    client, seen = _recording_backend()
+    client.request("GET", "/api/incidents")
+    client.request("GET", "/inventory/products")
+    assert seen == [SERVICE_KEY, SERVICE_KEY]
+
+
+def test_backend_client_without_service_key_sends_no_header():
+    client, seen = _recording_backend(service_key="")
+    client.request("GET", "/api/incidents")
+    assert seen == [None]
+
+
+@pytest.mark.parametrize("status_code", [401, 403])
+def test_api_rejecting_the_service_key_is_upstream_unavailable(status_code):
+    client, _ = _recording_backend(status_code)
+    with pytest.raises(McpToolError) as error:
+        client.request("GET", "/api/incidents")
+    assert error.value.code == "UPSTREAM_UNAVAILABLE"
+    assert "rechazó la credencial del servidor MCP" in str(error.value)
+    assert SERVICE_KEY not in str(error.value)
+
+
+def test_service_key_is_never_shown_in_repr(monkeypatch, tmp_path):
+    from mcps.trackflow_mcp import config as config_module
+
+    monkeypatch.setenv("TRACKFLOW_SERVICE_KEY", SERVICE_KEY)
+    monkeypatch.setattr(config_module, "ROOT", tmp_path)  # sin .env real
+    settings = config_module.load_settings()
+    assert settings.service_key == SERVICE_KEY
+    assert SERVICE_KEY not in repr(settings)
+    assert SERVICE_KEY not in repr(BackendClient("http://api.test", service_key=SERVICE_KEY))
+
+
+def test_create_app_passes_the_service_key_to_the_backend(monkeypatch, tmp_path):
+    from mcps.trackflow_mcp import server as server_module
+
+    captured = {}
+
+    class SpyBackend(BackendClient):
+        def __init__(self, base_url, transport=None, *, service_key=""):
+            captured["service_key"] = service_key
+            super().__init__(base_url, transport, service_key=service_key)
+
+    monkeypatch.setattr(server_module, "BackendClient", SpyBackend)
+    settings = Settings(
+        auth_issuer=ISSUER, resource_url=RESOURCE, api_url="http://api.test", port=8001,
+        audit_log=tmp_path / "audit.jsonl", allowed_origins=("*",), service_key=SERVICE_KEY,
+    )
+    provider = AuthServerConfig(
+        type=AuthServerType.OIDC,
+        metadata=AuthorizationServerMetadata(
+            issuer=ISSUER, authorization_endpoint=f"{ISSUER}/auth", token_endpoint=f"{ISSUER}/token",
+            jwks_uri=f"{ISSUER}/jwks", response_types_supported=["code"],
+        ),
+    )
+    create_app(settings, auth_server_config=provider, verify=lambda token: None)
+    assert captured == {"service_key": SERVICE_KEY}
+
+
 def test_inventory_query_filters_by_sku_or_name(api):
     tools = api["tools"]
     assert [p.sku for p in tools.inventory_list_products(READ_ONLY, sku="tf-tee-001").items] == ["TF-TEE-001"]

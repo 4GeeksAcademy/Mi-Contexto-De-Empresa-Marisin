@@ -8,15 +8,17 @@
 | `MCP_PORT` | Puerto del servidor MCP | `8001` |
 | `MCP_AUDIT_LOG` | Fichero JSONL del log de invocaciones | `logs/mcp-tool-calls.jsonl` |
 | `MCP_ALLOWED_ORIGINS` | Orígenes CORS permitidos (coma), para clientes de navegador como MCP Playground | `*` |
+| `TRACKFLOW_SERVICE_KEY` | Clave de servicio con la que el MCP se identifica ante la API (`X-Service-Key`, ≥ 32 caracteres) | — (solo en `.env`) |
 
-Nunca hay secretos en el código: el servidor no necesita ninguno (valida tokens con
-las claves públicas JWKS del proveedor).
+Nunca hay secretos en el código. Los tokens de los clientes se validan con las claves
+públicas JWKS del proveedor; la única credencial propia es `TRACKFLOW_SERVICE_KEY`, que
+se lee del entorno, no aparece en el `repr` de `Settings` y nunca se registra.
 """
 
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -38,6 +40,7 @@ class Settings:
     port: int
     audit_log: Path
     allowed_origins: tuple[str, ...]
+    service_key: str = field(default="", repr=False)
 
 
 def load_settings() -> Settings:
@@ -55,4 +58,5 @@ def load_settings() -> Settings:
         port=int(os.environ.get("MCP_PORT", "8001")),
         audit_log=Path(os.environ.get("MCP_AUDIT_LOG") or ROOT / "logs" / "mcp-tool-calls.jsonl"),
         allowed_origins=tuple(origin.strip() for origin in origins.split(",") if origin.strip()),
+        service_key=os.environ.get("TRACKFLOW_SERVICE_KEY", "").strip(),
     )

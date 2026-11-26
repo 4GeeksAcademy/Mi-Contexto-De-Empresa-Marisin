@@ -301,7 +301,7 @@ def create_app(
         return Caller(client_id=info.client_id, subject=info.subject, scopes=list(info.scopes or []))
 
     audit = AuditLog(settings.audit_log)
-    mcp = build_mcp(TrackFlowTools(backend or BackendClient(settings.api_url)), audit, current_caller)
+    mcp = build_mcp(TrackFlowTools(backend or BackendClient(settings.api_url, service_key=settings.service_key)), audit, current_caller)
 
     # `audience` es imprescindible: MCP Auth 0.2.0b1 solo comprueba el `aud` del token si se le pasa.
     bearer_auth = Middleware(
