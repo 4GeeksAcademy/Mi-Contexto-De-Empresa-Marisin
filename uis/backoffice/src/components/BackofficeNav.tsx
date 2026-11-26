@@ -13,6 +13,7 @@ const LINKS = [
   { href: "/reporting", label: "Reporte semanal" },
   { href: "/knowledge", label: "Asistente comercial" },
   { href: "/rfp", label: "RFPs" },
+  { href: "/support-chat", label: "Chat de soporte" },
 ];
 
 export default function BackofficeNav() {
