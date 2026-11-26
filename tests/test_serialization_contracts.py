@@ -32,6 +32,10 @@ DOCUMENTED_NO_BODY_ENDPOINTS = {
     "delete_supplier",
     "remove_user",
 }
+# Streams sin `response_model` (no son JSON): el SSE de tiempo real.
+DOCUMENTED_STREAM_ENDPOINTS = {
+    "stream_realtime_events",
+}
 
 
 def _api_routes(routes):
@@ -102,9 +106,11 @@ def _response_keys(value):
 def test_every_api_route_declares_a_response_model_or_documented_204():
     routes = list(_api_routes(app.routes))
 
-    assert len(routes) == 51
+    assert len(routes) == 52
     for route in routes:
-        if route.response_model is None:
+        if route.response_model is None and route.name in DOCUMENTED_STREAM_ENDPOINTS:
+            assert route.path == "/realtime/events"
+        elif route.response_model is None:
             assert route.status_code == 204
             assert route.name in DOCUMENTED_NO_BODY_ENDPOINTS
         else:
@@ -112,7 +118,7 @@ def test_every_api_route_declares_a_response_model_or_documented_204():
 
     assert {
         route.name for route in routes if route.response_model is None
-    } == DOCUMENTED_NO_BODY_ENDPOINTS
+    } == DOCUMENTED_NO_BODY_ENDPOINTS | DOCUMENTED_STREAM_ENDPOINTS
     telemetry_route = next(
         route for route in routes if route.path == "/telemetry/events"
     )

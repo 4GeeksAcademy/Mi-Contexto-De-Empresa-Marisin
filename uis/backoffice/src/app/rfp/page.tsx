@@ -33,6 +33,13 @@ import {
   type RfpTicketSummary,
   type TraceEvent,
 } from "@/lib/rfp";
+import {
+  COUNTRY_LABELS,
+  upsertTicket,
+  useRfpNotifications,
+  type RfpTicketCreatedEvent,
+} from "@/lib/rfp-notifications";
+import type { SseStatusInfo } from "@/lib/sse";
 
 const CARD = "rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-900";
 const MUTED = "text-gray-500 dark:text-gray-400";
@@ -74,6 +81,84 @@ function StatusBadge({ ticket }: { ticket: Pick<RfpTicketSummary, "status" | "st
     ? "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-200"
     : STATUS_STYLES[ticket.status] ?? STATUS_STYLES.descartado;
   return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${style}`}>{label}</span>;
+}
+
+// Indicador del stream SSE de /realtime/events.
+function ConnectionIndicator({ connection }: { connection: SseStatusInfo }) {
+  const { status, retryInMs, attempt } = connection;
+  const view = {
+    open: { dot: "bg-emerald-500", text: "En directo" },
+    connecting: { dot: "bg-gray-400 animate-pulse", text: "Conectando…" },
+    reconnecting: {
+      dot: "bg-amber-500 animate-pulse",
+      text: `Reconectando en ${Math.max(1, Math.round((retryInMs ?? 0) / 1000))} s… (intento ${attempt})`,
+    },
+    unauthorized: { dot: "bg-red-500", text: "Sesión caducada" },
+    closed: { dot: "bg-gray-400", text: "Desconectado" },
+  }[status];
+  return (
+    <span role="status" aria-live="polite" className={`inline-flex items-center gap-1.5 text-xs ${MUTED}`}>
+      <span aria-hidden className={`inline-block h-2 w-2 rounded-full ${view.dot}`} />
+      {view.text}
+      {status === "unauthorized" && (
+        <a href="/login" className="underline underline-offset-2">Volver a entrar</a>
+      )}
+    </span>
+  );
+}
+
+type LiveNotice =
+  | { key: string; kind: "ticket"; event: RfpTicketCreatedEvent }
+  | { key: string; kind: "recovered"; ticketIds: number[] };
+
+const MAX_NOTICES = 3;
+
+// Aviso de RFP nueva: banda esmeralda, distinta de los mensajes de la página.
+function LiveNoticeCard({ notice, onOpen, onDismiss }: {
+  notice: LiveNotice;
+  onOpen: (ticketId: number) => void;
+  onDismiss: () => void;
+}) {
+  const firstId = notice.kind === "ticket" ? notice.event.ticket_id : notice.ticketIds[0];
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-emerald-300 border-l-4 border-l-emerald-600 bg-emerald-50 p-3 text-sm text-emerald-950 shadow-sm dark:border-emerald-800 dark:border-l-emerald-400 dark:bg-emerald-950/60 dark:text-emerald-50">
+      <span className="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-white dark:bg-emerald-400 dark:text-emerald-950">
+        Nueva RFP
+      </span>
+      <div className="min-w-0 flex-1 space-y-0.5">
+        {notice.kind === "ticket" ? (
+          <>
+            <p className="font-semibold">
+              #{notice.event.ticket_id} · {notice.event.client_name ?? notice.event.original_filename ?? notice.event.rfp_id}
+            </p>
+            <p>
+              {COUNTRY_LABELS[notice.event.client_country ?? ""] ?? notice.event.client_country ?? "País sin confirmar"}
+              {" · "}
+              {notice.event.services_requested.length
+                ? notice.event.services_requested.map((service) => SERVICE_LABELS[service] ?? service).join(", ")
+                : "servicios sin confirmar"}
+            </p>
+            <p className="text-xs text-emerald-800 dark:text-emerald-200">
+              {notice.event.rfp_id} · requiere procesamiento · {formatDate(notice.event.created_at)}
+            </p>
+          </>
+        ) : (
+          <p className="font-semibold">
+            {notice.ticketIds.length === 1
+              ? `Llegó la RFP #${notice.ticketIds[0]} mientras estabas desconectado`
+              : `Llegaron ${notice.ticketIds.length} RFP mientras estabas desconectado (${notice.ticketIds.map((id) => `#${id}`).join(", ")})`}
+            {" · requiere procesamiento"}
+          </p>
+        )}
+      </div>
+      <button type="button" onClick={() => onOpen(firstId)} className="shrink-0 text-xs font-medium underline underline-offset-2">
+        Ver ticket
+      </button>
+      <button type="button" onClick={onDismiss} aria-label="Descartar aviso" className="shrink-0 text-base leading-none">
+        ×
+      </button>
+    </div>
+  );
 }
 
 function formatDate(value: string | null | undefined): string {
@@ -764,25 +849,99 @@ export default function RfpIntakePage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Tiempo real: avisos de RFP nuevas y filas resaltadas como «Nuevo».
+  const [notices, setNotices] = useState<LiveNotice[]>([]);
+  const [freshIds, setFreshIds] = useState<Set<number>>(() => new Set());
+  const ticketsRef = useRef<RfpTicketSummary[]>([]);
+  const liveRef = useRef<Map<number, RfpTicketCreatedEvent>>(new Map());
+  const loadedRef = useRef(false);
+  // Último error que puso una carga de la lista: se borra en cuanto otra carga va bien.
+  const loadErrorRef = useRef<string | null>(null);
 
-  const refresh = useCallback(async () => {
+  useEffect(() => {
+    ticketsRef.current = tickets;
+  }, [tickets]);
+
+  const refresh = useCallback(async (): Promise<RfpTicketSummary[] | null> => {
     try {
-      const list = await listRfpTickets();
+      // Un refetch que empezó antes de un evento no debe borrar la fila que trajo el evento.
+      const list = [...liveRef.current.values()].reduce(upsertTicket, await listRfpTickets());
       setTickets(list);
+      loadedRef.current = true;
       if (selectedId !== null) setDetail(await getRfpTicket(selectedId));
+      // Recuperada la conexión: fuera el «Failed to fetch» / «Error 500» del polling,
+      // pero no un error de otra acción (validación del PDF, aprobación…).
+      const stale = loadErrorRef.current;
+      loadErrorRef.current = null;
+      if (stale !== null) setError((current) => (current === stale ? null : current));
+      return list;
     } catch (reason: unknown) {
-      if (reason instanceof ApiError && reason.status === 503) {
-        setError("La recepción de RFPs no está disponible (¿falta DATABASE_URL en la API?).");
-      } else {
-        setError(reason instanceof Error ? reason.message : "No se pudieron cargar los tickets.");
-      }
+      const message =
+        reason instanceof ApiError && reason.status === 503
+          ? "La recepción de RFPs no está disponible (¿falta DATABASE_URL en la API?)."
+          : reason instanceof Error
+            ? reason.message
+            : "No se pudieron cargar los tickets.";
+      loadErrorRef.current = message;
+      setError(message);
+      return null;
     }
   }, [selectedId]);
+
+  function addNotice(notice: LiveNotice) {
+    setNotices((current) => [notice, ...current].slice(0, MAX_NOTICES));
+  }
+
+  function markFresh(ticketIds: number[]) {
+    setFreshIds((current) => new Set([...current, ...ticketIds]));
+  }
+
+  // `rfp_ticket_created`: upsert local de la fila, sin volver a pedir la lista.
+  function handleLiveTicket(event: RfpTicketCreatedEvent) {
+    liveRef.current.set(event.ticket_id, event);
+    setTickets((current) => upsertTicket(current, event));
+    markFresh([event.ticket_id]);
+    addNotice({ key: `ticket-${event.ticket_id}`, kind: "ticket", event });
+  }
+
+  // `resync`: el servidor no pudo reenviar lo perdido → un solo GET /rfp/tickets.
+  // Avisa solo de las RFP válidas (ya con cliente) que no estaban en la lista ni se habían notificado.
+  async function handleResync() {
+    const before = new Set(ticketsRef.current.map((ticket) => ticket.ticket_id));
+    const wasLoaded = loadedRef.current;
+    const list = await refresh();
+    if (!list || !wasLoaded) return;
+    const recovered = list
+      .filter((ticket) => !before.has(ticket.ticket_id) && !notifications.wasNotified(ticket.ticket_id))
+      .filter((ticket) => ticket.status !== "descartado" && ticket.client_name)
+      .map((ticket) => ticket.ticket_id);
+    if (recovered.length === 0) return;
+    notifications.markNotified(recovered);
+    markFresh(recovered);
+    addNotice({ key: `recovered-${recovered.join("-")}`, kind: "recovered", ticketIds: recovered });
+  }
+
+  const notifications = useRfpNotifications({
+    onTicket: handleLiveTicket,
+    onResync: () => void handleResync(),
+  });
+
+  function openTicket(ticketId: number) {
+    setSelectedId(ticketId);
+    setFreshIds((current) => {
+      if (!current.has(ticketId)) return current;
+      const next = new Set(current);
+      next.delete(ticketId);
+      return next;
+    });
+  }
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  // Los tickets nuevos llegan por SSE (arriba). El polling sigue solo para el
+  // progreso de los tickets que ya están en marcha y se para cuando no hay trabajo.
   const polling =
     tickets.some(isWorking) ||
     tickets.some((ticket) => ticket.status === "esperando_aprobación") ||
@@ -908,6 +1067,22 @@ export default function RfpIntakePage() {
           </button>
         </form>
 
+        {notices.length > 0 && (
+          <section aria-label="Avisos en tiempo real" aria-live="polite" className="space-y-2">
+            {notices.map((notice) => (
+              <LiveNoticeCard
+                key={notice.key}
+                notice={notice}
+                onOpen={(ticketId) => {
+                  openTicket(ticketId);
+                  setNotices((current) => current.filter((item) => item.key !== notice.key));
+                }}
+                onDismiss={() => setNotices((current) => current.filter((item) => item.key !== notice.key))}
+              />
+            ))}
+          </section>
+        )}
+
         {message && <p role="status" className="text-sm text-emerald-800 dark:text-emerald-200">{message}</p>}
         {error && (
           <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
@@ -919,9 +1094,12 @@ export default function RfpIntakePage() {
           <section aria-label="Tickets de RFP" className={`${CARD} h-fit`}>
             <div className="mb-2 flex items-center justify-between">
               <h2 className="font-semibold">Tickets</h2>
-              <button type="button" onClick={() => void refresh()} className="text-xs underline underline-offset-2">
-                Actualizar
-              </button>
+              <span className="flex items-center gap-3">
+                <ConnectionIndicator connection={notifications.connection} />
+                <button type="button" onClick={() => void refresh()} className="text-xs underline underline-offset-2">
+                  Actualizar
+                </button>
+              </span>
             </div>
             {tickets.length === 0 ? (
               <p className={`text-sm ${MUTED}`}>Aún no hay RFPs subidas.</p>
@@ -931,14 +1109,21 @@ export default function RfpIntakePage() {
                   <li key={ticket.ticket_id}>
                     <button
                       type="button"
-                      onClick={() => setSelectedId(ticket.ticket_id)}
+                      onClick={() => openTicket(ticket.ticket_id)}
                       aria-current={ticket.ticket_id === selectedId ? "true" : undefined}
                       className={`w-full space-y-1 px-2 py-2 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
                         ticket.ticket_id === selectedId ? "bg-gray-100 dark:bg-gray-800" : ""
-                      }`}
+                      } ${freshIds.has(ticket.ticket_id) ? "rounded-md bg-emerald-50 ring-2 ring-emerald-500 dark:bg-emerald-950/50" : ""}`}
                     >
                       <span className="flex items-center justify-between gap-2">
-                        <span className="font-medium">#{ticket.ticket_id} {ticket.client_name ?? ticket.original_filename}</span>
+                        <span className="font-medium">
+                          #{ticket.ticket_id} {ticket.client_name ?? ticket.original_filename}
+                          {freshIds.has(ticket.ticket_id) && (
+                            <span className="ml-2 rounded-full bg-emerald-600 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-white dark:bg-emerald-400 dark:text-emerald-950">
+                              Nuevo
+                            </span>
+                          )}
+                        </span>
                         <StatusBadge ticket={ticket} />
                       </span>
                       <span className={`block text-xs ${MUTED}`}>
