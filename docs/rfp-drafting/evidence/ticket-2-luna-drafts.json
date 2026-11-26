@@ -1,0 +1,181 @@
+{
+  "ticket_id": 2,
+  "original_filename": "trackflow-request-2.pdf",
+  "status": "en_evaluación",
+  "stage": "borradores_listos",
+  "error_stage": null,
+  "error_message": null,
+  "ready_for_approval": true,
+  "drafting": {
+    "contract": "trackflow.rfp_drafting.handoff/v1",
+    "status": "en_evaluación",
+    "currency": "USD",
+    "needs_human_review": [],
+    "metrics": {
+      "sections": 2,
+      "avg_iterations": 1.5,
+      "max_iterations": 3,
+      "first_pass_sections": 1
+    }
+  },
+  "sections": [
+    {
+      "department_id": "warehouse",
+      "responsible": "Ana Whitfield",
+      "draft_status": "evaluacion_superada",
+      "iterations": 1,
+      "draft_source": "llm",
+      "evaluation_results": {
+        "iteration": 1,
+        "relevance": {
+          "pass": true,
+          "details": {
+            "aspects_total": 4,
+            "open_questions": 5,
+            "aspects_covered": [
+              "Volumen mensual",
+              "Ubicación del cliente",
+              "Alcance geográfico",
+              "Plazo de onboarding"
+            ]
+          },
+          "missing_aspects": []
+        },
+        "compliance": {
+          "pass": true,
+          "rule_ids": [
+            "currency-by-country",
+            "on-time-sla-stated",
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "violations": []
+        },
+        "section_id": "2:warehouse",
+        "readability": {
+          "pass": true,
+          "score": 82.28,
+          "details": {
+            "metric": "fernandez_huerta",
+            "source": "py-readability-metrics",
+            "language": "es",
+            "problems": [],
+            "gunning_fog": 13.42,
+            "prose_words": 259,
+            "section_words": 355,
+            "fernandez_huerta": 82.28,
+            "flesch_reading_ease": 41.91,
+            "flesch_kincaid_grade": 10.5,
+            "avg_words_per_sentence": 12.33
+          }
+        },
+        "evaluated_at": "2026-11-26T10:42:16.375742+00:00",
+        "overall_pass": true,
+        "department_id": "warehouse",
+        "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+      },
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "violations": [],
+          "draft_source": "llm",
+          "overall_pass": true,
+          "relevance_pass": true,
+          "compliance_pass": true,
+          "missing_aspects": [],
+          "readability_pass": true,
+          "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+        }
+      ],
+      "draft_content": "## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Volumen mensual:** Luna Cosmetics indica 5.000 pedidos al mes. Esto sitúa los pedidos en el tramo de descuento de 5.000 a 9.999.\n- **Ubicación del cliente:** La marca está en Los Ángeles. El servicio de almacenamiento se ofrece desde el almacén de Los Ángeles; falta confirmar si esa ubicación es la preferida.\n- **Alcance geográfico:** Solicita almacenamiento y envíos en todo Estados Unidos. TrackFlow gestiona la última milla en Estados Unidos.\n- **Plazo de onboarding:** Busca estar operativa alrededor del 24 de agosto. El onboarding tarda 10 días hábiles desde la firma; el año de la fecha objetivo está pendiente.\n\n### Precios\n\n| Concepto | Precio |\n|---|---:|\n| Almacenamiento por m³ ocupado al mes | 18 USD |\n| Primeros 30 días de cada producto nuevo | 0 USD |\n| Preparación y empaquetado por pedido | 1,40 USD |\n| Inventario sin movimiento desde el día 181 | 150 % de la tarifa de almacenamiento |\n\nLa capacidad de almacenamiento no puede cotizarse sin conocer el volumen ocupado.\n\n### Descuentos por volumen\n\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nAplica el tramo de **5.000 a 9.999 pedidos al mes: 5 %** sobre cargos por pedido, envío y devolución.\n\n### Condiciones de servicio\n- El SLA es de **90 % de entregas a tiempo al mes**, medido por país.\n- Si el resultado queda por debajo del 90 % durante dos meses consecutivos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n- El servicio de almacenamiento se presta desde Los Ángeles.\n- El onboarding tarda 10 días hábiles desde la firma.\n- Con más de 50 m³ de media mensual, puede negociarse una tarifa de almacenamiento preferente con Miguel Torres.\n- No se indica un precio de onboarding o integración en el tarifario.\n\n### Datos pendientes del cliente\n- ¿Cuántos SKUs, pallets o m³ hay que almacenar?\n- ¿Qué inventario inicial prevén, en pallets o m³?\n- ¿Prefieren un almacén en Los Ángeles o Zaragoza?\n- ¿Qué ERP utilizan y qué integraciones ERP/API necesitan?\n- ¿A qué año corresponde el 24 de agosto como fecha objetivo de onboarding?"
+    },
+    {
+      "department_id": "lastmile",
+      "responsible": "Carlos Vega",
+      "draft_status": "evaluacion_superada",
+      "iterations": 2,
+      "draft_source": "llm",
+      "evaluation_results": {
+        "iteration": 2,
+        "relevance": {
+          "pass": true,
+          "details": {
+            "aspects_total": 4,
+            "open_questions": 6,
+            "aspects_covered": [
+              "Cobertura nacional",
+              "Selección de transportista",
+              "Volumen mensual",
+              "Puesta en marcha"
+            ]
+          },
+          "missing_aspects": []
+        },
+        "compliance": {
+          "pass": true,
+          "rule_ids": [
+            "currency-by-country",
+            "on-time-sla-stated",
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "violations": []
+        },
+        "section_id": "2:lastmile",
+        "readability": {
+          "pass": true,
+          "score": 82.92,
+          "details": {
+            "metric": "fernandez_huerta",
+            "source": "py-readability-metrics",
+            "language": "es",
+            "problems": [],
+            "gunning_fog": 14.58,
+            "prose_words": 277,
+            "section_words": 370,
+            "fernandez_huerta": 82.92,
+            "flesch_reading_ease": 39.52,
+            "flesch_kincaid_grade": 10.74,
+            "avg_words_per_sentence": 12.04
+          }
+        },
+        "evaluated_at": "2026-11-26T10:42:21.110596+00:00",
+        "overall_pass": true,
+        "department_id": "lastmile",
+        "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+      },
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "violations": [],
+          "draft_source": "llm",
+          "overall_pass": false,
+          "relevance_pass": false,
+          "compliance_pass": true,
+          "missing_aspects": [
+            "nombre del cliente «Luna Cosmetics»"
+          ],
+          "readability_pass": true,
+          "feedback_for_generator": "- [relevance] Responde también a: nombre del cliente «Luna Cosmetics». Nombra cada aspecto clave en «Qué pide el cliente» y cada pregunta en «Datos pendientes del cliente»."
+        },
+        {
+          "iteration": 2,
+          "violations": [],
+          "draft_source": "llm",
+          "overall_pass": true,
+          "relevance_pass": true,
+          "compliance_pass": true,
+          "missing_aspects": [],
+          "readability_pass": true,
+          "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+        }
+      ],
+      "draft_content": "## Propuesta económica — Last Mile and Carrier Management\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Cobertura nacional:** Luna Cosmetics solicita envíos a todo Estados Unidos. Para evaluar destinos y costes, falta el desglose de zonas.\n- **Selección de transportista:** El cliente no tiene relaciones con transportistas. TrackFlow elige el transportista según destino, peso, tipo de producto y urgencia.\n- **Volumen mensual:** Luna Cosmetics indica 5.000 al mes. Falta confirmar cuántos corresponden a envíos y su distribución por destino.\n- **Puesta en marcha:** El cliente espera estar operativo dentro de las próximas tres semanas, alrededor del 24 de agosto. Falta confirmar la fecha exacta.\n\n### Precios\n| Servicio | Peso del paquete | Precio final por envío |\n|---|---:|---:|\n| Envío estándar | Hasta 2 kg | 6,90 USD |\n| Envío estándar | De 2 a 5 kg | 8,90 USD |\n| Envío estándar | Más de 5 kg | 12,50 USD |\n\n### Descuentos por volumen\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nEl tramo aplicable depende del número de pedidos mensuales. Si los 5.000 indicados son pedidos, corresponde el tramo de 5.000 a 9.999: 5 %.\n\n### Condiciones de servicio\n- El envío estándar dentro del mismo país tarda de 3 a 5 días hábiles.\n- TrackFlow se compromete a un **90 % de entregas a tiempo al mes**, medido por país.\n- Si el porcentaje baja del 90 % durante dos meses consecutivos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n- El sistema elige el transportista de cada envío según destino, peso, tipo de producto y urgencia.\n- En periodos de alta demanda, los plazos pueden alargarse. TrackFlow avisa con antelación; no se garantiza el SLA durante esas fechas.\n- La cobertura nacional y los costes requieren confirmar los destinos o zonas.\n\n### Datos pendientes del cliente\n- ¿Cuál es el peso y tamaño medio de los paquetes?\n- ¿Qué plazo de entrega o SLA espera el cliente?\n- ¿A qué destinos o zonas de Estados Unidos se envían los pedidos y en qué proporción?\n- ¿Cuántos envíos mensuales prevén y cómo se distribuyen por destino?\n- ¿Qué plazos de entrega o niveles de servicio necesitan y qué urgencia tienen los envíos?\n- ¿Qué fecha exacta esperan para la puesta en marcha?"
+    }
+  ],
+  "run": null
+}

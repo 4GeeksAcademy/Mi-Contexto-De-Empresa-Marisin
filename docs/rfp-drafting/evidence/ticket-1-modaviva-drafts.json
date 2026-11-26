@@ -1,0 +1,170 @@
+{
+  "ticket_id": 1,
+  "original_filename": "trackflow-request-1.pdf",
+  "status": "en_evaluación",
+  "stage": "borradores_listos",
+  "error_stage": null,
+  "error_message": null,
+  "ready_for_approval": true,
+  "drafting": {
+    "contract": "trackflow.rfp_drafting.handoff/v1",
+    "status": "en_evaluación",
+    "currency": "EUR",
+    "needs_human_review": [],
+    "metrics": {
+      "sections": 2,
+      "avg_iterations": 1,
+      "max_iterations": 3,
+      "first_pass_sections": 2
+    }
+  },
+  "sections": [
+    {
+      "department_id": "warehouse",
+      "responsible": "Ana Whitfield",
+      "draft_status": "evaluacion_superada",
+      "iterations": 1,
+      "draft_source": "llm",
+      "evaluation_results": {
+        "iteration": 1,
+        "relevance": {
+          "pass": true,
+          "details": {
+            "aspects_total": 6,
+            "open_questions": 6,
+            "aspects_covered": [
+              "Número de SKUs",
+              "Ubicación Zaragoza",
+              "Capacidad del almacén",
+              "Integración ERP",
+              "Servicios solicitados",
+              "Fecha límite RFP"
+            ]
+          },
+          "missing_aspects": []
+        },
+        "compliance": {
+          "pass": true,
+          "rule_ids": [
+            "currency-by-country",
+            "on-time-sla-stated",
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "violations": []
+        },
+        "section_id": "1:warehouse",
+        "readability": {
+          "pass": true,
+          "score": 74.95,
+          "details": {
+            "metric": "fernandez_huerta",
+            "source": "py-readability-metrics",
+            "language": "es",
+            "problems": [],
+            "gunning_fog": 15.06,
+            "prose_words": 278,
+            "section_words": 370,
+            "fernandez_huerta": 74.95,
+            "flesch_reading_ease": 31.06,
+            "flesch_kincaid_grade": 11.96,
+            "avg_words_per_sentence": 12.09
+          }
+        },
+        "evaluated_at": "2026-11-26T10:38:39.601370+00:00",
+        "overall_pass": true,
+        "department_id": "warehouse",
+        "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+      },
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "violations": [],
+          "draft_source": "llm",
+          "overall_pass": true,
+          "relevance_pass": true,
+          "compliance_pass": true,
+          "missing_aspects": [],
+          "readability_pass": true,
+          "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+        }
+      ],
+      "draft_content": "## Propuesta económica — Warehouse Operations\n\n### Qué pide el cliente y cómo lo cubre TrackFlow\n\n- **Número de SKUs:** La propuesta contempla aproximadamente 15.000 SKUs, según lo indicado por ModaViva.\n- **Ubicación Zaragoza:** El servicio se prestaría desde el almacén de Zaragoza.\n- **Capacidad del almacén:** La capacidad disponible para esta necesidad está pendiente de confirmación.\n- **Integración ERP:** Se considera una integración vía API; faltan requisitos técnicos y alcance.\n- **Servicios solicitados:** Se solicita almacenamiento y logística inversa. ModaViva conserva su transportista de última milla.\n- **Fecha límite RFP:** La fecha límite indicada es el 28 de agosto de 2026.\n\n### Precios\n\n| Concepto | Precio |\n|---|---:|\n| Almacenamiento por m³ ocupado al mes | 16 EUR |\n| Primeros 30 días de cada producto nuevo | 0 EUR |\n| Preparación y empaquetado por pedido | 1,25 EUR |\n| Inventario sin movimiento desde el día 181 | 150 % de la tarifa de almacenamiento |\n\nNo se incluye precio para logística inversa: el tarifario no especifica esa tarifa.\n\n### Descuentos por volumen\n\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nNo se puede determinar el tramo aplicable porque falta el volumen mensual de pedidos.\n\n### Condiciones de servicio\n\n- El SLA de entrega a tiempo es del 90 % mensual, medido por país. Si baja del 90 % dos meses consecutivos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n- ModaViva mantiene su propio transportista de última milla; por tanto, el SLA de entrega de TrackFlow no aplica a ese transporte.\n- El servicio de almacenamiento se presta desde Zaragoza.\n- El onboarding dura 10 días hábiles desde la firma.\n- Con más de 50 m³ de media mensual, se puede negociar una tarifa de almacenamiento preferente con Miguel Torres.\n\n### Datos pendientes del cliente\n\n- ¿Cuántos pedidos al mes habrá que preparar? La RFP no indica el volumen mensual.\n- ¿Cuántos pallets o qué volumen en m³ hay que almacenar?\n- ¿Qué tarifas por pallet y por SKU debemos cotizar? El tarifario establece cobro por m³ ocupado.\n- ¿Qué capacidad concreta y qué ubicación del almacén cercano a Zaragoza se pueden ofrecer?\n- ¿Qué requisitos técnicos y alcance tiene la integración del ERP vía API?\n- ¿Cuál es la fecha objetivo de onboarding y qué requisitos o tiempos de incorporación debemos considerar?"
+    },
+    {
+      "department_id": "reverse",
+      "responsible": "Sofía Ramos",
+      "draft_status": "evaluacion_superada",
+      "iterations": 1,
+      "draft_source": "llm",
+      "evaluation_results": {
+        "iteration": 1,
+        "relevance": {
+          "pass": true,
+          "details": {
+            "aspects_total": 4,
+            "open_questions": 6,
+            "aspects_covered": [
+              "Alcance de devoluciones",
+              "Mercados atendidos",
+              "Transporte de última milla",
+              "Fecha límite RFP"
+            ]
+          },
+          "missing_aspects": []
+        },
+        "compliance": {
+          "pass": true,
+          "rule_ids": [
+            "currency-by-country",
+            "on-time-sla-stated",
+            "returns-min-48h",
+            "volume-discount-table",
+            "no-carrier-negotiated-rates",
+            "no-invented-figures"
+          ],
+          "violations": []
+        },
+        "section_id": "1:reverse",
+        "readability": {
+          "pass": true,
+          "score": 67.72,
+          "details": {
+            "metric": "fernandez_huerta",
+            "source": "py-readability-metrics",
+            "language": "es",
+            "problems": [],
+            "gunning_fog": 15.54,
+            "prose_words": 246,
+            "section_words": 317,
+            "fernandez_huerta": 67.72,
+            "flesch_reading_ease": 24.09,
+            "flesch_kincaid_grade": 12.7,
+            "avg_words_per_sentence": 11.18
+          }
+        },
+        "evaluated_at": "2026-11-26T10:38:39.207646+00:00",
+        "overall_pass": true,
+        "department_id": "reverse",
+        "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+      },
+      "evaluation_history": [
+        {
+          "iteration": 1,
+          "violations": [],
+          "draft_source": "llm",
+          "overall_pass": true,
+          "relevance_pass": true,
+          "compliance_pass": true,
+          "missing_aspects": [],
+          "readability_pass": true,
+          "feedback_for_generator": "Sin cambios: la sección cumple legibilidad, pertinencia y lineamientos."
+        }
+      ],
+      "draft_content": "## Propuesta económica — Reverse Logistics\n### Qué pide el cliente y cómo lo cubre TrackFlow\n- **Alcance de devoluciones:** contempla inspección, clasificación, reacondicionamiento y reposición de inventario según las reglas que defina ModaViva.\n- **Mercados atendidos:** la operación solicitada corresponde a ventas online en España y Portugal. Las devoluciones internacionales entre países requieren gestión manual.\n- **Transporte de última milla:** ModaViva mantiene su propio transportista para las entregas. Falta confirmar cómo se trasladarán las devoluciones al almacén.\n- **Fecha límite RFP:** la propuesta considera la fecha límite del 28 de agosto de 2026.\n\n### Precios\n| Concepto | Precio |\n|---|---:|\n| Recepción, inspección y clasificación (por unidad devuelta) | 2,40 EUR |\n| Reacondicionamiento y restock (por unidad) | 1,30 EUR |\n\n### Descuentos por volumen\n| Pedidos al mes | Descuento por volumen |\n|---|---:|\n| Hasta 4.999 | 0 % |\n| 5.000 a 9.999 | 5 % |\n| 10.000 a 24.999 | 8 % |\n| 25.000 o más | 12 % |\n\nEl tramo aplicable está pendiente de confirmar el volumen mensual de pedidos.\n\n### Condiciones de servicio\n- El procesamiento de cada devolución toma 72 horas desde su llegada al almacén. No se promete un plazo inferior a 48 horas.\n- La ventana estándar de devolución es de 30 días desde la entrega.\n- El envío de vuelta lo asume ModaViva, salvo errores de TrackFlow.\n- TrackFlow inspecciona y clasifica los productos según las reglas de ModaViva. No reacondiciona ni revende por cuenta propia.\n- Las devoluciones internacionales requieren gestión manual.\n- El SLA de entrega a tiempo es del 90 % mensual, medido por país. Si queda por debajo del 90 % durante dos meses consecutivos, corresponde una compensación del 5 % de la tarifa mensual de ese país.\n\n### Datos pendientes del cliente\n- ¿Qué volumen o tasa de devoluciones espera ModaViva?\n- ¿Qué plazo de procesamiento de devoluciones espera?\n- ¿Qué criterios de inspección y clasificación debemos aplicar?\n- ¿Qué trabajos de reacondicionamiento se requieren y con qué frecuencia?\n- ¿Qué productos deben reponerse, devolverse al cliente o destruirse según su estado?\n- ¿Cómo se gestionará el transporte de las devoluciones hasta nuestras instalaciones?"
+    }
+  ],
+  "run": null
+}
