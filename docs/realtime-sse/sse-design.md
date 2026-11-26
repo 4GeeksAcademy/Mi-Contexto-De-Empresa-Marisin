@@ -229,7 +229,7 @@ En `uis/backoffice/src/app/rfp/page.tsx`:
 
 - **Un solo proceso.** El broker vive en memoria: con varios workers de
   uvicorn o varias réplicas, un evento solo llega a las conexiones del proceso
-  que ejecutó el pipeline. Ver la pregunta 3.
+  que ejecutó el pipeline. Ver la pregunta 1.
 - **Reinicio de la API.** Al reiniciar se pierden el buffer y el registro de
   dedupe del servidor. El `resync` y el dedupe del cliente cubren ese hueco.
 - **Primera carga.** Si un ticket se crea entre la primera carga de la lista y
@@ -259,45 +259,129 @@ En `uis/backoffice/src/app/rfp/page.tsx`:
 
 ## 10. Preguntas de diseño
 
-> Respuestas por tema. Hay que cotejar la redacción con el enunciado antes del PR.
+**1. Si dos personas del equipo comercial abren el dashboard al mismo tiempo, ¿cada conexión SSE debería ser independiente o deberían compartir alguna capa intermedia? ¿Qué pasaría si 50 personas lo abren a la vez?**
 
-**1. ¿Por qué SSE y no WebSocket ni polling para avisar de una RFP nueva?**
-El flujo es de un solo sentido: el servidor avisa y el dashboard escucha. SSE
-va sobre HTTP normal, así que pasa por el proxy de Next y por el de
-Codespaces, reutiliza el mismo JWT y el mismo middleware, y no añade
-dependencias. Además trae ids de evento y reconexión en el propio protocolo.
-Un WebSocket daría un canal bidireccional que aquí no hace falta (es lo que
-usará el chat de la Parte 2). El polling avisaría tarde o costaría peticiones
-vacías cada pocos segundos aunque no llegue ninguna RFP. Usamos `fetch` en
-lugar del cliente nativo porque este no envía `Authorization`.
+Las dos cosas, cada una en su nivel.
 
-**2. ¿Qué pasa si se corta la red o se reinicia el servidor? ¿Cómo evitas perder o duplicar tickets?**
-Es la estrategia de la §5:
+**La conexión es independiente.** Cada pestaña abre su propio
+`GET /realtime/events` con su JWT, y tiene su propia `asyncio.Queue(maxsize=100)`
+y su propia posición (`Last-Event-ID`). Si un cliente es lento o se le corta la
+red, eso solo le afecta a él: su cola se llena, el broker lo desconecta y se
+recupera al reconectar. Nunca frena a los demás.
 
-- El cliente reconecta con backoff exponencial y jitter (1 s → 30 s) y envía
-  `Last-Event-ID`.
-- Si la caída fue corta, el servidor reenvía lo que se perdió desde su buffer.
-- Si el servidor se reinició o el buffer ya no lo tiene, manda `resync` y el
-  cliente pide la lista una sola vez.
-- El dedupe por `ticket_id` en el servidor (un aviso por ticket) y en el
-  cliente (`Set` y upsert) garantiza que el mismo ticket no aparece ni avisa
-  dos veces.
-- El watchdog de 45 s detecta las conexiones «zombis» que un proxy dejó
-  abiertas sin tráfico.
+**El origen del evento es compartido.** Todas las conexiones cuelgan de una
+capa intermedia, el `EventBroker`:
 
-**3. ¿Cómo escalarías esto a varias instancias de la API?**
-El broker en memoria solo sirve para un proceso. Para escalar:
+- el pipeline emite **una vez** por ticket, sin saber cuántas personas
+  escuchan;
+- el broker hace el fan-out a N colas;
+- el buffer de replay y el dedupe por `ticket_id` son comunes.
 
-1. **Reparto entre procesos:** `publish()` pasaría a publicar en **Redis
-   pub/sub**, que ya tenemos por Celery, en un canal `realtime:events`. Cada
-   instancia se suscribiría a ese canal y repartiría a sus conexiones locales
-   con el mismo código de colas.
-2. **Buffer de replay e ids:** pasarían a un **Redis Stream** (`XADD` con
-   `MAXLEN ~ 200`). Sus ids son globales y monótonos, de modo que
-   `Last-Event-ID` funciona contra cualquier instancia y ya no hace falta el
-   `boot_id`.
-3. **Dedupe del servidor:** un `SET NX` en Redis por `ticket_id` con TTL.
-4. **Balanceador:** sin sticky sessions, porque cualquier instancia puede
-   reanudar. Habría que desactivar el buffering para `text/event-stream` (por
-   eso `X-Accel-Buffering: no`) y subir el timeout de inactividad por encima
-   del intervalo de keep-alive.
+Sin esa capa, cada conexión tendría que consultar la base de datos por su
+cuenta (polling encubierto), o el pipeline tendría que conocer a los clientes.
+
+**Con 50 personas a la vez, en un solo proceso uvicorn:**
+
+- **Conexiones.** Son 50 conexiones HTTP de larga duración. Cada una es una
+  corrutina dormida y una cola vacía.
+- **Tráfico en reposo.** Unos 50 `: keep-alive` cada 15 s, de pocos bytes.
+- **Un evento.** Una RFP nueva supone 50 `put_nowait` y 50 escrituras de
+  unos 400 B. Es trivial frente a lo que tarda el propio pipeline.
+- **Proxy de Codespaces.** Cabe de sobra en su límite. La cabecera de la
+  captura de Network indica `ClientConnectionsPerPort: max 1000`.
+- **Reinicio de la API.** Las 50 conexiones reconectan a la vez. El jitter de
+  ±20 % del backoff las reparte y cada una hace **un** `GET /rfp/tickets` por
+  el `resync`: 50 lecturas de la lista una sola vez, no cada 3 s como el
+  polling.
+
+**Puntos a vigilar:**
+
+- **Varias pestañas de una misma persona por HTTP/1.1.** El navegador permite
+  6 conexiones por origen, y cada pestaña consume una. Con HTTP/2 (el túnel
+  HTTPS de Codespaces) se multiplexan.
+- **Varias instancias.** Con varios workers de uvicorn o varias réplicas, un
+  evento solo llegaría a las conexiones del proceso que ejecutó el pipeline.
+  En ese momento la capa compartida tiene que salir del proceso:
+
+  | Pieza | Hoy (un proceso) | Con varias instancias |
+  |---|---|---|
+  | Reparto de eventos | `EventBroker` en memoria | **Redis pub/sub** (ya está por Celery): cada instancia se suscribe y reparte a sus conexiones locales con el mismo código de colas |
+  | Buffer de replay e ids | Buffer en memoria con ids `{boot_id}-{seq}` | **Redis Stream** (`XADD` con `MAXLEN ~ 200`): ids globales, así que `Last-Event-ID` funciona contra cualquier instancia y sobra el `boot_id` |
+  | Dedupe del servidor | Registro en memoria por `ticket_id` | `SET NX` por `ticket_id` con TTL |
+  | Balanceador | — | Sin sticky sessions, sin buffering para `text/event-stream` y con un timeout de inactividad mayor que el keep-alive |
+
+**2. ¿Qué estrategia de recuperación elegiste para tickets registrados mientras estabas desconectado (Last-Event-ID / replay corto, refetch-luego-SSE, o equivalente), y cómo evitas duplicados tras reconectar?**
+
+**`Last-Event-ID` y replay corto, con refetch como respaldo** (detalle en la
+§5).
+
+- **Ids.** Cada evento lleva `id: {boot_id}-{seq}`. El cliente guarda el
+  último que vio y lo envía en `Last-Event-ID` al reconectar. Eso incluye el
+  `id:` del frame de apertura, para tener posición aunque no haya llegado
+  ningún evento.
+- **Mismo arranque, id aún en el buffer** (últimos 200 eventos): el servidor
+  reenvía solo los posteriores. Es lo normal tras un corte de red.
+- **Otro arranque, id fuera del buffer o mal formado:** el servidor envía
+  `event: resync` con su posición actual. El cliente hace **un**
+  `GET /rfp/tickets` y sigue con el mismo stream. Es el refetch-luego-SSE,
+  pero solo cuando el replay no basta.
+
+No elegimos refetch-luego-SSE en cada reconexión porque costaría una lectura
+completa de la lista por cliente y por microcorte, y porque deja un hueco entre
+el refetch y la apertura del stream.
+
+**Cómo se evitan los duplicados:**
+
+1. **En el servidor, al publicar:** un solo `rfp_ticket_created` por
+   `ticket_id` en la vida del proceso. Reprocesar un ticket no vuelve a
+   notificar.
+2. **En el servidor, al suscribirse:** calcular el replay y registrar la cola
+   ocurre bajo el mismo lock que `publish()`. Un evento llega por replay o por
+   la cola, nunca por las dos vías.
+3. **En el cliente:**
+   - un `Set<number>` de `ticket_id` ya notificados (un aviso por ticket);
+   - un upsert por `ticket_id` en la lista (una fila por ticket, aunque
+     también la traiga el polling o el refetch);
+   - tras un `resync`, solo se avisa de las RFP válidas que no estaban en la
+     lista ni en el `Set`.
+
+**3. ¿Por qué SSE es la herramienta correcta para notificar la llegada de un ticket y no WebSockets? ¿En qué momento dejaría de serlo — por ejemplo, si quisieras que alguien pudiera reaccionar al ticket desde el mismo canal?**
+
+**Por qué SSE.** El flujo es de un solo sentido: el servidor avisa y el
+dashboard escucha. SSE encaja exactamente:
+
+- **Es HTTP normal.** Reutiliza `Depends(get_current_user)` con el mismo JWT,
+  pasa por el proxy de Next y por el túnel de Codespaces, lo atraviesan el
+  middleware de timing y el CORS existentes, y se depura con `curl -N`.
+- **No añade nada.** Ni dependencias, ni protocolo nuevo, ni servidor aparte.
+- **Trae lo que necesitamos.** Eventos con nombre (`event:`), ids
+  (`Last-Event-ID`) y la convención de reintento (`retry:`), que es justo lo
+  que usa la recuperación.
+
+Un WebSocket obligaría a:
+
+- montar un handshake con otro modelo de autenticación (el navegador no envía
+  headers en el `upgrade`, así que el token iría en la query o en un primer
+  mensaje);
+- inventar un protocolo propio de ids, reintentos y heartbeat;
+- mantener abierto un canal de subida que aquí nadie usa.
+
+**Cuándo dejaría de serlo.** Cuando el mismo canal tenga que llevar mensajes
+del cliente al servidor con frecuencia y baja latencia. Por ejemplo:
+
+- que alguien «se quede» el ticket desde el aviso y los demás lo vean al
+  instante con presencia («Miguel lo está mirando»);
+- comentar el ticket en una conversación en vivo;
+- confirmar la recepción de cada mensaje.
+
+**El matiz.** Una reacción puntual (un clic en «Me lo quedo») todavía no
+justifica cambiar de protocolo. Se resuelve con un `POST` REST normal que, al
+guardarse, publica otro evento SSE para el resto del equipo. Las acciones de
+la Parte 3 ya funcionan así, y el endpoint SSE ya admite otros nombres de
+evento.
+
+**El punto de corte.** Es cuando la interacción se vuelve conversacional:
+muchos mensajes en ambos sentidos, presencia, «escribiendo…», confirmación por
+mensaje. Ahí abrir un `POST` por mensaje y emparejarlo con el stream sale más
+caro y frágil que un canal bidireccional, y WebSocket es la herramienta
+correcta. Es el caso del chat de la Parte 2.
