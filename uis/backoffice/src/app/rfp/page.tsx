@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import { ApiError } from "@/lib/api";
 import {
+  APPROVAL_STATUS_LABELS,
   COMPLIANCE_RULE_LABELS,
+  DECISION_LABELS,
   DRAFT_STATUS_LABELS,
   MAX_PDF_BYTES,
   POLL_INTERVAL_MS,
@@ -11,15 +13,25 @@ import {
   STAGE_LABELS,
   STATUS_LABELS,
   canRegenerateDrafts,
+  canStartApproval,
+  getFinalDocument,
   getRfpTicket,
+  getRfpTrace,
   isAnalyzing,
+  isApprovalBusy,
   isWorking,
   listRfpTickets,
   regenerateDrafts,
+  startApproval,
+  submitApproval,
   uploadRfp,
+  type ApprovalDecision,
+  type ApprovalRequest,
   type DepartmentSection,
+  type FinalDocument,
   type RfpTicketDetail,
   type RfpTicketSummary,
+  type TraceEvent,
 } from "@/lib/rfp";
 
 const CARD = "rounded-lg border border-gray-200 bg-white p-4 shadow dark:border-gray-800 dark:bg-gray-900";
@@ -32,7 +44,18 @@ const STATUS_STYLES: Record<string, string> = {
   generando_borrador: "bg-sky-100 text-sky-900 dark:bg-sky-900/40 dark:text-sky-200",
   "en_evaluación": "bg-indigo-100 text-indigo-900 dark:bg-indigo-900/40 dark:text-indigo-200",
   needs_human_review: "bg-orange-100 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200",
+  "esperando_aprobación": "bg-violet-100 text-violet-900 dark:bg-violet-900/40 dark:text-violet-200",
+  terminado: "bg-green-200 text-green-950 dark:bg-green-900/60 dark:text-green-100",
 };
+
+const APPROVAL_STYLES: Record<string, string> = {
+  pendiente: STATUS_STYLES["esperando_aprobación"],
+  cambios_solicitados: STATUS_STYLES.generando_borrador,
+  aprobada: STATUS_STYLES.terminado,
+  rechazada: "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-200",
+};
+
+type DecideHandler = (departmentId: string, body: { decision: ApprovalDecision; approver: string; comment: string }) => Promise<void>;
 
 const DRAFT_STATUS_STYLES: Record<string, string> = {
   generando_borrador: STATUS_STYLES.generando_borrador,
@@ -42,6 +65,7 @@ const DRAFT_STATUS_STYLES: Record<string, string> = {
 };
 
 const DRAFTING_STAGES = new Set(["generando_secciones", "evaluando_secciones", "borradores_listos"]);
+const APPROVAL_STAGES = new Set(["esperando_aprobaciones", "arbitrando", "revisando_secciones", "generando_documento"]);
 
 function StatusBadge({ ticket }: { ticket: Pick<RfpTicketSummary, "status" | "stage" | "stale"> }) {
   const failed = ticket.stage === "error";
@@ -127,7 +151,124 @@ function Check({ label, ok }: { label: string; ok: boolean }) {
   );
 }
 
-function DraftSectionCard({ section }: { section: DepartmentSection }) {
+// Parte 3: el responsable decide sobre SU sección. La rama está en pausa (interrupt) hasta que responde.
+function ApprovalBox({
+  section,
+  request,
+  onDecide,
+}: {
+  section: DepartmentSection;
+  request?: ApprovalRequest;
+  onDecide: DecideHandler;
+}) {
+  const [decision, setDecision] = useState<ApprovalDecision>("approve");
+  const [comment, setComment] = useState("");
+  const [sending, setSending] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const status = section.approval_status;
+  if (!status && !request) return null;
+  const needsReason = decision !== "approve";
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (sending) return;
+    setSending(true);
+    setProblem(null);
+    try {
+      await onDecide(section.department_id, { decision, approver: section.responsible, comment });
+      setComment("");
+      setDecision("approve");
+    } catch (reason: unknown) {
+      setProblem(reason instanceof Error ? reason.message : "No se pudo registrar la decisión.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-violet-200 bg-violet-50/50 p-3 dark:border-violet-900 dark:bg-violet-950/30">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium">Visto bueno de {section.responsible}</p>
+        {status && (
+          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${APPROVAL_STYLES[status] ?? ""}`}>
+            {APPROVAL_STATUS_LABELS[status] ?? status}
+          </span>
+        )}
+      </div>
+      {status === "aprobada" && (
+        <p className="text-xs">Aprobada por {section.approver} el {formatDate(section.approved_at)}.</p>
+      )}
+      {status === "rechazada" && section.approval_comment && (
+        <p className="text-xs text-red-800 dark:text-red-200">Motivo: {section.approval_comment}</p>
+      )}
+      {status === "cambios_solicitados" && (
+        <p role="status" className="text-xs">El generador de la Parte 2 está reescribiendo la sección con el feedback… (se actualiza solo)</p>
+      )}
+      {request && (
+        <>
+          <p className={`text-xs ${MUTED}`}>
+            Ronda {request.round} de {request.max_rounds} · {request.provisional ? "borrador provisional" : "evaluación superada"}
+            {request.violations.length > 0 && ` · reglas que fallan: ${request.violations.map((r) => COMPLIANCE_RULE_LABELS[r] ?? r).join(", ")}`}
+            {request.missing_aspects.length > 0 && ` · sin responder: ${request.missing_aspects.length}`}
+          </p>
+          {request.arbitration_notes.length > 0 && (
+            <ul className="ml-4 list-disc text-xs text-violet-900 dark:text-violet-200">
+              {request.arbitration_notes.map((note) => <li key={note}>Árbitro: {note}</li>)}
+            </ul>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-2" aria-label={`Decisión de ${section.responsible}`}>
+            <fieldset className="flex flex-wrap gap-3 text-sm">
+              <legend className="sr-only">Decisión</legend>
+              {(request.allowed_decisions ?? (["approve", "request_changes", "reject"] as ApprovalDecision[])).map((option) => (
+                <label key={option} className="flex items-center gap-1">
+                  <input
+                    type="radio"
+                    name={`decision-${section.department_id}`}
+                    value={option}
+                    checked={decision === option}
+                    onChange={() => setDecision(option)}
+                  />
+                  {DECISION_LABELS[option]}
+                </label>
+              ))}
+            </fieldset>
+            <label className="block text-xs">
+              {needsReason ? "Motivo (obligatorio, llega al generador como feedback)" : "Comentario (opcional)"}
+              <textarea
+                value={comment}
+                onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setComment(event.target.value)}
+                rows={2}
+                maxLength={2000}
+                className="mt-1 block w-full rounded-md border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+              />
+            </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                disabled={sending || (needsReason && comment.trim().length < 10)}
+                className="rounded-md bg-violet-700 px-3 py-1 text-xs font-medium text-white hover:bg-violet-600 disabled:opacity-50"
+              >
+                {sending ? "Enviando…" : `${DECISION_LABELS[decision]} como ${section.responsible}`}
+              </button>
+              <span className={`text-xs ${MUTED}`}>Solo {section.responsible} firma esta sección (BRIEFING §6).</span>
+            </div>
+            {problem && <p role="alert" className="text-xs text-red-800 dark:text-red-200">{problem}</p>}
+          </form>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DraftSectionCard({
+  section,
+  request,
+  onDecide,
+}: {
+  section: DepartmentSection;
+  request?: ApprovalRequest;
+  onDecide: DecideHandler;
+}) {
   const evaluation = section.evaluation_results;
   const status = section.draft_status ?? "generando_borrador";
   const provisional = status === "needs_human_review";
@@ -194,6 +335,8 @@ function DraftSectionCard({ section }: { section: DepartmentSection }) {
         <p className={`text-sm ${MUTED}`}>El generador está escribiendo la sección…</p>
       )}
 
+      <ApprovalBox section={section} request={request} onDecide={onDecide} />
+
       {(section.evaluation_history?.length ?? 0) > 1 && (
         <details className={`text-xs ${MUTED}`}>
           <summary>Historial del ciclo generador-evaluador ({section.evaluation_history?.length} iteraciones)</summary>
@@ -216,10 +359,12 @@ function DraftsPanel({
   ticket,
   onRegenerate,
   regenerating,
+  onDecide,
 }: {
   ticket: RfpTicketDetail;
   onRegenerate: () => void;
   regenerating: boolean;
+  onDecide: DecideHandler;
 }) {
   const drafted = ticket.sections.filter((section) => section.draft_status);
   const handoff = ticket.drafting_handoff;
@@ -250,8 +395,128 @@ function DraftsPanel({
       )}
       {drafted.length > 0 && (
         <div className="grid gap-3 xl:grid-cols-2">
-          {drafted.map((section) => <DraftSectionCard key={section.department_id} section={section} />)}
+          {drafted.map((section) => (
+            <DraftSectionCard
+              key={section.department_id}
+              section={section}
+              request={ticket.approval_requests?.find((item) => item.department_id === section.department_id)}
+              onDecide={onDecide}
+            />
+          ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+function ApprovalPanel({ ticket, onStart, starting }: { ticket: RfpTicketDetail; onStart: () => void; starting: boolean }) {
+  const [document, setDocument] = useState<FinalDocument | null>(null);
+  const [trace, setTrace] = useState<TraceEvent[] | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const inApproval = ticket.status === "esperando_aprobación" || ticket.status === "terminado";
+  const canStart = canStartApproval(ticket);
+
+  useEffect(() => {
+    if (!ticket.final_document_available || document) return;
+    getFinalDocument(ticket.ticket_id)
+      .then(setDocument)
+      .catch((reason: unknown) => setProblem(reason instanceof Error ? reason.message : "No se pudo leer el documento."));
+  }, [ticket.ticket_id, ticket.final_document_available, document]);
+
+  if (!inApproval && !canStart) return null;
+  const pending = ticket.sections.filter((section) => section.approval_status && section.approval_status !== "aprobada");
+
+  function download() {
+    if (!document) return;
+    const url = URL.createObjectURL(new Blob([document.markdown], { type: "text/markdown;charset=utf-8" }));
+    const link = window.document.createElement("a");
+    link.href = url;
+    link.download = `propuesta-rfp-${ticket.ticket_id}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function loadTrace() {
+    try {
+      setTrace(await getRfpTrace(ticket.ticket_id));
+    } catch (reason: unknown) {
+      setProblem(reason instanceof Error ? reason.message : "No se pudo leer la traza.");
+    }
+  }
+
+  return (
+    <div className={`${CARD} space-y-3`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-semibold">Aprobación y documento final</h3>
+        <div className="flex gap-2">
+          {canStart && (
+            <button
+              type="button"
+              onClick={onStart}
+              disabled={starting}
+              className="rounded-md bg-violet-700 px-3 py-1 text-xs font-medium text-white hover:bg-violet-600 disabled:opacity-50"
+            >
+              {starting ? "Abriendo…" : ticket.status === "esperando_aprobación" ? "Reiniciar la aprobación" : "Pedir aprobación"}
+            </button>
+          )}
+          {inApproval && (
+            <button type="button" onClick={() => void loadTrace()} className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
+              {trace ? "Actualizar traza" : "Ver traza"}
+            </button>
+          )}
+        </div>
+      </div>
+      {ticket.status === "esperando_aprobación" && (
+        <p className="text-sm">
+          {ticket.stage === "seccion_rechazada"
+            ? "Una sección quedó rechazada: no habrá documento final hasta regenerar los borradores (nueva ejecución)."
+            : `Esperando el visto bueno de: ${pending.map((section) => section.responsible).join(", ") || "—"}. Cada sección se aprueba por separado; las demás no esperan.`}
+        </p>
+      )}
+      {problem && <p role="alert" className="text-xs text-red-800 dark:text-red-200">{problem}</p>}
+      {document && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium">
+              Documento final para {document.delivered_to} · {document.currency} · {formatDate(document.generated_at)}
+            </p>
+            <button type="button" onClick={download} className="rounded-md border border-gray-300 px-3 py-1 text-xs font-medium hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800">
+              Descargar .md
+            </button>
+          </div>
+          <div className="max-h-[32rem] overflow-y-auto rounded-md border border-gray-200 p-3 dark:border-gray-800">
+            <DraftMarkdown content={document.markdown} />
+          </div>
+        </div>
+      )}
+      {trace && (
+        <details open className="text-xs">
+          <summary className="cursor-pointer font-medium">Traza: qué agente hizo qué y en qué orden ({trace.length} pasos)</summary>
+          <div className="mt-2 max-h-96 overflow-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="text-left">
+                  {["#", "Hora", "Grafo", "Rama", "Nodo", "Agente", "Estado"].map((label) => (
+                    <th key={label} className="border-b border-gray-300 px-2 py-1 dark:border-gray-700">{label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {trace.map((event) => (
+                  <tr key={event.id} className={event.status === "interrupted" ? "bg-violet-50 dark:bg-violet-950/40" : event.status === "error" ? "bg-red-50 dark:bg-red-950/40" : ""}>
+                    <td className="px-2 py-0.5">{event.id}</td>
+                    <td className="px-2 py-0.5">{new Date(event.finished_at).toLocaleTimeString("es-ES")}</td>
+                    <td className="px-2 py-0.5"><code>{event.graph}</code></td>
+                    <td className="px-2 py-0.5">{event.department_id ?? "—"}</td>
+                    <td className="px-2 py-0.5"><code>{event.node}</code></td>
+                    <td className="px-2 py-0.5">{event.agent}</td>
+                    <td className="px-2 py-0.5">{event.status === "interrupted" ? "⏸ en pausa" : event.status === "error" ? "✗ error" : "✓"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
       )}
     </div>
   );
@@ -261,10 +526,16 @@ function TicketDetail({
   ticket,
   onRegenerate,
   regenerating,
+  onDecide,
+  onStartApproval,
+  startingApproval,
 }: {
   ticket: RfpTicketDetail;
   onRegenerate: () => void;
   regenerating: boolean;
+  onDecide: DecideHandler;
+  onStartApproval: () => void;
+  startingApproval: boolean;
 }) {
   const metadata = ticket.metadata;
   const handoff = ticket.handoff;
@@ -295,12 +566,16 @@ function TicketDetail({
       {ticket.stage === "error" && (
         <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           <p className="font-medium">
-            {DRAFTING_STAGES.has(ticket.error_stage ?? "") ? "La generación de borradores" : "El análisis"} falló en la
+            {APPROVAL_STAGES.has(ticket.error_stage ?? "")
+              ? "La aprobación"
+              : DRAFTING_STAGES.has(ticket.error_stage ?? "") ? "La generación de borradores" : "El análisis"} falló en la
             etapa «{STAGE_LABELS[ticket.error_stage ?? ""] ?? ticket.error_stage}».
           </p>
           <p className="break-words">{ticket.error_message}</p>
           <p className="mt-2">
-            {DRAFTING_STAGES.has(ticket.error_stage ?? "") ? (
+            {APPROVAL_STAGES.has(ticket.error_stage ?? "") ? (
+              <>Reinicia con «Reiniciar la aprobación» o <code>python scripts/rfp_approval_run.py --start {ticket.ticket_id} --force</code></>
+            ) : DRAFTING_STAGES.has(ticket.error_stage ?? "") ? (
               <>Relanza con «Regenerar borradores» o <code>python scripts/rfp_drafting_run.py --ticket-id {ticket.ticket_id} --force</code></>
             ) : (
               <>Reprocesar: <code>python scripts/rfp_intake_run.py --ticket-id {ticket.ticket_id}</code></>
@@ -425,7 +700,10 @@ function TicketDetail({
         </div>
       )}
 
-      <DraftsPanel ticket={ticket} onRegenerate={onRegenerate} regenerating={regenerating} />
+      {/* key: al cambiar de ticket, el documento y la traza cargados se descartan. */}
+      <ApprovalPanel key={ticket.ticket_id} ticket={ticket} onStart={onStartApproval} starting={startingApproval} />
+
+      <DraftsPanel ticket={ticket} onRegenerate={onRegenerate} regenerating={regenerating} onDecide={onDecide} />
 
       {handoff && (handoff.inactive_departments.length > 0 || handoff.unassigned_requests.length > 0 || handoff.conflicts.length > 0) && (
         <div className={`${CARD} space-y-2 text-sm`}>
@@ -470,9 +748,10 @@ function TicketDetail({
   );
 }
 
-// Recepción de RFPs (Hito 9 · Partes 1 y 2): Ventas sube el PDF, se crea un ticket y la
+// Recepción de RFPs (Hito 9 · Partes 1-3): Ventas sube el PDF, se crea un ticket y la
 // página consulta su estado mientras el pipeline trabaja: análisis (descartado o análisis
-// completo) y, después, borradores por departamento con su evaluación.
+// completo), borradores por departamento con su evaluación y, al final, el visto bueno de
+// cada responsable y el documento final.
 export default function RfpIntakePage() {
   const [tickets, setTickets] = useState<RfpTicketSummary[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -480,6 +759,7 @@ export default function RfpIntakePage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [startingApproval, setStartingApproval] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -502,7 +782,10 @@ export default function RfpIntakePage() {
     void refresh();
   }, [refresh]);
 
-  const polling = tickets.some(isWorking) || (detail !== null && isWorking(detail));
+  const polling =
+    tickets.some(isWorking) ||
+    tickets.some((ticket) => ticket.status === "esperando_aprobación") ||
+    (detail !== null && (isWorking(detail) || isApprovalBusy(detail)));
   useEffect(() => {
     if (!polling) return;
     const timer = window.setInterval(() => void refresh(), POLL_INTERVAL_MS);
@@ -524,6 +807,34 @@ export default function RfpIntakePage() {
       setRegenerating(false);
     }
   }
+
+  async function handleStartApproval() {
+    if (selectedId === null || startingApproval) return;
+    setStartingApproval(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await startApproval(selectedId);
+      setMessage(`Ticket #${selectedId}: aprobación abierta; cada responsable ya puede dar su visto bueno.`);
+      await refresh();
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "No se pudo abrir la aprobación.");
+    } finally {
+      setStartingApproval(false);
+    }
+  }
+
+  const handleDecide: DecideHandler = async (departmentId, body) => {
+    if (selectedId === null) return;
+    setMessage(null);
+    const accepted = await submitApproval(selectedId, departmentId, body);
+    setMessage(
+      accepted.resumed
+        ? `Ticket #${selectedId}: ${DECISION_LABELS[body.decision].toLowerCase()} registrado para ${departmentId} (${body.approver}).`
+        : `Ticket #${selectedId}: cambios pedidos en ${departmentId}; el generador está reescribiendo la sección…`,
+    );
+    await refresh();
+  };
 
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const chosen = event.target.files?.[0] ?? null;
@@ -569,8 +880,8 @@ export default function RfpIntakePage() {
           <p className={`text-sm ${MUTED}`}>
             Sube la RFP del cliente en PDF. Se crea un ticket, el documento se convierte a Markdown, el clasificador
             decide si es una RFP y, si lo es, cada departamento (Warehouse, Last Mile, Reverse) recibe solo lo que le
-            toca. Al terminar verás qué pedir a quién sin abrir el PDF y, en seguida, el borrador de la propuesta
-            económica de cada departamento, revisado por los evaluadores.
+            toca. Al terminar verás qué pedir a quién sin abrir el PDF, el borrador de la propuesta económica de cada
+            departamento revisado por los evaluadores y, cuando cada responsable da su visto bueno, el documento final.
           </p>
         </div>
 
@@ -641,7 +952,14 @@ export default function RfpIntakePage() {
 
           <div>
             {detail ? (
-              <TicketDetail ticket={detail} onRegenerate={() => void handleRegenerate()} regenerating={regenerating} />
+              <TicketDetail
+                ticket={detail}
+                onRegenerate={() => void handleRegenerate()}
+                regenerating={regenerating}
+                onDecide={handleDecide}
+                onStartApproval={() => void handleStartApproval()}
+                startingApproval={startingApproval}
+              />
             ) : (
               <p className={`${CARD} text-sm ${MUTED}`}>Selecciona un ticket para ver su análisis.</p>
             )}
