@@ -191,7 +191,8 @@ El cliente SSE nativo del navegador no permite enviar `Authorization`, así que
 **Reconexión:**
 
 - **Backoff:** 1 s, 2 s, 4 s, 8 s, 16 s, con un máximo de 30 s y jitter de
-  ±20 %. Vuelve a 1 s tras una conexión correcta. El `retry: 3000` del servidor
+  ±20 % (es decir, hasta 36 s; en la verificación: 1,0 → 2,3 → 3,6 → 7,5 →
+  16,9 → 36,0 s). Vuelve a 1 s tras una conexión correcta. El `retry: 3000` del servidor
   es para clientes SSE nativos; este cliente sigue su backoff.
 - **401:** no reintenta. El indicador pasa a «Sesión caducada».
 - **Vigilancia de la conexión:**
@@ -232,6 +233,14 @@ En `uis/backoffice/src/app/rfp/page.tsx`:
   que ejecutó el pipeline. Ver la pregunta 1.
 - **Reinicio de la API.** Al reiniciar se pierden el buffer y el registro de
   dedupe del servidor. El `resync` y el dedupe del cliente cubren ese hueco.
+- **Cierre de uvicorn.** Los streams abiertos no terminan solos, así que
+  Ctrl+C se queda esperando a que se cierren. Hay que arrancar la API con
+  `--timeout-graceful-shutdown 3`: pasados 3 s, uvicorn cancela los streams y
+  los clientes reconectan contra el nuevo proceso (`resync`). En producción,
+  el `stopTimeout` del contenedor debe ser mayor que ese valor.
+- **Recargas en desarrollo.** Con `npm run dev`, Next recarga la página al
+  volver la red y la conexión empieza sin `Last-Event-ID`. El replay solo se
+  aprecia con `npm run build` y `npm run start`.
 - **Primera carga.** Si un ticket se crea entre la primera carga de la lista y
   la apertura del stream, no hay replay porque la conexión es nueva. Aparece
   en el siguiente polling o al pulsar «Actualizar».
