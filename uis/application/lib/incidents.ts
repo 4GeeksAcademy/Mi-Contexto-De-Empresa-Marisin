@@ -1,3 +1,5 @@
+import { getAccessToken } from "@/lib/auth";
+
 export const incidentCategories = [
   "RETURN_REQUEST",
   "DAMAGE",
@@ -51,10 +53,26 @@ export interface AnalysisResult {
 
 const apiBase = "/backend/api/incidents";
 const genericIncidentError = "No se pudo completar la operación. Inténtalo de nuevo en unos segundos.";
+const sessionExpiredError = "Tu sesión ha caducado. Vuelve a iniciar sesión.";
+const forbiddenError = "Tu cuenta no tiene acceso al gestor de incidencias.";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
-    const response = await fetch(`${apiBase}${path}`, { ...init, cache: "no-store" });
+    // La API exige un JWT de personal de TrackFlow (OWASP C1): sin token no hay petición.
+    const token = getAccessToken();
+    if (!token) {
+      throw new Error(sessionExpiredError);
+    }
+    const headers = new Headers(init?.headers);
+    headers.set("Authorization", `Bearer ${token}`);
+
+    const response = await fetch(`${apiBase}${path}`, { ...init, headers, cache: "no-store" });
+    if (response.status === 401) {
+      throw new Error(sessionExpiredError);
+    }
+    if (response.status === 403) {
+      throw new Error(forbiddenError);
+    }
     if (!response.ok) {
       throw new Error(response.status >= 500 ? "El servicio no está disponible ahora." : "Revisa los datos introducidos.");
     }
