@@ -1,0 +1,15 @@
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+tests/test_caching.py::test_incident_summary_hit_and_create_invalidation
+tests/test_caching.py::test_incident_invalid_transition_keeps_cache_valid
+tests/test_caching.py::test_incident_successful_transition_invalidates_summary
+  /workspaces/Mi-Contexto-De-Empresa-Marisin/services/api/services/incidents.py:66: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    data = payload.dict()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+1329 passed, 6 warnings in 83.63s (0:01:23)
