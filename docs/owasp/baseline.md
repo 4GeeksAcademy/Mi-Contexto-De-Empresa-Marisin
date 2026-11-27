@@ -189,10 +189,10 @@ Búsqueda en el código (`*.py`, `*.ts`, `*.tsx`, `*.yml`, `*.example`; sin
 
 | Captura | Comando | Qué debe verse | Resultado |
 |---------|---------|----------------|-----------|
-| 📸 `owasp-probe-antes.png` | `python scripts/owasp_probe.py` (con la API en marcha) | FAIL en P1–P4 y P6–P8; PASS en P5 | _pendiente_ |
-| 📸 `docker-ports-antes.png` | `docker ps --format '{{.Names}}\t{{.Ports}}'` (con Qdrant y Redis arrancados) | `0.0.0.0:6333`, `0.0.0.0:6379`… | _pendiente_ |
-| 📸 `lab-01-audit-antes.png` | `infra/hardening/lab.sh audit` | FAIL en root SSH, password auth, usuarios, permisos y ufw | _pendiente (Fase 2)_ |
-| 📸 `lab-02-scan-antes.png` | `infra/hardening/lab.sh scan` | 11 puertos abiertos | _pendiente (Fase 2)_ |
-| 📸 `lab-03-ssh-antes.png` | `infra/hardening/lab.sh ssh-test` | root entra por SSH | _pendiente (Fase 2)_ |
+| 📸 [`owasp-probe-antes.png`](evidence/owasp-probe-antes.png) · [`.txt`](evidence/owasp-probe-antes.txt) | `python scripts/owasp_probe.py` (con la API en marcha) | FAIL en P1–P4 y P6–P8; PASS en P5 | ✅ Como se esperaba: **1/8 PASS** (solo P5). Sin token, `GET /api/incidents` → 200 y la clave de servicio falsa → 200; login con la contraseña por defecto del admin → 200; inventario sin token → 200; las 6 rutas internas con token `user` → 200; el agente ejecutó `lookup_inventory` para un `user` (`status=unavailable`: el MCP no estaba arrancado); ninguna cabecera de seguridad; 6 logins fallidos → 6 × 401, sin límite |
+| 📸 [`docker-ports-antes.png`](evidence/docker-ports-antes.png) · [`.txt`](evidence/docker-ports-antes.txt) | `docker ps --format '{{.Names}}\t{{.Ports}}'` (con Qdrant y Redis arrancados) | `0.0.0.0:6333`, `0.0.0.0:6379`… | ✅ `0.0.0.0:6333->6333/tcp, [::]:6333->6333/tcp` y `0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp` |
+| 📸 [`lab-01-audit-antes.png`](evidence/lab-01-audit-antes.png) · [`.txt`](evidence/lab-01-audit-antes.txt) | `infra/hardening/lab.sh audit` | FAIL en root SSH, password auth, usuarios, permisos y ufw | ✅ **PASS=5 FAIL=23**: `PermitRootLogin yes`, `PasswordAuthentication yes`, root con clave autorizada, sin `trackflow-ops` ni `trackflow`, las 5 rutas de `/srv/trackflow` en `777` (7 rutas escribibles por cualquiera), ufw `inactive` |
+| 📸 [`lab-02-scan-antes.png`](evidence/lab-02-scan-antes.png) · [`.txt`](evidence/lab-02-scan-antes.txt) | `infra/hardening/lab.sh scan` | 11 puertos abiertos | ✅ **11 de 11** abiertos (22 80 443 3000 3001 3002 5555 6333 6379 8000 8001) |
+| 📸 [`lab-03-ssh-antes.png`](evidence/lab-03-ssh-antes.png) · [`.txt`](evidence/lab-03-ssh-antes.txt) | `infra/hardening/lab.sh ssh-test` | root entra por SSH | ✅ root **ENTRA** (`uid=0(root)`); `trackflow-ops` no existe todavía |
 
-Las capturas se guardan en `docs/owasp/evidence/`.
+Las capturas se guardan en `docs/owasp/evidence/`. El «después» de cada una está en [`verification.md`](verification.md) y en el [informe](OWASP_TOP10_AUDIT.md).
