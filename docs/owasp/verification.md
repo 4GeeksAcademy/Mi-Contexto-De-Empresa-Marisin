@@ -63,9 +63,9 @@ Detalle en [server-hardening.md](server-hardening.md#5-resultados-del-laboratori
 
 | Paso | Comando | Esperado | Obtenido | Evidencia |
 |------|---------|----------|----------|-----------|
-| 6.1a | `npm audit --omit=dev` en `uis/{backoffice,application,website,talent-pipeline-tracker}` | — | Críticas con corrección en Next.js (application, website, talent-pipeline-tracker); moderada en backoffice | `npm-audit-<app>.txt` (solo texto) |
+| 6.1a | `npm audit --omit=dev` en `uis/{backoffice,application,website,talent-pipeline-tracker}` | — | Críticas con corrección en Next.js (application, website, talent-pipeline-tracker); moderada en backoffice | `npm-audit-<app>.txt` · `.png` |
 | 6.1b | Next.js 16.4.6 + `npm audit fix` (decisión de Marisin) y de nuevo `npm audit --omit=dev` | 0 vulnerabilidades | **found 0 vulnerabilities** en las 4 apps | `npm-audit-<app>-despues.txt` · `.png` |
-| 6.1c | `uv run --with pip-audit pip-audit --skip-editable` | — | `ecdsa`, `pyasn1` (con corrección), `python-jose` | [`pip-audit.txt`](evidence/pip-audit.txt) (solo texto) |
+| 6.1c | `uv run --with pip-audit pip-audit --skip-editable` | — | `ecdsa`, `pyasn1` (con corrección), `python-jose` | [`pip-audit.txt`](evidence/pip-audit.txt) · [`.png`](evidence/pip-audit.png) |
 | 6.1d | `uv lock --upgrade-package pyasn1` y de nuevo `pip-audit` | solo avisos sin corrección | `ecdsa` y `python-jose` (riesgo aceptado R1) | [`pip-audit-despues.txt`](evidence/pip-audit-despues.txt) · [`.png`](evidence/pip-audit-despues.png) |
 | 6.1e | `npm run typecheck` (application, backoffice), `npx tsc --noEmit` (website, talent-pipeline-tracker), `pytest -q` | limpio y verde | Limpio; 1251 passed | — |
 

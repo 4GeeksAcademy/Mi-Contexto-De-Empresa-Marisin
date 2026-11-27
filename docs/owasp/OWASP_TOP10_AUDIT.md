@@ -260,7 +260,7 @@ Resultado después: `npm audit --omit=dev` → **found 0 vulnerabilities** en la
 
 ## 11. Evidencias
 
-Todas en [`evidence/`](evidence/): salida en texto (`.txt`) y captura de pantalla (`.png`) de cada paso. Los `npm audit` y `pip-audit` del «antes» solo se guardaron en texto. Se comprobó que ningún fichero contiene tokens, claves ni contraseñas.
+Todas en [`evidence/`](evidence/): salida en texto (`.txt`) y captura de pantalla (`.png`) de cada paso. Se comprobó que ningún fichero contiene tokens, claves ni contraseñas.
 
 | Evidencia | Qué demuestra |
 |-----------|---------------|
@@ -275,5 +275,5 @@ Todas en [`evidence/`](evidence/): salida en texto (`.txt`) y captura de pantall
 | [`chat-caso1-bloqueado.png`](evidence/chat-caso1-bloqueado.png) | Caso 1 del BRIEFING en la UI: rechazo sin datos del pedido |
 | [`backoffice-403-cliente.png`](evidence/backoffice-403-cliente.png) | C4 en la UI: «Registrar entrada» con una cuenta `user` → 403 |
 | `lab-00` … `lab-10` (`.txt` y `.png`) | Endurecimiento del servidor, antes y después ([server-hardening.md](server-hardening.md#5-resultados-del-laboratorio)) |
-| `npm-audit-<app>.txt` → `npm-audit-<app>-despues.txt` · `.png` (4 apps) | A06 frontend: 1 crítica, 4 altas y 1 moderada → **0 vulnerabilidades** |
-| [`pip-audit.txt`](evidence/pip-audit.txt) → [`pip-audit-despues.txt`](evidence/pip-audit-despues.txt) · [`.png`](evidence/pip-audit-despues.png) | A06 backend: `pyasn1` corregido; quedan `python-jose` y `ecdsa` (R1) |
+| `npm-audit-<app>.txt` · `.png` → `npm-audit-<app>-despues.txt` · `.png` (4 apps) | A06 frontend: 1 crítica, 4 altas y 1 moderada → **0 vulnerabilidades** |
+| [`pip-audit.txt`](evidence/pip-audit.txt) · [`.png`](evidence/pip-audit.png) → [`pip-audit-despues.txt`](evidence/pip-audit-despues.txt) · [`.png`](evidence/pip-audit-despues.png) | A06 backend: `pyasn1` corregido; quedan `python-jose` y `ecdsa` (R1) |
