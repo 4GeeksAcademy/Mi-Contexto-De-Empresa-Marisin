@@ -92,6 +92,16 @@ if not timing_logger.handlers:
     timing_logger.addHandler(timing_handler)
 timing_logger.propagate = False
 
+# Eventos de seguridad (login fallido, límite de intentos, recuperación; D14): a consola,
+# como api.timing. Sin emails en claro ni contraseñas.
+security_logger = logging.getLogger("api.security")
+security_logger.setLevel(logging.INFO)
+if not security_logger.handlers:
+    security_handler = logging.StreamHandler()
+    security_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+    security_logger.addHandler(security_handler)
+security_logger.propagate = False
+
 
 @app.middleware("http")
 async def timing_middleware(request: Request, call_next):
