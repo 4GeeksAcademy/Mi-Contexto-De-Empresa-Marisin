@@ -11,7 +11,7 @@
 
 Antes de la auditoría, **cualquier persona que se registrara en la web (`POST /users`) podía leer los datos internos de TrackFlow**: emails y roles de todos los usuarios, tarifas de proveedores, RFPs B2B confidenciales, KPIs por almacén y por marca, y el stock de todas las marcas. Las incidencias y el inventario se leían **incluso sin cuenta**. El agente de soporte, que usan los clientes, consultaba esas mismas tools internas para cualquier rol. Además, en cada arranque se creaba un admin con contraseña escrita en el código, y Redis, Qdrant y Flower se publicaban en todas las interfaces sin autenticación.
 
-La sonda de evidencias del «antes» dio **1 de 8 comprobaciones en PASS** ([`owasp-probe-antes.txt`](evidence/owasp-probe-antes.txt)).
+La sonda de evidencias dio **1 de 8 comprobaciones en PASS antes** ([`owasp-probe-antes.png`](evidence/owasp-probe-antes.png)) y **8 de 8 después** ([`owasp-probe-despues.png`](evidence/owasp-probe-despues.png)), con la suite completa en verde (**1251 passed**, [`pytest-final.png`](evidence/pytest-final.png)).
 
 **Corregido en esta rama:**
 
@@ -68,6 +68,8 @@ La sonda de evidencias del «antes» dio **1 de 8 comprobaciones en PASS** ([`ow
 | **H2** | A05 | Backend | La API no enviaba cabeceras de seguridad (`main.py:73-105`) | Middleware (`services/api/main.py:128-150`): `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, y HSTS **solo** por HTTPS (directo o `X-Forwarded-Proto`) | `67dd177` | Sonda P6: 5 cabeceras ausentes → **presentes** · `test_security_headers.py` |
 | **D1** | A06 | Frontend | `next` 16.2.11 con avisos **críticos** (RCE sin autenticación en Image Optimization y `next/og`, SSRF, cache poisoning…) y `postcss`, `sharp`, `nanoid` y `source-map-js` con avisos altos | Next.js 16.4.6 (+ `eslint-config-next`) en `application`, `website` y `talent-pipeline-tracker`; `npm audit fix` en las 4 apps | `73db7cb` | [`npm-audit-application.txt`](evidence/npm-audit-application.txt) «5 vulnerabilities (4 high, 1 critical)» → [`npm-audit-application-despues.txt`](evidence/npm-audit-application-despues.txt) «found 0 vulnerabilities» (igual en las 4 apps) |
 | **D2** | A06 | Backend | `pyasn1` 0.6.4 con 4 CVE (CVE-2026-119194 a 119197) | `pyasn1` 0.6.5 (`uv.lock`) | `c61b707` | [`pip-audit.txt`](evidence/pip-audit.txt) → [`pip-audit-despues.txt`](evidence/pip-audit-despues.txt) |
+
+**Sonda P1–P8, mismo comando antes y después:** [`owasp-probe-antes.txt`](evidence/owasp-probe-antes.txt) · [`.png`](evidence/owasp-probe-antes.png) (1/8 PASS) → [`owasp-probe-despues.txt`](evidence/owasp-probe-despues.txt) · [`.png`](evidence/owasp-probe-despues.png) (**8/8 PASS**). Detalle paso a paso en [verification.md](verification.md#verificación-final-fase-65).
 
 ### Impacto regulatorio de las críticas (si se hubieran explotado)
 
@@ -258,14 +260,20 @@ Resultado después: `npm audit --omit=dev` → **found 0 vulnerabilities** en la
 
 ## 11. Evidencias
 
+Todas en [`evidence/`](evidence/): salida en texto (`.txt`) y captura de pantalla (`.png`) de cada paso. Los `npm audit` y `pip-audit` del «antes» solo se guardaron en texto. Se comprobó que ningún fichero contiene tokens, claves ni contraseñas.
+
 | Evidencia | Qué demuestra |
 |-----------|---------------|
-| [`owasp-probe-antes.txt`](evidence/owasp-probe-antes.txt) · `owasp-probe-antes.png` | Sonda antes: 1/8 PASS |
-| `owasp-probe-despues.png` (Fase 6.5) | Sonda después: resultado en [verification.md](verification.md) |
-| [`docker-ports-antes.txt`](evidence/docker-ports-antes.txt) → [`docker-ports-despues.txt`](evidence/docker-ports-despues.txt) · [`compose-loopback.txt`](evidence/compose-loopback.txt) · [`infra-conectividad.txt`](evidence/infra-conectividad.txt) | C5 |
-| `admin-rotado.png` · `admin-password-antigua-401.png` | C3 (rotación) |
-| `chat-tool-denegada.png` · `chat-caso1-bloqueado.png` | C2 y caso 1 del BRIEFING en la UI |
-| `backoffice-403-cliente.png` | C4 en la UI («Registrar entrada» con una cuenta `user` → 403) |
-| `lab-00` … `lab-10` (`.txt` y `.png`) | Endurecimiento del servidor ([server-hardening.md](server-hardening.md)) |
-| `npm-audit-*.txt` / `npm-audit-*-despues.txt` · `pip-audit.txt` / `pip-audit-despues.txt` | A06 |
-| `pytest-final.png` (Fase 6.5) | Suite completa en verde |
+| [`owasp-probe-antes.txt`](evidence/owasp-probe-antes.txt) · [`.png`](evidence/owasp-probe-antes.png) | Sonda antes: **1/8 PASS** |
+| [`owasp-probe-despues.txt`](evidence/owasp-probe-despues.txt) · [`.png`](evidence/owasp-probe-despues.png) | Sonda después: **8/8 PASS** (C1, C2, C3, C4, H1, H2 y caso 1 del BRIEFING) |
+| [`pytest-final.txt`](evidence/pytest-final.txt) · [`.png`](evidence/pytest-final.png) | Suite completa: **1251 passed** |
+| [`docker-ports-antes.txt`](evidence/docker-ports-antes.txt) · [`.png`](evidence/docker-ports-antes.png) → [`docker-ports-despues.txt`](evidence/docker-ports-despues.txt) · [`.png`](evidence/docker-ports-despues.png) | C5: `0.0.0.0` → `127.0.0.1` |
+| [`compose-loopback.txt`](evidence/compose-loopback.txt) · [`.png`](evidence/compose-loopback.png) | C5: `host_ip: 127.0.0.1` en los 7 puertos de `docker-compose.yml` |
+| [`infra-conectividad.txt`](evidence/infra-conectividad.txt) · [`.png`](evidence/infra-conectividad.png) | C5 sin romper nada: Qdrant `healthz` 200 y Redis `ping` `True` por loopback |
+| [`admin-rotado.png`](evidence/admin-rotado.png) · [`admin-password-antigua-401.png`](evidence/admin-password-antigua-401.png) | C3: contraseña del admin rotada; la antigua da 401 |
+| [`chat-tool-denegada.png`](evidence/chat-tool-denegada.png) | C2 en la UI: un `user` pide stock y recibe la denegación, sin marcas ni cifras |
+| [`chat-caso1-bloqueado.png`](evidence/chat-caso1-bloqueado.png) | Caso 1 del BRIEFING en la UI: rechazo sin datos del pedido |
+| [`backoffice-403-cliente.png`](evidence/backoffice-403-cliente.png) | C4 en la UI: «Registrar entrada» con una cuenta `user` → 403 |
+| `lab-00` … `lab-10` (`.txt` y `.png`) | Endurecimiento del servidor, antes y después ([server-hardening.md](server-hardening.md#5-resultados-del-laboratorio)) |
+| `npm-audit-<app>.txt` → `npm-audit-<app>-despues.txt` · `.png` (4 apps) | A06 frontend: 1 crítica, 4 altas y 1 moderada → **0 vulnerabilidades** |
+| [`pip-audit.txt`](evidence/pip-audit.txt) → [`pip-audit-despues.txt`](evidence/pip-audit-despues.txt) · [`.png`](evidence/pip-audit-despues.png) | A06 backend: `pyasn1` corregido; quedan `python-jose` y `ecdsa` (R1) |

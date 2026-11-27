@@ -73,18 +73,18 @@ Es lo que pide el BRIEFING: «Público: HTTPS API + frontend; SSH solo ops». Ha
 
 ## 5. Resultados del laboratorio
 
-Todo con el mismo comando antes y después (`infra/hardening/lab.sh <subcomando>`). Salidas completas en `evidence/` (`.txt` y captura `.png`).
+Todo con el mismo comando antes y después (`infra/hardening/lab.sh <subcomando>`). Salida completa (`.txt`) y captura (`.png`) de cada paso en [`evidence/`](evidence/).
 
 | Paso | Antes | Después | Evidencia |
 |------|-------|---------|-----------|
-| Espacio en disco antes de construir | 21 GB libres (33 % usado) | — | `lab-00-espacio` |
-| `audit` | **PASS=5 FAIL=23**: `PermitRootLogin yes`, `PasswordAuthentication yes`, sin `trackflow-ops` ni `trackflow`, todo en `777`, ufw `inactive` | **PASS=28 FAIL=0** | [`lab-01-audit-antes.txt`](evidence/lab-01-audit-antes.txt) → [`lab-05-audit-despues.txt`](evidence/lab-05-audit-despues.txt) |
-| `scan` (desde otro contenedor de la red) | **11 de 11** abiertos | **3 de 11**: 22, 80, 443 | [`lab-02-scan-antes.txt`](evidence/lab-02-scan-antes.txt) → [`lab-06-scan-despues.txt`](evidence/lab-06-scan-despues.txt) |
-| `ssh-test` con la misma clave válida | root **ENTRA** (`uid=0(root)`); `trackflow-ops` denegado (no existe) | root **DENEGADO** (`Permission denied (publickey)`); `trackflow-ops` **ENTRA** (`uid=1001`, grupo `sudo`) | [`lab-03-ssh-antes.txt`](evidence/lab-03-ssh-antes.txt) → [`lab-07-ssh-despues.txt`](evidence/lab-07-ssh-despues.txt) |
-| `harden` | — | Usuarios creados, drop-in validado con `sshd -t`, permisos, ufw activo, claves de root eliminadas | [`lab-04-harden.txt`](evidence/lab-04-harden.txt) |
-| Permisos (`ls -la`) | `777` | `app` `drwxr-x---` `trackflow-ops:trackflow`, `config` `drwxr-x---` `root:trackflow`, `logs` `drwxr-s---` `trackflow:trackflow-ops`, `.env` `-rw-r-----` `root:trackflow` | [`lab-08-permisos.txt`](evidence/lab-08-permisos.txt) |
-| `ufw status verbose` | `inactive` | `deny (incoming), allow (outgoing)`; `22/tcp LIMIT`, `80/tcp ALLOW`, `443/tcp ALLOW` (IPv4 e IPv6) | [`lab-09-ufw.txt`](evidence/lab-09-ufw.txt) |
-| `down` + `space` | — | Contenedor, red e imagen borrados; 20 GB libres | [`lab-10-limpieza.txt`](evidence/lab-10-limpieza.txt) |
+| Espacio en disco antes de construir | 21 GB libres (33 % usado) | — | [`lab-00-espacio.txt`](evidence/lab-00-espacio.txt) · [`.png`](evidence/lab-00-espacio.png) |
+| `audit` | **PASS=5 FAIL=23**: `PermitRootLogin yes`, `PasswordAuthentication yes`, sin `trackflow-ops` ni `trackflow`, todo en `777`, ufw `inactive` | **PASS=28 FAIL=0** | [`lab-01-audit-antes.txt`](evidence/lab-01-audit-antes.txt) · [`.png`](evidence/lab-01-audit-antes.png) → [`lab-05-audit-despues.txt`](evidence/lab-05-audit-despues.txt) · [`.png`](evidence/lab-05-audit-despues.png) |
+| `scan` (desde otro contenedor de la red) | **11 de 11** abiertos | **3 de 11**: 22, 80, 443 | [`lab-02-scan-antes.txt`](evidence/lab-02-scan-antes.txt) · [`.png`](evidence/lab-02-scan-antes.png) → [`lab-06-scan-despues.txt`](evidence/lab-06-scan-despues.txt) · [`.png`](evidence/lab-06-scan-despues.png) |
+| `ssh-test` con la misma clave válida | root **ENTRA** (`uid=0(root)`); `trackflow-ops` denegado (no existe) | root **DENEGADO** (`Permission denied (publickey)`); `trackflow-ops` **ENTRA** (`uid=1001`, grupo `sudo`) | [`lab-03-ssh-antes.txt`](evidence/lab-03-ssh-antes.txt) · [`.png`](evidence/lab-03-ssh-antes.png) → [`lab-07-ssh-despues.txt`](evidence/lab-07-ssh-despues.txt) · [`.png`](evidence/lab-07-ssh-despues.png) |
+| `harden` | — | Usuarios creados, drop-in validado con `sshd -t`, permisos, ufw activo, claves de root eliminadas | [`lab-04-harden.txt`](evidence/lab-04-harden.txt) · [`.png`](evidence/lab-04-harden.png) |
+| Permisos (`ls -la`) | `777` | `app` `drwxr-x---` `trackflow-ops:trackflow`, `config` `drwxr-x---` `root:trackflow`, `logs` `drwxr-s---` `trackflow:trackflow-ops`, `.env` `-rw-r-----` `root:trackflow` | [`lab-08-permisos.txt`](evidence/lab-08-permisos.txt) · [`.png`](evidence/lab-08-permisos.png) |
+| `ufw status verbose` | `inactive` | `deny (incoming), allow (outgoing)`; `22/tcp LIMIT`, `80/tcp ALLOW`, `443/tcp ALLOW` (IPv4 e IPv6) | [`lab-09-ufw.txt`](evidence/lab-09-ufw.txt) · [`.png`](evidence/lab-09-ufw.png) |
+| `down` + `space` | — | Contenedor, red e imagen borrados; 20 GB libres | [`lab-10-limpieza.txt`](evidence/lab-10-limpieza.txt) · [`.png`](evidence/lab-10-limpieza.png) |
 
 La parte estática (opciones del drop-in, usuarios, permisos y reglas de `harden.sh`, `bash -n` de los scripts, que la clave de laboratorio no está en el repo) se comprueba en cada ejecución de la suite con `tests/test_owasp_hardening.py`.
 

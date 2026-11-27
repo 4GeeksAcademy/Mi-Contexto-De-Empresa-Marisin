@@ -1,0 +1,16 @@
+warning: No `requires-python` value found in the workspace. Defaulting to `>=3.12`.
+Downloading pip (1.9MiB)
+Downloading pygments (1.2MiB)
+ Downloaded pygments
+ Downloaded pip
+Installed 29 packages in 1.45s
+Found 7 known vulnerabilities in 3 packages
+Name        Version ID              Fix Versions
+----------- ------- --------------- ------------
+ecdsa       0.19.2  PYSEC-2026-1325
+ecdsa       0.19.2  PYSEC-2026-1325
+pyasn1      0.6.4   CVE-2026-119196 0.6.5
+pyasn1      0.6.4   CVE-2026-119194 0.6.5
+pyasn1      0.6.4   CVE-2026-119197 0.6.5
+pyasn1      0.6.4   CVE-2026-119195 0.6.5
+python-jose 3.5.0   PYSEC-2026-4298

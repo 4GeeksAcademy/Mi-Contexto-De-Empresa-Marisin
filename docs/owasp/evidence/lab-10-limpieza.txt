@@ -1,0 +1,16 @@
+
+=== lab.sh down · 2026-11-26 23:39:24 UTC ===
+contenedor trackflow-server borrado
+red trackflow-hardening-net borrada
+imagen trackflow-server-sim borrada
+La imagen base ubuntu:24.04 se conserva; si no la usas para nada más: docker image rm ubuntu:24.04
+
+=== lab.sh space · 2026-11-26 23:39:24 UTC ===
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          32G  9.8G   20G  33% /
+
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          6         4         4.284GB   1.726GB (40%)
+Containers      4         3         1.918GB   0B (0%)
+Local Volumes   3         3         172.2MB   0B (0%)
+Build Cache     40        0         54.39MB   54.39MB

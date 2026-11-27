@@ -1,0 +1,4 @@
+
+=== lab.sh ssh-test · 2026-11-26 23:31:42 UTC ===
+ENTRA     ssh -i /opt/lab-keys/id_ed25519 root@trackflow-server id → uid=0(root) gid=0(root) groups=0(root)
+DENEGADO  ssh -i /opt/lab-keys/id_ed25519 trackflow-ops@trackflow-server id → trackflow-ops@trackflow-server: Permission denied (publickey,password).

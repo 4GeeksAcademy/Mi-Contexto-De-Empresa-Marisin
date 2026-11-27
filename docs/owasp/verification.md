@@ -63,10 +63,10 @@ Detalle en [server-hardening.md](server-hardening.md#5-resultados-del-laboratori
 
 | Paso | Comando | Esperado | Obtenido | Evidencia |
 |------|---------|----------|----------|-----------|
-| 6.1a | `npm audit --omit=dev` en `uis/{backoffice,application,website,talent-pipeline-tracker}` | — | Críticas con corrección en Next.js (application, website, talent-pipeline-tracker); moderada en backoffice | `npm-audit-<app>.txt/.png` |
-| 6.1b | Next.js 16.4.6 + `npm audit fix` (decisión de Marisin) y de nuevo `npm audit --omit=dev` | 0 vulnerabilidades | **found 0 vulnerabilities** en las 4 apps | `npm-audit-<app>-despues.txt/.png` |
-| 6.1c | `uv run --with pip-audit pip-audit --skip-editable` | — | `ecdsa`, `pyasn1` (con corrección), `python-jose` | `pip-audit.txt/.png` |
-| 6.1d | `uv lock --upgrade-package pyasn1` y de nuevo `pip-audit` | solo avisos sin corrección | `ecdsa` y `python-jose` (riesgo aceptado R1) | `pip-audit-despues.txt/.png` |
+| 6.1a | `npm audit --omit=dev` en `uis/{backoffice,application,website,talent-pipeline-tracker}` | — | Críticas con corrección en Next.js (application, website, talent-pipeline-tracker); moderada en backoffice | `npm-audit-<app>.txt` (solo texto) |
+| 6.1b | Next.js 16.4.6 + `npm audit fix` (decisión de Marisin) y de nuevo `npm audit --omit=dev` | 0 vulnerabilidades | **found 0 vulnerabilities** en las 4 apps | `npm-audit-<app>-despues.txt` · `.png` |
+| 6.1c | `uv run --with pip-audit pip-audit --skip-editable` | — | `ecdsa`, `pyasn1` (con corrección), `python-jose` | [`pip-audit.txt`](evidence/pip-audit.txt) (solo texto) |
+| 6.1d | `uv lock --upgrade-package pyasn1` y de nuevo `pip-audit` | solo avisos sin corrección | `ecdsa` y `python-jose` (riesgo aceptado R1) | [`pip-audit-despues.txt`](evidence/pip-audit-despues.txt) · [`.png`](evidence/pip-audit-despues.png) |
 | 6.1e | `npm run typecheck` (application, backoffice), `npx tsc --noEmit` (website, talent-pipeline-tracker), `pytest -q` | limpio y verde | Limpio; 1251 passed | — |
 
 ## Verificación final (Fase 6.5)
@@ -91,13 +91,13 @@ Detalle en [server-hardening.md](server-hardening.md#5-resultados-del-laboratori
 
 | Paso | Comprobación | Esperado | Obtenido | Evidencia |
 |------|--------------|----------|----------|-----------|
-| F.1 | P1 · `GET /api/incidents` y `PATCH …/status` sin token (C1) | 401 | _pendiente_ | `owasp-probe-despues.png` |
-| F.2 | P2 · login con la contraseña por defecto del admin (C3) | 401 | _pendiente_ | |
-| F.3 | P3 · inventario sin token 401; `/users`, `/suppliers`, `/inventory/products`, `/rfp/tickets`, `/reporting/pipeline-runs/latest`, `/tasks/…` con token `user` (C4) | 401 / 403 | _pendiente_ | |
-| F.4 | P4 · `POST /agent/query` de stock con token `user` → trace (C2) | `status=forbidden` | _pendiente_ | |
-| F.5 | P5 · caso 1 del BRIEFING | `blocked`, sin datos | _pendiente_ | |
-| F.6 | P6 · cabeceras de seguridad en `GET /auth/me` (H2) | 5 cabeceras | _pendiente_ | |
-| F.7 | P7 · `X-Service-Key` falsa (C1) | 401 | _pendiente_ | |
-| F.8 | P8 · 6 logins fallidos (H1) | 401 ×5, el 6.º 429 | _pendiente_ | |
-| F.9 | Resumen de la sonda | **8/8 PASS** | _pendiente_ | `owasp-probe-despues.png` |
-| F.10 | `pytest -q` completo | todo verde | _pendiente_ | `pytest-final.png` |
+| F.1 | P1 · `GET /api/incidents` y `PATCH …/status` sin token (C1) | 401 | **PASS**: 401 y 401 (antes 200 y 404) | [`owasp-probe-despues.txt`](evidence/owasp-probe-despues.txt) · [`.png`](evidence/owasp-probe-despues.png) |
+| F.2 | P2 · login con la contraseña por defecto del admin (C3) | 401 | **PASS**: 401 (antes 200) | ídem |
+| F.3 | P3 · inventario sin token 401; `/users`, `/suppliers`, `/inventory/products`, `/rfp/tickets`, `/reporting/pipeline-runs/latest`, `/tasks/…` con token `user` (C4) | 401 / 403 | **PASS**: 401, 401 y 403 ×6 (antes 200 ×8) | ídem |
+| F.4 | P4 · `POST /agent/query` de stock con token `user` → trace (C2) | `status=forbidden` | **PASS**: `lookup_inventory status=forbidden` (antes `unavailable`: la tool se había llamado) | ídem |
+| F.5 | P5 · caso 1 del BRIEFING | `blocked`, sin datos | **PASS**: `status=blocked` (ya pasaba antes) | ídem |
+| F.6 | P6 · cabeceras de seguridad en `GET /auth/me` (H2) | 5 cabeceras | **PASS**: las 5 presentes con su valor (antes ausentes) | ídem |
+| F.7 | P7 · `X-Service-Key` falsa (C1) | 401 | **PASS**: 401 (antes 200) | ídem |
+| F.8 | P8 · 6 logins fallidos (H1) | 401 ×5, el 6.º 429 | **PASS**: `401 401 401 401 401 429` (antes 401 ×6) | ídem |
+| F.9 | Resumen de la sonda | **8/8 PASS** | **8/8 PASS** (2026-11-27 08:16 UTC; antes 1/8) | [`owasp-probe-despues.png`](evidence/owasp-probe-despues.png) |
+| F.10 | `pytest -q` completo | todo verde | **1251 passed** | [`pytest-final.txt`](evidence/pytest-final.txt) · [`.png`](evidence/pytest-final.png) |

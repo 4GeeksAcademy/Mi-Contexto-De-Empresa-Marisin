@@ -1,0 +1,26 @@
+
+=== lab.sh harden · 2026-11-26 23:32:19 UTC ===
+=== harden.sh · 2026-11-26 23:32:20 UTC · modo laboratorio ===
+[harden] creada la cuenta de servicio trackflow (nologin, sin home)
+usermod: no changes
+[harden] creado el usuario de operaciones trackflow-ops
+usermod: no changes
+[harden] trackflow-ops: grupo sudo, sudo con contraseña (fíjala con 'passwd trackflow-ops' desde la consola)
+[harden] trackflow-ops: 1 clave(s) autorizada(s)
+[harden] SSH: drop-in instalado, validado con sshd -t y sshd recargado
+[harden] permisos: app 750/640, logs 2750, config 750 y .env 640; umask 027 en /etc/systemd/system/trackflow-api.service.d/10-hardening.conf
+[harden] ufw (laboratorio): IPT_SYSCTL=/etc/ufw/sysctl-lab.conf
+Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)
+Default outgoing policy changed to 'allow'
+(be sure to update your rules accordingly)
+Rules updated
+Rules updated (v6)
+Rules updated
+Rules updated (v6)
+Rules updated
+Rules updated (v6)
+Firewall is active and enabled on system startup
+[harden] firewall: deny incoming; abiertos solo 22 (limit), 80 y 443
+[harden] root: claves autorizadas eliminadas
+[harden] hecho. Comprueba con audit.sh (y en un VPS, entra como trackflow-ops en otra sesión antes de cerrar esta).
