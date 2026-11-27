@@ -8,6 +8,9 @@
   como un LLM caído, salvo que el test las sustituya. Así la suite es determinista.
 * Lo mismo para los agentes del flujo de RFPs (`data/pipelines/rfp_intake/`): sin
   un doble explícito, todos caen a sus reglas deterministas.
+* Los límites de intentos de autenticación (`services/api/rate_limit.py`) viven en
+  memoria del proceso: se vacían antes de cada test para que un test no herede los
+  fallos de login de otro.
 * La Parte 3 de RFPs usa en los tests un checkpointer en memoria nuevo en cada test:
   ninguna prueba escribe `data/checkpoints/rfp_approval.sqlite` (las que prueban la
   persistencia en SQLite usan un fichero temporal propio).
@@ -20,6 +23,7 @@ from services.agent.harness import generation as agent_generation
 from services.agent.memory import store as memory_store
 from services.agent.memory.backend import InMemoryBackend
 from data.pipelines.rfp_intake import llm as rfp_llm
+from services.api import rate_limit
 
 
 @pytest.fixture(autouse=True)
@@ -36,6 +40,13 @@ def in_memory_guardrail_log():
     guard_events.set_log(log)
     yield log
     guard_events.set_log(None)
+
+
+@pytest.fixture(autouse=True)
+def fresh_auth_rate_limits():
+    rate_limit.reset_limiters()
+    yield
+    rate_limit.reset_limiters()
 
 
 @pytest.fixture(autouse=True)

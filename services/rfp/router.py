@@ -41,13 +41,13 @@ from starlette.concurrency import run_in_threadpool
 try:
     # API arrancada desde la raíz del repo: `uvicorn services.api.main:app`.
     from services.api.database import engine
-    from services.api.security import get_current_user
+    from services.api.security import get_current_user, require_staff
 except ModuleNotFoundError as exc:
     if exc.name not in {"services", "services.api"}:
         raise
     # Contenedor de Docker: /app es `services/`, así que el paquete es `api`.
     from api.database import engine
-    from api.security import get_current_user
+    from api.security import get_current_user, require_staff
 
 from data.pipelines.rfp_intake import config as rfp_config
 from data.pipelines.rfp_intake import intake, runner
@@ -71,7 +71,8 @@ from .schemas import (
     RfpTraceList,
 )
 
-router = APIRouter(prefix="/rfp", tags=["rfp"])
+# Solo personal de TrackFlow (D8): un cliente (`user`) recibe 403 en todo el router.
+router = APIRouter(prefix="/rfp", tags=["rfp"], dependencies=[Depends(require_staff)])
 logger = logging.getLogger("api.rfp")
 
 ACCEPTED_CONTENT_TYPES = {"application/pdf", "application/octet-stream"}

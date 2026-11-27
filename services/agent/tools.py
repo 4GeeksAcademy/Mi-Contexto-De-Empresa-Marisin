@@ -42,7 +42,9 @@ from . import mcp_client
 TOOL_TIMEOUT_SECONDS = mcp_client.MCP_CALL_TIMEOUT_SECONDS  # 4 s
 MAX_RESULTS = 5  # tickets o productos que se muestran como máximo en la respuesta
 
-ToolStatus = Literal["ok", "not_found", "unavailable"]
+# `forbidden`: la ACL del harness (`harness/tool_policy.py`) no deja usar la tool a ese rol;
+# no se llama al servidor MCP.
+ToolStatus = Literal["ok", "not_found", "unavailable", "forbidden"]
 
 
 # --------------------------------------------------------------------------- #

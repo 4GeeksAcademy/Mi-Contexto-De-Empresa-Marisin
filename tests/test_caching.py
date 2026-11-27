@@ -16,7 +16,7 @@ from services.api.main import app
 from services.api.models import SKU, StockEntry, StockExit
 from services.api.routes import incidents as incident_routes
 from services.api.routes import inventory as inventory_routes
-from services.api.security import get_current_user
+from services.api.security import get_current_user, require_staff_or_service
 from services.api.services import incidents as incident_service
 
 
@@ -29,12 +29,17 @@ def isolate_cache(monkeypatch):
     api_cache.clear()
 
 
+STAFF_USER = {"id": 1, "uuid": "cache-test", "role": "manager"}
+
+
 @pytest.fixture
 def incident_client(monkeypatch):
     database = TinyDB(storage=MemoryStorage)
     monkeypatch.setattr(
         incident_service, "incidents_table", database.table("incidents")
     )
+    # La API de incidencias es solo para staff o el servicio MCP (OWASP D9).
+    monkeypatch.setitem(app.dependency_overrides, require_staff_or_service, lambda: STAFF_USER)
     # Routers delegate storage to the service; TestClient must not run startup.
     client = TestClient(app)
     yield client
@@ -80,8 +85,9 @@ def inventory_client(monkeypatch):
     monkeypatch.setitem(
         app.dependency_overrides,
         get_current_user,
-        lambda: {"id": 1, "uuid": "cache-test"},
+        lambda: {"id": 1, "uuid": "cache-test", "role": "manager"},
     )
+    monkeypatch.setitem(app.dependency_overrides, require_staff_or_service, lambda: STAFF_USER)
     client = TestClient(app)
     yield client, engine, product_id
     client.close()

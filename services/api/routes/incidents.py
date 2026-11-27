@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, Depends, Query, Response
 
 from ..cache import (
     CACHE_ENABLED,
@@ -17,6 +17,7 @@ from ..models import (
     IncidentStatusUpdate,
     IncidentSummary,
 )
+from ..security import require_staff_or_service
 from ..services.incidents import (
     create_incident,
     get_incident,
@@ -25,7 +26,13 @@ from ..services.incidents import (
     update_incident_status,
 )
 
-router = APIRouter(prefix="/api/incidents", tags=["Incidents"])
+# Gestor interno de incidencias: personal de TrackFlow (JWT de staff) o el servidor MCP
+# (X-Service-Key). Un cliente (`user`) recibe 403 (D9).
+router = APIRouter(
+    prefix="/api/incidents",
+    tags=["Incidents"],
+    dependencies=[Depends(require_staff_or_service)],
+)
 
 
 @router.post("", response_model=Incident, status_code=201)

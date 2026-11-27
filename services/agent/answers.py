@@ -26,6 +26,10 @@ ORIGIN_LABELS = {"customer": "cliente", "branch": "sucursal", "internal": "inter
 
 INCIDENTS_SOURCE = "Fuente: gestor de incidentes de TrackFlow (consulta en tiempo real)"
 INVENTORY_SOURCE = "Fuente: gestor de inventario de TrackFlow (consulta en tiempo real)"
+FORBIDDEN_MESSAGE = (
+    "Esa información es interna de TrackFlow y no está disponible desde tu cuenta. "
+    "Si necesitas ayuda con un pedido tuyo, dime su número."
+)
 
 
 def _date(value: str) -> str:
@@ -87,6 +91,9 @@ def inventory_answer(result: dict[str, Any]) -> str:
 
 def fallback_message(result: dict[str, Any]) -> str:
     """Respuesta honesta cuando la tool no pudo dar el dato. Nunca afirma un estado ni un stock."""
+    if result["status"] == "forbidden":
+        # ACL de tools (D10): sin nombrar marcas, SKU ni cifras.
+        return FORBIDDEN_MESSAGE
     query = result["query"]
     if result["tool"] == "incidents":
         subject = f"del ticket {query['ticket_id']}" if "ticket_id" in query else "de esos tickets"

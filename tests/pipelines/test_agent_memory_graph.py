@@ -161,8 +161,9 @@ def test_rejected_cycle_leaves_memory_unchanged(ask):
 # Ambigüedad y cambio de tema: descarte por defecto
 # --------------------------------------------------------------------------- #
 def test_topic_change_discards_the_proposal_and_answers_the_new_question(ask):
-    first, _ = ask(SEUR_MESSAGE)
-    second, trace = ask("¿En qué estado está el ticket 3?", first.conversation_id)
+    staff = {**AGENT, "role": "manager"}  # la tool de incidencias es solo para el personal (D10)
+    first, _ = ask(SEUR_MESSAGE, user=staff)
+    second, trace = ask("¿En qué estado está el ticket 3?", first.conversation_id, user=staff)
 
     assert trace["path"] == ["receive_question", "resolve_memory_decision", "route_question", "lookup_ticket", "compose_answer"]
     assert second.memory["decision"]["outcome"] == "discarded_topic_change"

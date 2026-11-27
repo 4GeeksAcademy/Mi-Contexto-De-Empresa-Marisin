@@ -1,0 +1,15 @@
+
+=== lab.sh scan · 2026-11-26 23:31:15 UTC ===
+=== scan_ports.sh · 2026-11-26 23:31:15 UTC · destino trackflow-server ===
+22     SSH          ABIERTO
+80     HTTP         ABIERTO
+443    HTTPS        ABIERTO
+3000   website      ABIERTO
+3001   backoffice   ABIERTO
+3002   application  ABIERTO
+5555   Flower       ABIERTO
+6333   Qdrant       ABIERTO
+6379   Redis        ABIERTO
+8000   API          ABIERTO
+8001   MCP          ABIERTO
+Abiertos: 11 de 11 (22 80 443 3000 3001 3002 5555 6333 6379 8000 8001)

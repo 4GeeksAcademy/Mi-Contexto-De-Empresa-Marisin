@@ -1,0 +1,38 @@
+
+=== lab.sh audit · 2026-11-26 23:29:49 UTC ===
+=== audit.sh · 2026-11-26 23:29:49 UTC · trackflow-server ===
+--- SSH (configuración efectiva: sshd -T) ---
+FAIL  PermitRootLogin                                      obtenido=yes · esperado=no
+FAIL  PasswordAuthentication                               obtenido=yes · esperado=no
+PASS  KbdInteractiveAuthentication                         no
+FAIL  AuthenticationMethods                                obtenido=any · esperado=publickey
+FAIL  AllowUsers                                           obtenido=(vacío) · esperado=trackflow-ops
+FAIL  MaxAuthTries                                         obtenido=6 · esperado=3
+FAIL  X11Forwarding                                        obtenido=yes · esperado=no
+FAIL  AllowTcpForwarding                                   obtenido=yes · esperado=no
+FAIL  root tiene claves SSH autorizadas                    obtenido=si · esperado=no
+--- Usuarios ---
+PASS  solo root tiene uid 0                                root
+FAIL  trackflow-ops existe con shell bash                  obtenido=(vacío) · esperado=/bin/bash
+FAIL  trackflow-ops en el grupo sudo                       obtenido=no · esperado=si
+PASS  trackflow-ops fuera del grupo trackflow              no
+PASS  sudo sin contraseña (NOPASSWD) para ops/%sudo       no
+FAIL  trackflow-ops tiene clave SSH autorizada             obtenido=no · esperado=si
+FAIL  trackflow existe con shell nologin                   obtenido=(vacío) · esperado=/usr/sbin/nologin
+PASS  trackflow fuera del grupo sudo                       no
+--- Permisos de /srv/trackflow ---
+FAIL  /srv/trackflow                                       obtenido=777 root:root · esperado=755 root:root
+FAIL  /srv/trackflow/app (código)                         obtenido=777 root:root · esperado=750 trackflow-ops:trackflow
+FAIL  /srv/trackflow/logs                                  obtenido=777 root:root · esperado=2750 trackflow:trackflow-ops
+FAIL  /srv/trackflow/config (configuración sensible)      obtenido=777 root:root · esperado=750 root:trackflow
+FAIL  /srv/trackflow/config/.env                           obtenido=777 root:root · esperado=640 root:trackflow
+FAIL  ficheros de app/ con permisos distintos de 640       obtenido=1 · esperado=0
+FAIL  rutas escribibles por cualquiera en /srv/trackflow   obtenido=7 · esperado=0
+--- Firewall (ufw) ---
+FAIL  ufw activo                                           obtenido=Status: inactive · esperado=Status: active
+FAIL  política por defecto de entrada                     obtenido=(vacío) · esperado=deny (incoming)
+FAIL  política por defecto de salida                      obtenido=(vacío) · esperado=allow (outgoing)
+FAIL  reglas de entrada (solo 22 limit, 80, 443)           obtenido=(vacío) · esperado=22/tcp=LIMIT 80/tcp=ALLOW 443/tcp=ALLOW
+--- Resultado ---
+PASS=5 FAIL=23
+(hay controles en FAIL)

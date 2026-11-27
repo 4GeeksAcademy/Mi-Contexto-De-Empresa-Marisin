@@ -1,0 +1,14 @@
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp                     LIMIT IN    Anywhere                   # SSH solo ops (anti fuerza bruta)
+80/tcp                     ALLOW IN    Anywhere                   # HTTP solo redireccion a HTTPS
+443/tcp                    ALLOW IN    Anywhere                   # HTTPS API y frontend (proxy inverso)
+22/tcp (v6)                LIMIT IN    Anywhere (v6)              # SSH solo ops (anti fuerza bruta)
+80/tcp (v6)                ALLOW IN    Anywhere (v6)              # HTTP solo redireccion a HTTPS
+443/tcp (v6)               ALLOW IN    Anywhere (v6)              # HTTPS API y frontend (proxy inverso)
+

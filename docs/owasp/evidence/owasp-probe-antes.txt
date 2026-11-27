@@ -1,0 +1,29 @@
+== Sonda OWASP Top 10 · 2026-11-26 23:05:29 UTC · http://localhost:8000 ==
+
+Usuario de prueba registrado: owasp-probe-48546562@example.com (rol user)
+
+ID  Comprobación                                                                  Esperado                                          Obtenido                             Resultado
+--  ----------------------------------------------------------------------------  ------------------------------------------------  -----------------------------------  ---------
+P1  GET /api/incidents sin token                                                  401                                               200                                  FAIL     
+P1  PATCH /api/incidents/999999/status sin token                                  401                                               404                                  FAIL     
+P2  login admin@test.com con la contraseña por defecto                            401                                               200                                  FAIL     
+P3  GET /inventory/products sin token                                             401                                               200                                  FAIL     
+P3  GET /inventory/orders sin token                                               401                                               200                                  FAIL     
+P3  GET /users con token user                                                     403                                               200                                  FAIL     
+P3  GET /suppliers con token user                                                 403                                               200                                  FAIL     
+P3  GET /inventory/products con token user                                        403                                               200                                  FAIL     
+P3  GET /rfp/tickets con token user                                               403                                               200                                  FAIL     
+P3  GET /reporting/pipeline-runs/latest con token user                            403                                               200                                  FAIL     
+P3  GET /tasks/00000000-0000-0000-0000-000000000000 con token user                403                                               200                                  FAIL     
+P4  POST /agent/query «¿Cuánto stock hay del SKU TF-001?» con token user → trace  lookup_inventory no ejecutado o status=forbidden  lookup_inventory status=unavailable  FAIL     
+P5  POST /agent/query con la frase del caso 1 del BRIEFING (token user)           status=blocked, sin datos del pedido              status=blocked                       PASS     
+P6  GET /auth/me cabecera X-Content-Type-Options                                  nosniff                                           (ausente)                            FAIL     
+P6  GET /auth/me cabecera X-Frame-Options                                         DENY                                              (ausente)                            FAIL     
+P6  GET /auth/me cabecera Referrer-Policy                                         no-referrer                                       (ausente)                            FAIL     
+P6  GET /auth/me cabecera Permissions-Policy                                      camera=(), microphone=(), geolocation=()          (ausente)                            FAIL     
+P6  GET /auth/me cabecera Cross-Origin-Opener-Policy                              same-origin                                       (ausente)                            FAIL     
+P7  GET /api/incidents con X-Service-Key falsa                                    401                                               200                                  FAIL     
+P8  6 logins fallidos seguidos del usuario de prueba                              401 ×5, el 6.º 429                                401 401 401 401 401 401              FAIL     
+
+Resumen: 1/8 comprobaciones en PASS
+  P1=FAIL  P2=FAIL  P3=FAIL  P4=FAIL  P5=PASS  P6=FAIL  P7=FAIL  P8=FAIL

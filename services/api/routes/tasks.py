@@ -21,7 +21,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from ..security import get_current_user
+from ..security import get_current_user, require_staff
 
 try:
     # API arrancada desde la raíz del repo: `uvicorn services.api.main:app`.
@@ -33,7 +33,8 @@ except ModuleNotFoundError as exc:
     import celery_app as task_queue
 
 
-router = APIRouter(prefix="/tasks", tags=["tasks"])
+# Solo personal de TrackFlow (D8): un cliente (`user`) recibe 403 en todo el router.
+router = APIRouter(prefix="/tasks", tags=["tasks"], dependencies=[Depends(require_staff)])
 
 TaskStatusValue = Literal["pending", "started", "success", "failure"]
 

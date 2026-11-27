@@ -1,0 +1,10 @@
+
+=== lab.sh space · 2026-11-26 23:25:23 UTC ===
+Filesystem      Size  Used Avail Use% Mounted on
+overlay          32G  9.7G   21G  33% /
+
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          6         4         4.284GB   1.726GB (40%)
+Containers      4         3         1.918GB   0B (0%)
+Local Volumes   3         3         172.2MB   0B (0%)
+Build Cache     32        0         387.3kB   387.3kB

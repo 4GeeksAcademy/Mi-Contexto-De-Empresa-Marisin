@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from datetime import datetime
+import logging
 import os
 from pathlib import Path
 from threading import RLock
@@ -54,19 +55,45 @@ inventory_orders_table = db.table("inventory_orders")
 inventory_db_lock = RLock()
 
 
-def seed_database():
-    """Inserta datos iniciales de prueba si la tabla está vacía."""
+SEED_ADMIN_EMAIL_ENV = "SEED_ADMIN_EMAIL"
+SEED_ADMIN_PASSWORD_ENV = "SEED_ADMIN_PASSWORD"
+SEED_ADMIN_PASSWORD_MIN_LENGTH = 12
+
+security_logger = logging.getLogger("api.security")
+
+
+def seed_admin() -> None:
+    """Crea el admin inicial SOLO si el entorno lo pide (OWASP C3: sin credenciales por defecto).
+
+    Necesita `SEED_ADMIN_EMAIL` y `SEED_ADMIN_PASSWORD` (≥ 12 caracteres). Si faltan, no
+    crea nada. Nunca registra la contraseña. Si el usuario ya existe, no lo toca.
+    """
     from .models import UserCreate, UserRole
     from .services.users import create_user, get_user_by_email
 
+    email = os.getenv(SEED_ADMIN_EMAIL_ENV, "").strip()
+    password = os.getenv(SEED_ADMIN_PASSWORD_ENV, "")
+    if not email or not password:
+        security_logger.info("Sin SEED_ADMIN_*: no se crea ningún admin por defecto")
+        return
+    if len(password) < SEED_ADMIN_PASSWORD_MIN_LENGTH:
+        security_logger.warning(
+            "%s tiene menos de %d caracteres: no se crea ningún admin por defecto",
+            SEED_ADMIN_PASSWORD_ENV,
+            SEED_ADMIN_PASSWORD_MIN_LENGTH,
+        )
+        return
+
     with auth_db_lock:
-        if get_user_by_email("admin@test.com") is None:
-            user = create_user(UserCreate(
-                email="admin@test.com",
-                password="password123",
-                name="Development Administrator",
-            ))
+        if get_user_by_email(email) is None:
+            user = create_user(UserCreate(email=email, password=password, name="TrackFlow Administrator"))
             users_table.update({"role": UserRole.admin.value}, doc_ids=[user["id"]])
+            security_logger.info("Admin inicial creado desde SEED_ADMIN_EMAIL")
+
+
+def seed_database():
+    """Inserta datos iniciales: el admin solo si lo pide el entorno; proveedores y productos de ejemplo."""
+    seed_admin()
 
     if len(suppliers_table.all()) == 0:
         initial_suppliers = [

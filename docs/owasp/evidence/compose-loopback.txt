@@ -1,0 +1,14 @@
+        host_ip: 127.0.0.1
+        published: "8000"
+        host_ip: 127.0.0.1
+        published: "5555"
+        host_ip: 127.0.0.1
+        published: "6333"
+        host_ip: 127.0.0.1
+        published: "6379"
+        host_ip: 127.0.0.1
+        published: "3000"
+        host_ip: 127.0.0.1
+        published: "3001"
+        host_ip: 127.0.0.1
+        published: "3002"

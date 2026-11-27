@@ -22,14 +22,14 @@ try:
     # API arrancada desde la raíz del repo: `uvicorn services.api.main:app`.
     from services import celery_app as task_queue
     from services.api import database
-    from services.api.security import get_current_user
+    from services.api.security import get_current_user, require_staff
 except ModuleNotFoundError as exc:
     if exc.name not in {"services", "services.api", "services.celery_app"}:
         raise
     # Contenedor de Docker: /app es `services/`, así que el paquete es `api`.
     import celery_app as task_queue
     from api import database
-    from api.security import get_current_user
+    from api.security import get_current_user, require_staff
 
 from data.pipelines import queries
 
@@ -41,7 +41,8 @@ from .schemas import (
 )
 
 
-router = APIRouter(prefix="/reporting", tags=["reporting"])
+# Solo personal de TrackFlow (D8): un cliente (`user`) recibe 403 en todo el router.
+router = APIRouter(prefix="/reporting", tags=["reporting"], dependencies=[Depends(require_staff)])
 logger = logging.getLogger("api.reporting")
 
 TRIGGER_ROLES = {"admin", "manager"}

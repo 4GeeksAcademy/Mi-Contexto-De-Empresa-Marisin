@@ -6,16 +6,19 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import math
+import os
 from pathlib import Path
 import re
+import sys
 from typing import Any
 from urllib.parse import quote
 
 import httpx
 
 
-DEMO_EMAIL = "admin@test.com"
-DEMO_PASSWORD = "password123"
+# Credenciales del benchmark: del entorno, nunca en el código (OWASP C3).
+BENCH_EMAIL_ENV = "BENCH_EMAIL"
+BENCH_PASSWORD_ENV = "BENCH_PASSWORD"
 CACHE_STATES = ("HIT", "MISS", "BYPASS", "ausente")
 
 
@@ -129,10 +132,22 @@ def format_endpoint_row(
     )
 
 
+def bench_credentials() -> tuple[str, str]:
+    email = os.environ.get(BENCH_EMAIL_ENV, "").strip()
+    password = os.environ.get(BENCH_PASSWORD_ENV, "")
+    if not email or not password:
+        sys.exit(
+            f"Faltan {BENCH_EMAIL_ENV} y/o {BENCH_PASSWORD_ENV} en el entorno: "
+            "exporta las credenciales de una cuenta de staff antes de lanzar el benchmark."
+        )
+    return email, password
+
+
 def login(client: httpx.Client) -> dict[str, str]:
+    email, password = bench_credentials()
     response = client.post(
         "/auth/login",
-        json={"email": DEMO_EMAIL, "password": DEMO_PASSWORD},
+        json={"email": email, "password": password},
     )
     response.raise_for_status()
     token = response.json().get("access_token")

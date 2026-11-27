@@ -42,7 +42,7 @@ def calls(monkeypatch):
 @pytest.fixture
 def client(store, tmp_path, monkeypatch):
     monkeypatch.setattr(rfp_config, "RAW_DIR", tmp_path / "raw" / "rfp")
-    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "user"}
+    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "manager"}
     app.dependency_overrides[rfp_router.get_rfp_store] = lambda: store
     yield TestClient(app)
     app.dependency_overrides.pop(get_current_user, None)
@@ -126,7 +126,7 @@ def test_requires_an_authenticated_user():
 
 def test_without_database_the_endpoints_answer_503(monkeypatch):
     monkeypatch.setattr(rfp_router, "engine", None)
-    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "user"}
+    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "manager"}
     try:
         response = TestClient(app).get("/rfp/tickets")
     finally:

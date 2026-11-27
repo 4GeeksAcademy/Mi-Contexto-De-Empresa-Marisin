@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from ..models import UserCreate, UserListItem, UserPublic, UserRole, UserUpdate
 from ..schemas import MessageResponse
-from ..security import get_current_user
+from ..security import STAFF_ONLY_DETAIL, STAFF_ROLES, get_current_user, require_staff
 from ..services.users import (
     create_user,
     delete_user,
@@ -25,12 +25,15 @@ def register_user(user_in: UserCreate):
 
 
 @router.get("", response_model=list[UserListItem])
-def get_users(_: Annotated[dict, Depends(get_current_user)]):
+def get_users(_: Annotated[dict, Depends(require_staff)]):  # emails y roles de todos: solo personal (D8)
     return [UserListItem.model_validate(user) for user in list_users()]
 
 
 @router.get("/{user_id}", response_model=UserPublic)
-def get_user(user_id: int, _: Annotated[dict, Depends(get_current_user)]):
+def get_user(user_id: int, current_user: Annotated[dict, Depends(get_current_user)]):
+    # El propio usuario o el personal de TrackFlow (D8).
+    if current_user["id"] != user_id and current_user.get("role") not in STAFF_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=STAFF_ONLY_DETAIL)
     user = get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

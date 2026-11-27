@@ -1,0 +1,37 @@
+
+=== lab.sh audit · 2026-11-26 23:34:16 UTC ===
+=== audit.sh · 2026-11-26 23:34:16 UTC · trackflow-server ===
+--- SSH (configuración efectiva: sshd -T) ---
+PASS  PermitRootLogin                                      no
+PASS  PasswordAuthentication                               no
+PASS  KbdInteractiveAuthentication                         no
+PASS  AuthenticationMethods                                publickey
+PASS  AllowUsers                                           trackflow-ops
+PASS  MaxAuthTries                                         3
+PASS  X11Forwarding                                        no
+PASS  AllowTcpForwarding                                   no
+PASS  root tiene claves SSH autorizadas                    no
+--- Usuarios ---
+PASS  solo root tiene uid 0                                root
+PASS  trackflow-ops existe con shell bash                  /bin/bash
+PASS  trackflow-ops en el grupo sudo                       si
+PASS  trackflow-ops fuera del grupo trackflow              no
+PASS  sudo sin contraseña (NOPASSWD) para ops/%sudo       no
+PASS  trackflow-ops tiene clave SSH autorizada             si
+PASS  trackflow existe con shell nologin                   /usr/sbin/nologin
+PASS  trackflow fuera del grupo sudo                       no
+--- Permisos de /srv/trackflow ---
+PASS  /srv/trackflow                                       755 root:root
+PASS  /srv/trackflow/app (código)                         750 trackflow-ops:trackflow
+PASS  /srv/trackflow/logs                                  2750 trackflow:trackflow-ops
+PASS  /srv/trackflow/config (configuración sensible)      750 root:trackflow
+PASS  /srv/trackflow/config/.env                           640 root:trackflow
+PASS  ficheros de app/ con permisos distintos de 640       0
+PASS  rutas escribibles por cualquiera en /srv/trackflow   0
+--- Firewall (ufw) ---
+PASS  ufw activo                                           Status: active
+PASS  política por defecto de entrada                     deny (incoming)
+PASS  política por defecto de salida                      allow (outgoing)
+PASS  reglas de entrada (solo 22 limit, 80, 443)           22/tcp=LIMIT 80/tcp=ALLOW 443/tcp=ALLOW
+--- Resultado ---
+PASS=28 FAIL=0

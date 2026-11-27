@@ -1,0 +1,13 @@
+/srv/trackflow:
+total 40
+drwxr-xr-x 1 root          root          4096 Nov 26 23:26 .
+drwxr-xr-x 1 root          root          4096 Nov 26 23:26 ..
+drwxr-x--- 1 trackflow-ops trackflow     4096 Nov 26 23:26 app
+drwxr-x--- 1 root          trackflow     4096 Nov 26 23:26 config
+drwxr-s--- 1 trackflow     trackflow-ops 4096 Nov 26 23:26 logs
+
+/srv/trackflow/config:
+total 20
+drwxr-x--- 1 root trackflow 4096 Nov 26 23:26 .
+drwxr-xr-x 1 root root      4096 Nov 26 23:26 ..
+-rw-r----- 1 root trackflow   48 Nov 26 23:26 .env

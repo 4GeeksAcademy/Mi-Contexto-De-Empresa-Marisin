@@ -4,9 +4,10 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from ..database import auth_db_lock, password_reset_tokens_table, users_table
+from .. import rate_limit
 from ..email import send_password_reset_email
 from ..schemas import (
     ChangePasswordRequest,
@@ -30,21 +31,47 @@ from ..services.users import get_user_by_email
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 logger = logging.getLogger(__name__)
+# Eventos de seguridad (D14): email resumido e IP; nunca el email en claro ni la contraseña.
+security_logger = logging.getLogger("api.security")
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _too_many_attempts(retry_after: int) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail=rate_limit.TOO_MANY_ATTEMPTS_DETAIL,
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
 @router.post("/login", response_model=LoginResponse)
-def login(credentials: LoginRequest):
+def login(credentials: LoginRequest, request: Request):
+    ip = rate_limit.client_ip(request)
+    email = rate_limit.normalize_email(str(credentials.email))
+    pair = (ip, email)
+    retry_after = max(
+        rate_limit.login_pair_limiter.retry_after(pair) or 0,
+        rate_limit.login_ip_limiter.retry_after(ip) or 0,
+    )
+    if retry_after:
+        security_logger.warning("login_rate_limited email_hash=%s ip=%s retry_after=%s",
+                                rate_limit.email_hash(email), ip, retry_after)
+        raise _too_many_attempts(retry_after)
+
     user = get_user_by_email(str(credentials.email))
     if not user or not verify_user_password(credentials.password, user):
+        rate_limit.login_pair_limiter.hit(pair)
+        rate_limit.login_ip_limiter.hit(ip)
+        security_logger.warning("login_failed email_hash=%s ip=%s", rate_limit.email_hash(email), ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    rate_limit.login_pair_limiter.reset(pair)
     if not user.get("is_active", True):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
@@ -65,8 +92,17 @@ def read_me(current_user: Annotated[dict, Depends(get_current_user)]):
     response_model=MessageResponse,
     status_code=status.HTTP_200_OK,
 )
-def forgot_password(payload: ForgotPasswordRequest):
+def forgot_password(payload: ForgotPasswordRequest, request: Request):
     email = payload.email.strip().lower()
+    ip = rate_limit.client_ip(request)
+    pair = (ip, email)
+    retry_after = rate_limit.forgot_password_limiter.retry_after(pair)
+    if retry_after:
+        security_logger.warning("password_reset_rate_limited email_hash=%s ip=%s retry_after=%s",
+                                rate_limit.email_hash(email), ip, retry_after)
+        raise _too_many_attempts(retry_after)
+    rate_limit.forgot_password_limiter.hit(pair)
+    security_logger.info("password_reset_requested email_hash=%s ip=%s", rate_limit.email_hash(email), ip)
     user = get_user_by_email(email)
     if user:
         raw_token = secrets.token_urlsafe(32)

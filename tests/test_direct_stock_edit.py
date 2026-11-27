@@ -8,7 +8,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from services.api.database import get_db
 from services.api.main import app
 from services.api.models import SKU, StockEntry, StockExit
-from services.api.security import get_current_user
+from services.api.security import get_current_user, require_staff_or_service
 
 
 @pytest.fixture
@@ -55,7 +55,12 @@ def _authenticate(monkeypatch):
     monkeypatch.setitem(
         app.dependency_overrides,
         get_current_user,
-        lambda: {"id": 1, "uuid": "edit-test"},
+        lambda: {"id": 1, "uuid": "edit-test", "role": "manager"},
+    )
+    monkeypatch.setitem(
+        app.dependency_overrides,
+        require_staff_or_service,
+        lambda: {"id": 1, "uuid": "edit-test", "role": "manager"},
     )
 
 
