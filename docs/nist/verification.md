@@ -50,6 +50,8 @@ uv run pytest -q tests/test_nist_secrets.py tests/test_nist_rate_limit.py tests/
 2. Aparece el diálogo «Despacho de alto valor: 500 unidades (umbral 500). Requiere confirmación humana explícita…».
 3. Pulsa **Cancelar** → «Despacho de alto valor cancelado: no se ha registrado ninguna salida.» (El camino de confirmar está cubierto por `test_high_value_dispatch_with_human_confirmation_is_registered_and_audited`.)
 
+**Resultado (2026-11-27): PASS.** `LOAD-TOY-0072` (`?sku_id=75`), Los Angeles, 755 unidades disponibles, salida de 500: la API responde 409 y el backoffice muestra el diálogo «Despacho de alto valor: 500 unidades (umbral 500). Requiere confirmación humana explícita antes de registrarse. ¿Confirmas que quieres registrar este despacho?» ([`nist-dispatch-confirm.png`](evidence/nist-dispatch-confirm.png)). Al cancelar: «Despacho de alto valor cancelado: no se ha registrado ninguna salida.» y el stock sigue en 755 ([`nist-dispatch-cancelled.png`](evidence/nist-dispatch-cancelled.png)).
+
 **Resultado de los tests (2026-11-27):** 5 ficheros NIST → **78 passed** ([`pytest-nist.txt`](evidence/pytest-nist.txt), [`nist-pytest-tests.png`](evidence/nist-pytest-tests.png)); suite completa → **1329 passed** en 83,6 s, 0 fallos (1251 de la auditoría OWASP + 78 nuevos; los 55 evals grabados y el contrato de rutas intactos; los 6 *warnings* son avisos de deprecación previos de FastAPI y Pydantic) ([`pytest-suite.txt`](evidence/pytest-suite.txt), [`nist-pytest-suite.png`](evidence/nist-pytest-suite.png)); escáner de secretos → **PASS, 0 secretos** tras sacar de git `uis/talent-pipeline-tracker/.env.local` ([`secrets-scan.txt`](evidence/secrets-scan.txt), [`nist-secrets-scan.png`](evidence/nist-secrets-scan.png)).
 
 ## 4. Evidencias
@@ -62,3 +64,4 @@ uv run pytest -q tests/test_nist_secrets.py tests/test_nist_rate_limit.py tests/
 | `evidence/nist-probe.png` · `nist-probe.json` | Sonda N1–N7 |
 | `evidence/nist-agent-audit-log.png` | Log de uvicorn con `agent_decision`, el evento `rate_limit` y `high_value_dispatch_blocked` |
 | `evidence/nist-dispatch-confirm.png` | Diálogo de confirmación del despacho de alto valor en el backoffice |
+| `evidence/nist-dispatch-cancelled.png` | Mensaje tras cancelar: no se registra ninguna salida y el stock no cambia |
