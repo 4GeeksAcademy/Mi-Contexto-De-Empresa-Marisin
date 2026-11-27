@@ -275,3 +275,88 @@ def test_lab_key_is_never_stored_in_the_repo():
     for path in HARDENING.rglob("*"):
         if path.is_file():
             assert "PRIVATE KEY" not in path.read_text(encoding="utf-8", errors="ignore"), path
+
+
+# --------------------------------------------------------------------------- #
+# Contenedores de la pila (Fase 5: D16, D17)
+# --------------------------------------------------------------------------- #
+COMPOSE = ROOT / "docker-compose.yml"
+API_DOCKERFILE = ROOT / "services" / "Dockerfile"
+UI_DOCKERFILE = ROOT / "uis" / "Dockerfile"
+LOOPBACK_PORT = re.compile(r"^\$\{TRACKFLOW_BIND_ADDR:-127\.0\.0\.1\}:\d+:\d+$")
+
+
+def _compose() -> dict:
+    import yaml  # ya instalado (dependencia transitiva); se lee el fichero en crudo, sin el .env
+
+    return yaml.safe_load(COMPOSE.read_text(encoding="utf-8"))
+
+
+def _published_ports() -> list[tuple[str, str]]:
+    return [(name, str(port)) for name, service in _compose()["services"].items()
+            for port in service.get("ports", [])]
+
+
+def test_compose_publishes_every_port_on_loopback_by_default():
+    ports = _published_ports()
+    assert {name for name, _ in ports} == {"ui", "api", "qdrant", "redis", "flower"}
+    for name, port in ports:
+        assert LOOPBACK_PORT.match(port), f"{name}: {port}"
+
+
+def test_compose_publishes_only_the_known_stack_ports():
+    published = {int(port.rsplit(":", 2)[-2]) for _, port in _published_ports()}
+    assert published == {3000, 3001, 3002, 8000, 6333, 6379, 5555}
+
+
+def test_flower_is_dev_only_and_reads_basic_auth():
+    flower = _compose()["services"]["flower"]
+    assert flower["profiles"] == ["dev"]
+    assert flower["environment"]["FLOWER_BASIC_AUTH"] == "${FLOWER_BASIC_AUTH:-}"
+    others = {name for name, service in _compose()["services"].items() if "profiles" in service}
+    assert others == {"flower"}  # el resto arranca con `docker compose up`
+
+
+def _instructions(path: Path) -> list[str]:
+    return [line.strip() for line in _code_lines(path) if line.strip()]
+
+
+def _last_user(path: Path) -> str | None:
+    users = [line.split(None, 1)[1] for line in _instructions(path) if line.upper().startswith("USER ")]
+    return users[-1] if users else None
+
+
+@pytest.mark.parametrize("dockerfile, user", [(API_DOCKERFILE, "trackflow"), (UI_DOCKERFILE, "node")])
+def test_containers_do_not_run_as_root(dockerfile, user):
+    assert _last_user(dockerfile) == user
+    lines = _instructions(dockerfile)
+    user_at = max(i for i, line in enumerate(lines) if line.upper().startswith("USER "))
+    cmd_at = max(i for i, line in enumerate(lines) if line.upper().startswith("CMD "))
+    assert user_at < cmd_at
+
+
+@pytest.mark.parametrize("dockerfile, owner", [(API_DOCKERFILE, "trackflow:trackflow"), (UI_DOCKERFILE, "node:node")])
+def test_code_is_copied_with_the_unprivileged_owner(dockerfile, owner):
+    copies = [line for line in _instructions(dockerfile) if line.upper().startswith("COPY ")]
+    app_copies = [line for line in copies if line.endswith(" .") or "package.json" in line]
+    assert app_copies
+    assert all(f"--chown={owner}" in line for line in app_copies), app_copies
+
+
+def test_api_service_account_has_fixed_ids_and_no_login():
+    text = API_DOCKERFILE.read_text(encoding="utf-8")
+    assert "groupadd --system --gid 10001 trackflow" in text
+    assert "useradd --system --uid 10001 --gid trackflow --no-create-home --shell /usr/sbin/nologin trackflow" in text
+
+
+def test_ui_installs_dependencies_as_node():
+    lines = _instructions(UI_DOCKERFILE)
+    user_at = next(i for i, line in enumerate(lines) if line == "USER node")
+    install_at = next(i for i, line in enumerate(lines) if "npm install" in line)
+    assert user_at < install_at
+
+
+def test_api_runs_without_reload():
+    cmd = next(line for line in _instructions(API_DOCKERFILE) if line.upper().startswith("CMD "))
+    assert "--reload" not in cmd
+    assert '"api.main:app"' in cmd
