@@ -18,7 +18,7 @@ Cada carpeta contiene `prompt.md` (instrucciones para el agente) y `progress.md`
 | Colas de mensajes y tareas asíncronas (Redis + Celery) | `async-tasks/` | `feature/async-tasks` | PR abierto | #25 |
 | Sistemas en tiempo real: notificaciones SSE (Parte 1/2) | `sse-notifications/` | `feature/sse-notifications` | PR abierto | #37 |
 | Sistemas en tiempo real: chat por WebSocket (Parte 2/2) | `websocket-chat/` | `feature/websocket-chat` | PR abierto | #38 |
-| Auditoría y corrección de vulnerabilidades web (OWASP Top 10) | `owasp-top10-audit/` | `feature/owasp-top10-audit` | En curso | — |
+| Auditoría y corrección de vulnerabilidades web (OWASP Top 10) | `owasp-top10-audit/` | `feature/owasp-top10-audit` | PR abierto | #39 |
 
 Convención desde el proyecto de caching: el plan y su registro de avance se
 guardan juntos en `memory-bank/history/AAAA-MM-DD_<proyecto>.md`;
