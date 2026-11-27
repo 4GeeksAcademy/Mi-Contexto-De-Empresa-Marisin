@@ -56,11 +56,13 @@ Ver `git log feature/owasp-top10-audit..feature/nist-security-practices`. Bloque
 
 - **2026-11-27 (Claude):** implementado y verificado en local lo que no necesita FastAPI/LangGraph (el entorno de Claude no tiene red para instalar dependencias): escáner, saneado, `tool_call_guard` y limitador; 34 + 18 + 4 tests en verde. El escáner encontró `uis/talent-pipeline-tracker/.env.local` versionado. Pendiente de Marisin: `git rm --cached` del `.env.local`, suite completa, typecheck del backoffice, sonda y capturas.
 
+- **2026-11-27 (Marisin, Codespace):** `git am` limpio; `.env.local` del tracker sacado de git (`git rm --cached`); escáner → PASS (0 secretos, 883 ficheros); tests NIST 78 passed; suite completa **1329 passed** (1251 + 78); sonda NIST **7/7 PASS** con `LLM_RATE_LIMIT_PER_MINUTE=5` (429 tras 3 aceptadas, `Retry-After: 60`; 409 en `LOAD-TOY-0072`); log con `agent_decision`, `rate_limit` y `high_value_dispatch_blocked`. Capturas recortadas por Claude a partir de las que pegó Marisin.
+
 ## Checklist final
 
-- [ ] Suite completa en verde (incluidos los 55 evals grabados y el contrato de rutas, que no cambia: no hay rutas nuevas)
+- [x] Suite completa en verde (incluidos los 55 evals grabados y el contrato de rutas, que no cambia: no hay rutas nuevas)
 - [ ] `npm run typecheck` limpio en `uis/backoffice`
-- [ ] `scripts/secrets_scan.py` → PASS
-- [ ] Sonda NIST 7/7 PASS
-- [ ] Capturas en `docs/nist/evidence/` y tabla de `verification.md` rellena
+- [x] `scripts/secrets_scan.py` → PASS
+- [x] Sonda NIST 7/7 PASS
+- [ ] Capturas en `docs/nist/evidence/` (falta `nist-dispatch-confirm.png`) y tabla de `verification.md` rellena
 - [ ] PR encadenado con el enlace al caso de prueba y las brechas pendientes
