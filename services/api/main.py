@@ -123,6 +123,34 @@ async def timing_middleware(request: Request, call_next):
     return response
 
 
+# Cabeceras de seguridad (auditoría OWASP · H2, A05; decisión D15). Sin CSP: la API
+# sirve JSON y /docs (Swagger UI carga recursos de un CDN); la CSP va en los frontends.
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Cross-Origin-Opener-Policy": "same-origin",
+}
+HSTS_VALUE = "max-age=31536000; includeSubDomains"
+
+
+def is_https(request: Request) -> bool:
+    """HTTPS directo o detrás del proxy inverso que termina TLS (`X-Forwarded-Proto`)."""
+    forwarded = request.headers.get("x-forwarded-proto", "").split(",")[0].strip().lower()
+    return request.url.scheme == "https" or forwarded == "https"
+
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response: Response = await call_next(request)
+    for name, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    if is_https(request):
+        response.headers.setdefault("Strict-Transport-Security", HSTS_VALUE)
+    return response
+
+
 logger = logging.getLogger(__name__)
 
 
