@@ -19,7 +19,7 @@ from typing import Any
 TOKEN_PATTERN = re.compile(r"(?i)((?:^|[?&])token=)[^&\s\"']+")
 REDACTED = "[redacted]"
 LOGGER_NAMES = ("uvicorn.error", "uvicorn.access")
-CONSOLE_LOGGERS = ("api.agent.chat", "agent.runner")
+CONSOLE_LOGGERS = ("api.agent.chat", "agent.runner", "agent.audit")
 
 
 def redact(text: str) -> str:

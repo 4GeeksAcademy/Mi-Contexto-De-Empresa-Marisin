@@ -119,6 +119,9 @@ class AgentTraceResponse(BaseModel):
     memory: dict[str, Any] | None = None
     guardrail: dict[str, Any] | None = None
     guardrail_events: list[dict[str, Any]] | None = None
+    decision: dict[str, Any] | None = Field(
+        default=None, description="Qué acción tomó el agente y por qué (rol, fuentes, motivo, tools, guardrails)."
+    )
 
 
 class AgentMemoryResponse(BaseModel):
