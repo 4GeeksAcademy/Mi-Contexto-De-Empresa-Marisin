@@ -25,6 +25,8 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .harness import events as guard_events
+from .harness.input_sanitizer import record_event as record_sanitization
+from .harness.input_sanitizer import sanitize_user_input
 from .memory.models import Actor
 from .tracing import TraceRecorder, jsonable, recording, save_trace, summarize_state, utc_now
 
@@ -214,6 +216,10 @@ def run_agent(
         graph = AGENT_GRAPH
     run_id = str(uuid.uuid4())
     config = run_config(run_id)
+    # NIST · Protect: el grafo, el prompt y el trace trabajan con la pregunta saneada.
+    raw_question = question
+    sanitized = sanitize_user_input(question, record=False)
+    question = sanitized.text
     recorder = TraceRecorder(run_id=run_id, question=question)
     final_state: dict[str, Any] | None = None
     error: BaseException | None = None
@@ -232,6 +238,7 @@ def run_agent(
     with recording(recorder), guard_events.bind(
         run_id=run_id, conversation_id=conversation_id, user_id=actor.user_id if actor else None
     ) as collected_events:
+        record_sanitization(sanitized, raw_question)
         try:
             if on_token is None:
                 final_state = graph.invoke(initial, config)
