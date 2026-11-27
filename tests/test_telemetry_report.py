@@ -57,7 +57,7 @@ def pipeline_calls(monkeypatch: pytest.MonkeyPatch) -> list[tuple]:
 
 @pytest.fixture
 def client(pipeline_calls):
-    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True}
+    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "manager"}
     test_client = TestClient(app)
     yield test_client
     test_client.close()

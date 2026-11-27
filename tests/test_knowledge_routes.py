@@ -10,7 +10,7 @@ from services.api.security import get_current_user
 
 @pytest.fixture
 def client():
-    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "user"}
+    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "manager"}
     yield TestClient(app)
     app.dependency_overrides.pop(get_current_user, None)
 

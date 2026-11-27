@@ -83,7 +83,7 @@ def settings():
 
 @pytest.fixture
 def client(broker, settings):
-    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "user"}
+    app.dependency_overrides[get_current_user] = lambda: {"id": 1, "is_active": True, "role": "manager"}
     app.dependency_overrides[realtime_router.get_stream_settings] = lambda: settings["value"]
     yield TestClient(app)
     app.dependency_overrides.pop(get_current_user, None)
@@ -116,7 +116,7 @@ def test_an_invalid_token_is_refused_with_401(anonymous_client):
 def test_the_backoffice_jwt_opens_the_stream(anonymous_client, monkeypatch):
     from services.api.services import users as user_service
 
-    monkeypatch.setattr(user_service, "get_user_by_id", lambda user_id: {"id": user_id, "is_active": True})
+    monkeypatch.setattr(user_service, "get_user_by_id", lambda user_id: {"id": user_id, "is_active": True, "role": "manager"})
     token = create_access_token(7)
 
     response = anonymous_client.get("/realtime/events", headers={"Authorization": f"Bearer {token}"})

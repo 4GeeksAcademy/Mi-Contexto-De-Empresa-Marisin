@@ -23,7 +23,7 @@ from services.api.schemas import (
     ProductListItem,
     ProductOrderSummary,
 )
-from services.api.security import get_current_user
+from services.api.security import get_current_user, require_staff_or_service
 from services.api.services import profiles as profile_service
 from services.api.services import users as user_service
 
@@ -265,6 +265,7 @@ def test_product_list_uses_list_item_and_preserves_consumed_fields(monkeypatch):
         session.add(StockEntry(sku_id=product.id, warehouse="Zaragoza", quantity=4, user_uuid="1"))
         session.commit()
         monkeypatch.setitem(app.dependency_overrides, get_db, lambda: session)
+        monkeypatch.setitem(app.dependency_overrides, require_staff_or_service, lambda: {"id": 1, "role": "manager"})
 
         response = TestClient(app).get("/inventory/products")
 
