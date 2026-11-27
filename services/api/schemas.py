@@ -121,6 +121,13 @@ class OutboundOrderCreate(BaseModel):
     quantity: int = Field(..., gt=0, description="Cantidad a retirar")
     exit_type: str = Field(..., description="Tipo de salida (ej. B2C Order, B2B Transfer)")
     tracking_number: Optional[str] = Field(default=None, description="Número de seguimiento del transportista")
+    confirm_high_value: bool = Field(
+        default=False,
+        description=(
+            "Confirmación humana explícita de un despacho de alto valor (BRIEFING §5.2). "
+            "Por encima del umbral HIGH_VALUE_DISPATCH_UNITS la API responde 409 si falta."
+        ),
+    )
 
 class OutboundOrderResponse(BaseModel):
     id: int
