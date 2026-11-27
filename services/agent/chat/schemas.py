@@ -28,7 +28,8 @@ MessageStatus = Literal["streaming", "completed", "interrupted", "error"]
 AgentStatus = AgentQueryResponse.model_fields["status"].annotation
 AgentSource = Literal["incidents", "inventory", "rag"]
 ChatErrorCode = Literal[
-    "invalid_message", "generation_in_progress", "nothing_to_interrupt", "forbidden", "agent_unavailable"
+    "invalid_message", "generation_in_progress", "nothing_to_interrupt", "forbidden", "agent_unavailable",
+    "rate_limited",  # NIST: presupuesto de llamadas al modelo agotado (harness/usage_limits.py)
 ]
 
 # Nombres de evento.
