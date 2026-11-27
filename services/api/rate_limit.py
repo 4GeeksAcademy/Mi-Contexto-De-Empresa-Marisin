@@ -70,6 +70,20 @@ class SlidingWindowLimiter:
             self._prune(key, now)
             self._events.setdefault(key, deque()).append(now)
 
+    def acquire(self, key: Hashable) -> int | None:
+        """Comprueba y registra en un solo paso (atómico): `None` si cabe, o los segundos de espera.
+
+        Lo usa el límite de llamadas al LLM (proyecto NIST): cada petición aceptada
+        consume una unidad; una rechazada no consume nada.
+        """
+        with self._lock:
+            now = self.clock()
+            events = self._prune(key, now)
+            if len(events) >= self.limit:
+                return max(1, math.ceil(events[0] + self.window_seconds - now))
+            self._events.setdefault(key, deque()).append(now)
+            return None
+
     def reset(self, key: Hashable) -> None:
         with self._lock:
             self._events.pop(key, None)

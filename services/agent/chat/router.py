@@ -40,6 +40,7 @@ except ModuleNotFoundError as exc:
     from api.database import engine
     from api.security import get_current_user
 
+from ..harness import usage_limits
 from . import logging_filters
 from .pubsub import CLOSE, CLOSE_QUEUE_FULL, ChatSubscription
 from .schemas import (
@@ -237,6 +238,15 @@ def _parse(model: type[BaseModel], data: dict[str, Any], session_id: str) -> tup
     return parsed, None
 
 
+def over_llm_budget(user: dict, session_id: str) -> dict[str, Any] | None:
+    """`chat_error rate_limited` si el usuario agotó su presupuesto de llamadas al modelo (NIST)."""
+    verdict = usage_limits.consume(user, endpoint="WS /agent/chat")
+    if verdict.allowed:
+        return None
+    return chat_error(session_id, "rate_limited",
+                      f"{usage_limits.RATE_LIMITED_DETAIL} Reintenta en {verdict.retry_after} s.")
+
+
 async def handle_command(
     text: str | None, *, session_id: str, user: dict, is_owner: bool, store: ChatStore,
     turn_runner: TurnRunner, manager: ChatTurnManager,
@@ -255,6 +265,8 @@ async def handle_command(
             command, error = _parse(UserMessageIn, envelope.data, session_id)
             if error:
                 return error
+            if limited := over_llm_budget(user, session_id):
+                return limited
             # shield: si la conexión se cierra a mitad, el turno queda en un estado coherente
             await asyncio.shield(manager.start_turn(session_id, command.text, user=user, store=store,
                                                     turn_runner=turn_runner))
@@ -262,6 +274,9 @@ async def handle_command(
             command, error = _parse(InterruptRequestedIn, envelope.data, session_id)
             if error:
                 return error
+            # Interrumpir sin texto nuevo no llama al modelo; con `new_input`, sí.
+            if command.new_input and (limited := over_llm_budget(user, session_id)):
+                return limited
             await asyncio.shield(manager.interrupt(session_id, command.new_input, user=user, store=store,
                                                    turn_runner=turn_runner))
     except GenerationInProgress as exc:

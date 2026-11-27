@@ -38,6 +38,7 @@ from packages.shared.incident_validation import (
 )
 
 from . import mcp_client
+from .harness import tool_call_guard
 
 TOOL_TIMEOUT_SECONDS = mcp_client.MCP_CALL_TIMEOUT_SECONDS  # 4 s
 MAX_RESULTS = 5  # tickets o productos que se muestran como máximo en la respuesta
@@ -129,7 +130,16 @@ class ToolUnavailable(Exception):
 
 
 def call_mcp(tool_name: str, arguments: dict[str, Any]) -> Any:
-    """Único punto de salida de las tools del agente: una tool de lectura del servidor MCP."""
+    """Único punto de salida de las tools del agente: una tool de lectura del servidor MCP.
+
+    NIST · Protect: antes de salir, `tool_call_guard` valida la llamada (tool del
+    catálogo, contrato de argumentos, sin instrucciones dentro y, si fuera de
+    escritura o irreversible, confirmación humana). Un rechazo no llega al MCP:
+    el nodo responde con `tool_fallback`.
+    """
+    verdict = tool_call_guard.validate_tool_call(tool_name, arguments)
+    if not verdict.allowed:
+        raise ToolUnavailable(f"TOOL_CALL_REJECTED: {verdict.reason} ({verdict.detail})")
     try:
         return mcp_client.call_tool(tool_name, arguments)
     except mcp_client.McpCallError as exc:

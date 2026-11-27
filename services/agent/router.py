@@ -10,6 +10,10 @@
 * `GET /agent/guardrails/summary` — cuántas veces se activó cada guardrail, por tipo de
   fallo (solo `admin`/`manager`; `?since=` para acotar a una sesión de pruebas).
 
+Límite de llamadas al modelo (NIST · Protect): `POST /agent/query` gasta el
+presupuesto del usuario (`harness/usage_limits.py`); al agotarlo responde **429**
+con `Retry-After` y no llega a invocar el grafo.
+
 Errores: pregunta vacía → 422 con el mensaje del nodo `invalid_question`;
 fallo de cualquier nodo → 503 con un mensaje claro y la referencia `run_id`,
 nunca con el stack trace.
@@ -33,6 +37,7 @@ except ModuleNotFoundError as exc:
 from . import runner
 from .graph import AGENT_GRAPH  # noqa: F401  — compila el grafo al arrancar la API
 from .harness import events as guard_events
+from .harness import usage_limits
 from .memory import store as memory_store
 from .memory.backend import MemoryUnavailable
 from .schemas import (
@@ -74,12 +79,28 @@ def require_trace_role(user: dict) -> None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Solo admin o manager pueden ver esto.")
 
 
-@router.post("/query", response_model=AgentQueryResponse)
+def enforce_llm_budget(user: dict, endpoint: str) -> None:
+    """429 con `Retry-After` si el usuario agotó su presupuesto de llamadas al modelo."""
+    verdict = usage_limits.consume(user, endpoint=endpoint)
+    if not verdict.allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=usage_limits.RATE_LIMITED_DETAIL,
+            headers={"Retry-After": str(verdict.retry_after or 60)},
+        )
+
+
+@router.post(
+    "/query",
+    response_model=AgentQueryResponse,
+    responses={429: {"description": "Presupuesto de consultas al modelo agotado (cabecera Retry-After)."}},
+)
 def agent_query(
     body: AgentQueryRequest,
     user: Annotated[dict, Depends(get_current_user)],
 ) -> AgentQueryResponse:
     """Responde a la pregunta recorriendo el grafo del agente."""
+    enforce_llm_budget(user, "POST /agent/query")
     conversation_id = str(body.conversation_id) if body.conversation_id else None
     try:
         result = runner.run_agent(body.question, conversation_id=conversation_id, user=user)

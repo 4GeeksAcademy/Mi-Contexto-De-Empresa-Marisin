@@ -11,6 +11,10 @@
 * Los límites de intentos de autenticación (`services/api/rate_limit.py`) viven en
   memoria del proceso: se vacían antes de cada test para que un test no herede los
   fallos de login de otro.
+* El presupuesto de llamadas al LLM (`services/agent/harness/usage_limits.py`, proyecto
+  NIST) también vive en memoria: cada test empieza con un limitador nuevo y holgado
+  (para que ninguna prueba que llama muchas veces al agente reciba 429); los tests
+  del límite instalan el suyo con límites pequeños y un reloj falso.
 * La Parte 3 de RFPs usa en los tests un checkpointer en memoria nuevo en cada test:
   ninguna prueba escribe `data/checkpoints/rfp_approval.sqlite` (las que prueban la
   persistencia en SQLite usan un fichero temporal propio).
@@ -20,6 +24,7 @@ import pytest
 
 from services.agent.harness import events as guard_events
 from services.agent.harness import generation as agent_generation
+from services.agent.harness import usage_limits
 from services.agent.memory import store as memory_store
 from services.agent.memory.backend import InMemoryBackend
 from data.pipelines.rfp_intake import llm as rfp_llm
@@ -47,6 +52,13 @@ def fresh_auth_rate_limits():
     rate_limit.reset_limiters()
     yield
     rate_limit.reset_limiters()
+
+
+@pytest.fixture(autouse=True)
+def roomy_llm_budget():
+    usage_limits.reset_limiter(usage_limits.LlmUsageLimiter(10_000, 10_000, 10_000))
+    yield
+    usage_limits.reset_limiter(None)
 
 
 @pytest.fixture(autouse=True)

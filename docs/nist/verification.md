@@ -1,0 +1,67 @@
+# Verificación · Prácticas seguras en la integración de IA (NIST)
+
+- **Quién ejecuta qué:** los tests se ejecutan en cualquier entorno (sin red ni LLM). `uvicorn`, la sonda `scripts/nist_security_probe.py` y la prueba en el backoffice los ejecuta Marisin en el Codespace.
+- **Coste:** la sonda **no llama al LLM**: todas sus preguntas son ataques que la guardia de entrada bloquea antes del modelo.
+
+## 1. Tests deterministas
+
+```bash
+uv run pytest -q tests/test_nist_secrets.py tests/test_nist_rate_limit.py tests/test_nist_high_value_dispatch.py tests/pipelines/test_nist_input_and_tool_guards.py tests/pipelines/test_nist_prompt_injection.py
+```
+
+| Fichero | Qué demuestra |
+|---|---|
+| `tests/pipelines/test_nist_prompt_injection.py` | **Caso reproducible de prompt injection** (BRIEFING §4): caso 1 por `POST /agent/query` bloqueado sin LLM ni tools y con su decisión en `agent.audit`; 4 variantes ofuscadas; el usuario no puede cerrar `<consulta_usuario>`; caso 2 mostrado como dato; inyección en argumentos de tool rechazada |
+| `tests/pipelines/test_nist_input_and_tool_guards.py` | Saneado (NFKC, invisibles, control, repeticiones, longitud) y `tool_call_guard` (catálogo, esquema, órdenes en argumentos, escrituras y acciones del BRIEFING §5 sin confirmación humana) |
+| `tests/test_nist_rate_limit.py` | Ventanas por usuario, día y global; 429 con `Retry-After` sin ejecutar el grafo; por usuario; RAG y chat con el mismo presupuesto; evento `rate_limit` |
+| `tests/test_nist_high_value_dispatch.py` | 409 sin confirmación y nada registrado; 201 con confirmación y auditoría; un cliente no despacha; stock antes que confirmación |
+| `tests/test_nist_secrets.py` | 0 secretos en el repositorio; el escáner detecta claves reales y no imprime el secreto |
+
+## 2. Sonda contra la API en marcha
+
+1. API con un límite bajo para que N5 llegue rápido al 429 (Qdrant y Redis en marcha):
+   ```bash
+   LLM_RATE_LIMIT_PER_MINUTE=5 uv run uvicorn services.api.main:app --port 8000
+   ```
+2. En otra terminal, credenciales de staff sin que queden en pantalla ni en el `.env`:
+   ```bash
+   export TRACKFLOW_STAFF_EMAIL=admin@test.com
+   read -rsp "Contraseña de staff: " TRACKFLOW_STAFF_PASSWORD && export TRACKFLOW_STAFF_PASSWORD && echo
+   python scripts/nist_security_probe.py --out docs/nist/evidence/nist-probe.json
+   unset TRACKFLOW_STAFF_PASSWORD
+   ```
+3. En la terminal de uvicorn, las líneas `agent_decision {…}` (una por consulta), `guardrail {"guard": "rate_limit"…}` y `high_value_dispatch_blocked {…}`.
+
+| Id | Comprobación | Esperado | Obtenido | Evidencia |
+|---|---|---|---|---|
+| N1 | Escáner de secretos | 0 hallazgos | **PASS**: 0 hallazgos (883 ficheros versionados) | [`nist-probe.png`](evidence/nist-probe.png) · [`nist-probe.json`](evidence/nist-probe.json) |
+| N2 | BRIEFING caso 1 como cliente | 200 · blocked · injection | **PASS**: 200 · blocked · injection | ídem |
+| N3 | Caso 1 con caracteres invisibles | 200 · blocked · injection | **PASS**: 200 · blocked · injection | ídem |
+| N4 | Decisión del agente en el trace | user · blocked · injection | **PASS**: 200 · user · blocked · `receive_question → guardrail_block` | ídem |
+| N5 | Presupuesto agotado | 429 + `Retry-After` | **PASS**: 429 tras 3 aceptadas (límite 5/min; N2 y N3 gastaron 2) · `Retry-After: 60` | ídem |
+| N6 | Resumen de guardrails | `rate_limit:llm_budget` ≥ 1 | **PASS**: 200 · 1 | ídem |
+| N7 | Despacho de 500 uds sin confirmación | 409, no registrado | **PASS**: 409 · `LOAD-TOY-0072` · «Despacho de alto valor: 500 unidades (umbral 500)…» | ídem · [`nist-agent-audit-log.png`](evidence/nist-agent-audit-log.png) |
+
+**Resultado (2026-11-27): 7/7 PASS.** En el log de uvicorn ([`nist-agent-audit-log.png`](evidence/nist-agent-audit-log.png)) se ve una línea `agent_decision` por consulta (rol `user`, `status: blocked`, `tool_calls: []`, guardrail `input:injection`), el evento `guard: rate_limit` justo antes del `429 Too Many Requests` (2 ms: el grafo no llega a ejecutarse) y `high_value_dispatch_blocked` con el usuario y el umbral antes del `409 Conflict`.
+
+## 3. Backoffice: confirmación humana de un despacho de alto valor
+
+1. `Inventario → Salidas`, elige un producto con 500 unidades o más en un almacén (p. ej. un SKU `LOAD-…`) y pide una salida de **500**.
+2. Aparece el diálogo «Despacho de alto valor: 500 unidades (umbral 500). Requiere confirmación humana explícita…».
+3. Pulsa **Cancelar** → «Despacho de alto valor cancelado: no se ha registrado ninguna salida.» (El camino de confirmar está cubierto por `test_high_value_dispatch_with_human_confirmation_is_registered_and_audited`.)
+
+**Resultado (2026-11-27): PASS.** `LOAD-TOY-0072` (`?sku_id=75`), Los Angeles, 755 unidades disponibles, salida de 500: la API responde 409 y el backoffice muestra el diálogo «Despacho de alto valor: 500 unidades (umbral 500). Requiere confirmación humana explícita antes de registrarse. ¿Confirmas que quieres registrar este despacho?» ([`nist-dispatch-confirm.png`](evidence/nist-dispatch-confirm.png)). Al cancelar: «Despacho de alto valor cancelado: no se ha registrado ninguna salida.» y el stock sigue en 755 ([`nist-dispatch-cancelled.png`](evidence/nist-dispatch-cancelled.png)).
+
+**Resultado de los tests (2026-11-27):** 5 ficheros NIST → **78 passed** ([`pytest-nist.txt`](evidence/pytest-nist.txt), [`nist-pytest-tests.png`](evidence/nist-pytest-tests.png)); suite completa → **1329 passed** en 83,6 s, 0 fallos (1251 de la auditoría OWASP + 78 nuevos; los 55 evals grabados y el contrato de rutas intactos; los 6 *warnings* son avisos de deprecación previos de FastAPI y Pydantic) ([`pytest-suite.txt`](evidence/pytest-suite.txt), [`nist-pytest-suite.png`](evidence/nist-pytest-suite.png)); escáner de secretos → **PASS, 0 secretos** tras sacar de git `uis/talent-pipeline-tracker/.env.local` ([`secrets-scan.txt`](evidence/secrets-scan.txt), [`nist-secrets-scan.png`](evidence/nist-secrets-scan.png)).
+
+## 4. Evidencias
+
+| Fichero | Qué muestra |
+|---|---|
+| `evidence/nist-pytest-tests.png` · `pytest-nist.txt` | Los 5 ficheros de tests NIST en verde |
+| `evidence/nist-pytest-suite.png` · `pytest-suite.txt` | Suite completa en verde |
+| `evidence/nist-secrets-scan.png` · `secrets-scan.txt` | `scripts/secrets_scan.py` → PASS, 0 hallazgos |
+| `evidence/nist-probe.png` · `nist-probe.json` | Sonda N1–N7 |
+| `evidence/nist-agent-audit-log.png` | Log de uvicorn con `agent_decision`, el evento `rate_limit` y `high_value_dispatch_blocked` |
+| `evidence/nist-dispatch-confirm.png` | Diálogo de confirmación del despacho de alto valor en el backoffice |
+| `evidence/nist-dispatch-cancelled.png` | Mensaje tras cancelar: no se registra ninguna salida y el stock no cambia |

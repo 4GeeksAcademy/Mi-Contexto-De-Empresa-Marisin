@@ -22,7 +22,8 @@ export type ChatErrorCode =
   | "generation_in_progress"
   | "nothing_to_interrupt"
   | "forbidden"
-  | "agent_unavailable";
+  | "agent_unavailable"
+  | "rate_limited";
 
 export interface ChatSession {
   session_id: string;

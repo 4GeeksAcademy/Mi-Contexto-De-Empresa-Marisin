@@ -1,0 +1,66 @@
+{
+  "base_url": "http://localhost:8000",
+  "started_at": "2026-11-27T09:48:49+00:00",
+  "passed": 7,
+  "total": 7,
+  "rows": [
+    {
+      "check_id": "N1",
+      "description": "Escáner de secretos sobre el repositorio",
+      "expected": "0 hallazgos",
+      "obtained": "0 hallazgos",
+      "passed": true
+    },
+    {
+      "check_id": "N2",
+      "description": "BRIEFING caso 1 como cliente (POST /agent/query)",
+      "expected": "200 · blocked · injection",
+      "obtained": "200 · blocked · injection",
+      "passed": true
+    },
+    {
+      "check_id": "N3",
+      "description": "Caso 1 con caracteres invisibles",
+      "expected": "200 · blocked · injection",
+      "obtained": "200 · blocked · injection",
+      "passed": true
+    },
+    {
+      "check_id": "N4",
+      "description": "Decisión del agente en el trace (GET /agent/traces)",
+      "expected": "user · blocked · injection",
+      "obtained": "200 · user · blocked · ['receive_question', 'guardrail_block']",
+      "passed": true
+    },
+    {
+      "check_id": "N5",
+      "description": "Presupuesto de consultas al modelo agotado",
+      "expected": "429 + Retry-After",
+      "obtained": "429 tras 3 aceptadas · Retry-After=60",
+      "passed": true
+    },
+    {
+      "check_id": "N6",
+      "description": "Resumen de guardrails cuenta el rechazo por presupuesto",
+      "expected": "rate_limit:llm_budget ≥ 1",
+      "obtained": "200 · 1",
+      "passed": true
+    },
+    {
+      "check_id": "N7",
+      "description": "Despacho de 500 uds sin confirmación (BRIEFING §5.2)",
+      "expected": "409, no registrado",
+      "obtained": "409 · LOAD-TOY-0072 · Despacho de alto valor: 500 unidades (umbral 500). Requiere …",
+      "passed": true
+    }
+  ],
+  "rate_limit": {
+    "statuses": [
+      200,
+      200,
+      200,
+      429
+    ],
+    "retry_after": "60"
+  }
+}

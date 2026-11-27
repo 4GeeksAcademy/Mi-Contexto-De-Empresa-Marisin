@@ -1,3 +1,6 @@
+import json
+import logging
+import os
 from collections import defaultdict
 from typing import Annotated
 
@@ -181,6 +184,42 @@ def create_inbound_order(
     return InboundOrderResponse.model_validate(order, from_attributes=True)
 
 
+# --- Acción irreversible: despacho de alto valor (proyecto NIST, BRIEFING §5.2) ---
+# El modelo de SKU no tiene precio, así que «alto valor» se mide en unidades por
+# salida (configurable). Por encima del umbral la persona de staff tiene que
+# confirmarlo de forma explícita en el backoffice; sin confirmación → 409 y no se
+# registra nada. Las dos cosas (bloqueo y confirmación) quedan en `api.security`.
+DEFAULT_HIGH_VALUE_DISPATCH_UNITS = 500
+HIGH_VALUE_CONFIRMATION_DETAIL = (
+    "Despacho de alto valor: {quantity} unidades (umbral {threshold}). "
+    "Requiere confirmación humana explícita antes de registrarse."
+)
+security_logger = logging.getLogger("api.security")
+
+
+def high_value_dispatch_units() -> int:
+    try:
+        value = int(os.environ.get("HIGH_VALUE_DISPATCH_UNITS", "") or DEFAULT_HIGH_VALUE_DISPATCH_UNITS)
+    except ValueError:
+        return DEFAULT_HIGH_VALUE_DISPATCH_UNITS
+    return value if value > 0 else DEFAULT_HIGH_VALUE_DISPATCH_UNITS
+
+
+def _require_high_value_confirmation(payload: OutboundOrderCreate, current_user: dict) -> None:
+    threshold = high_value_dispatch_units()
+    record = {
+        "sku_id": payload.sku_id, "warehouse": payload.warehouse, "quantity": payload.quantity,
+        "threshold": threshold, "user_uuid": _user_uuid(current_user), "role": current_user.get("role"),
+    }
+    if not payload.confirm_high_value:
+        security_logger.warning("high_value_dispatch_blocked %s", json.dumps(record, ensure_ascii=False))
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=HIGH_VALUE_CONFIRMATION_DETAIL.format(quantity=payload.quantity, threshold=threshold),
+        )
+    security_logger.warning("high_value_dispatch_confirmed %s", json.dumps(record, ensure_ascii=False))
+
+
 @router.post(
     "/orders/outbound",
     response_model=OutboundOrderResponse,
@@ -205,7 +244,9 @@ def create_outbound_order(
                 f"disponible {available}, solicitado {payload.quantity}."
             ),
         )
-    order = StockExit(**payload.model_dump(), user_uuid=_user_uuid(current_user))
+    if payload.quantity >= high_value_dispatch_units():
+        _require_high_value_confirmation(payload, current_user)
+    order = StockExit(**payload.model_dump(exclude={"confirm_high_value"}), user_uuid=_user_uuid(current_user))
     session.add(order)
     session.commit()
     api_cache.invalidate(PRODUCTS_LIST_KEY)

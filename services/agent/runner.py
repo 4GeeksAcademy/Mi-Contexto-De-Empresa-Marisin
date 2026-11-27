@@ -17,6 +17,7 @@ se lanza `AgentRunCancelled`. Sin `on_token`, es el `graph.invoke` de siempre.
 
 from __future__ import annotations
 
+import json
 import logging
 import threading
 import uuid
@@ -25,10 +26,14 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .harness import events as guard_events
+from .harness.input_sanitizer import record_event as record_sanitization
+from .harness.input_sanitizer import sanitize_user_input
 from .memory.models import Actor
 from .tracing import TraceRecorder, jsonable, recording, save_trace, summarize_state, utc_now
 
 logger = logging.getLogger("agent.runner")
+# Una línea JSON por corrida con la decisión del agente (NIST · trazabilidad); ver `decision_record`.
+audit_logger = logging.getLogger("agent.audit")
 
 # Qué fuente de datos consulta cada nodo: el trace lista las usadas, en orden.
 SOURCE_BY_NODE = {"lookup_ticket": "incidents", "lookup_inventory": "inventory", "retrieve": "rag"}
@@ -147,6 +152,46 @@ def build_trace(
     return trace
 
 
+def _tool_summary(result: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not result:
+        return None
+    return {key: result.get(key) for key in ("tool", "mcp_tool", "status", "total", "error") if result.get(key) is not None}
+
+
+def decision_record(
+    trace: dict[str, Any], final_state: dict[str, Any] | None, actor: Actor | None
+) -> dict[str, Any]:
+    """Qué acción tomó el agente y por qué (NIST · Detect/Respond: trazabilidad por corrida).
+
+    Resume, sin el texto de la respuesta ni datos de terceros: quién preguntó (rol),
+    qué decidió el enrutador (fuentes, quién lo decidió y su motivo), qué tools se
+    llamaron y con qué resultado, qué guardrails saltaron y el estado final.
+    """
+    final_state = final_state or {}
+    route = trace.get("route") or {}
+    events = trace.get("guardrail_events") or []
+    tools = [summary for summary in (
+        _tool_summary(final_state.get("ticket_result")), _tool_summary(final_state.get("inventory_result")),
+    ) if summary]
+    return {
+        "run_id": trace["run_id"],
+        "at": trace.get("finished_at"),
+        "actor_role": actor.role if actor else "internal",
+        "status": trace.get("status"),
+        "path": trace.get("path"),
+        "sources": trace.get("sources"),
+        "decided_by": route.get("decided_by"),
+        "reason": (route.get("reason") or "")[:300] or None,
+        "tool_calls": tools,
+        "guardrail": trace.get("guardrail"),
+        "guardrail_events": [
+            {key: event.get(key) for key in ("guard", "category", "action", "rules") if event.get(key)}
+            for event in events
+        ],
+        "failed_node": trace.get("failed_node"),
+    }
+
+
 def guardrail_summary(final_state: dict[str, Any] | None) -> dict[str, Any] | None:
     """Veredicto del harness si la corrida se bloqueó o se recondujo (None si fue de dominio)."""
     guard = (final_state or {}).get("guardrail") or {}
@@ -214,6 +259,10 @@ def run_agent(
         graph = AGENT_GRAPH
     run_id = str(uuid.uuid4())
     config = run_config(run_id)
+    # NIST · Protect: el grafo, el prompt y el trace trabajan con la pregunta saneada.
+    raw_question = question
+    sanitized = sanitize_user_input(question, record=False)
+    question = sanitized.text
     recorder = TraceRecorder(run_id=run_id, question=question)
     final_state: dict[str, Any] | None = None
     error: BaseException | None = None
@@ -232,6 +281,7 @@ def run_agent(
     with recording(recorder), guard_events.bind(
         run_id=run_id, conversation_id=conversation_id, user_id=actor.user_id if actor else None
     ) as collected_events:
+        record_sanitization(sanitized, raw_question)
         try:
             if on_token is None:
                 final_state = graph.invoke(initial, config)
@@ -257,6 +307,8 @@ def run_agent(
         stream_closed = generation_stream_closed(recorder)
         trace["status"] = "interrupted"
         trace["cancelled"] = {"tokens_sent": stats["tokens_sent"], "stream_closed": stream_closed}
+    trace["decision"] = jsonable(decision_record(trace, final_state, actor))
+    audit_logger.info("agent_decision %s", json.dumps(trace["decision"], ensure_ascii=False, default=str))
     path = save_trace(trace, trace_directory)
     if cancelled:
         logger.info(

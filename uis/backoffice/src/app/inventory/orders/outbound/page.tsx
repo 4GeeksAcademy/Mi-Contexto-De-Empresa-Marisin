@@ -71,13 +71,27 @@ export default function OutboundOrderPage() {
     setSuccessMsg(null);
 
     try {
-      const { id } = await createOutboundOrder({
+      const payload = {
         sku_id: parseInt(selectedSkuId, 10),
         warehouse,
         quantity: Number(quantity),
         exit_type: exitType,
         tracking_number: trackingNumber || undefined,
-      });
+      };
+      let created: { id: number };
+      try {
+        created = await createOutboundOrder(payload);
+      } catch (error: unknown) {
+        // Acción irreversible (BRIEFING §5.2): por encima del umbral la API responde 409
+        // y la salida solo se registra si la persona lo confirma de forma explícita.
+        if (!(error instanceof ApiError) || error.status !== 409) throw error;
+        if (!window.confirm(`${error.message}\n\n¿Confirmas que quieres registrar este despacho?`)) {
+          setErrorMsg("Despacho de alto valor cancelado: no se ha registrado ninguna salida.");
+          return;
+        }
+        created = await createOutboundOrder({ ...payload, confirm_high_value: true });
+      }
+      const { id } = created;
       resetForm();
       const properties = selectedProduct ? inventoryProperties(selectedProduct, warehouse, quantity) : null;
       const exit_type = toExitType(exitType);

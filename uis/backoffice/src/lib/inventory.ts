@@ -23,6 +23,8 @@ export interface OutboundOrderPayload {
   quantity: number;
   exit_type: string;
   tracking_number?: string;
+  /** Confirmación humana de un despacho de alto valor (la API responde 409 si falta). */
+  confirm_high_value?: boolean;
 }
 
 export interface InventoryOrder {
