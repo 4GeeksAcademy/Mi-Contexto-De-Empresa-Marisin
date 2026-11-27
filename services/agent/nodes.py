@@ -38,7 +38,7 @@ from . import tools as agent_tools
 from .harness import authorization as guard_authorization
 from .harness import events as guard_events
 from .harness import generation as agent_generation
-from .harness import input_guard, isolation, output_guard, responses
+from .harness import input_guard, isolation, output_guard, responses, tool_policy
 from .memory import decision as memory_decision
 from .memory import flow as memory_flow
 from .memory import store as memory_store
@@ -213,18 +213,34 @@ def lookup_shipment(state: AgentState) -> AgentState:
 # --------------------------------------------------------------------------- #
 # Tools (datos en vivo, solo lectura)
 # --------------------------------------------------------------------------- #
+def _forbidden_tool(tool: str, query, state: AgentState) -> agent_tools.ToolResult:
+    """ACL de tools (D10): el rol no puede usar la tool. No se llama al MCP; queda el evento."""
+    role = _actor(state).role
+    guard_events.record(guard="tool_acl", category="unauthorized_tool", failure_type="security",
+                        action="block", rules=[f"tool:{tool}", f"role:{role}"])
+    return agent_tools.ToolResult(tool=tool, status="forbidden", mcp_tool=None,
+                                  query=query.model_dump(mode="json", exclude_none=True),
+                                  error="tool no permitida para este rol")
+
+
 def lookup_ticket(state: AgentState) -> AgentState:
-    """Tool 1: consulta el gestor de incidentes (GET, timeout de 4 s)."""
+    """Tool 1: consulta el gestor de incidentes (GET, timeout de 4 s). Solo personal de TrackFlow."""
     query = agent_tools.TicketQuery.model_validate(state["route"]["ticket"])
-    result = agent_tools.lookup_tickets(query)
+    if not tool_policy.tool_allowed("incidents", _actor(state)):
+        result = _forbidden_tool("incidents", query, state)
+    else:
+        result = agent_tools.lookup_tickets(query)
     data = isolation.sanitize_tool_result(result.model_dump(mode="json"), source="tool:incidents")
     return {"ticket_result": data, "status": "tool_done"}
 
 
 def lookup_inventory(state: AgentState) -> AgentState:
-    """Tool 2: consulta el gestor de inventario (GET, timeout de 4 s)."""
+    """Tool 2: consulta el gestor de inventario (GET, timeout de 4 s). Solo personal de TrackFlow."""
     query = agent_tools.InventoryQuery.model_validate(state["route"]["inventory"])
-    result = agent_tools.lookup_inventory(query)
+    if not tool_policy.tool_allowed("inventory", _actor(state)):
+        result = _forbidden_tool("inventory", query, state)
+    else:
+        result = agent_tools.lookup_inventory(query)
     data = isolation.sanitize_tool_result(result.model_dump(mode="json"), source="tool:inventory")
     return {"inventory_result": data, "status": "tool_done"}
 

@@ -60,6 +60,7 @@ def test_returns_run_id_status_answer_and_sources_only(client):
 
 
 def test_ticket_question_is_answered_by_the_incidents_tool(client):
+    as_user("manager")  # las tools internas son solo para el personal (ACL de tools, D10)
     body = client.post("/agent/query", json={"question": "¿En qué estado está el ticket 3?"}).json()
     assert body["status"] == "answered"
     assert body["sources"] == ["incidents"]
@@ -67,6 +68,7 @@ def test_ticket_question_is_answered_by_the_incidents_tool(client):
 
 
 def test_unavailable_tool_is_a_200_with_an_honest_answer(client):
+    as_user("manager")
     body = client.post("/agent/query", json={"question": "¿En qué estado está el ticket 8?"}).json()
     assert body["status"] == "tool_fallback"
     assert body["answer"].startswith("No he podido confirmar el estado del ticket 8")
