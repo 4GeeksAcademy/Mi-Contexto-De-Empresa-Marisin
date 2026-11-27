@@ -42,6 +42,7 @@ const ERROR_TEXT: Record<ChatErrorCode, string> = {
   nothing_to_interrupt: "No había ninguna respuesta en curso.",
   forbidden: "Estás observando esta conversación: solo su dueño puede escribir.",
   agent_unavailable: "El agente no ha podido completar la respuesta. Inténtalo de nuevo en unos minutos.",
+  rate_limited: "Has enviado demasiados mensajes en poco tiempo. Espera un momento y vuelve a intentarlo.",
 };
 
 export default function SupportChatPage() {
